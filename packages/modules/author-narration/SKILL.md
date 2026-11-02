@@ -63,7 +63,7 @@ N02原样交接P0的本集展开意图、用户明确的时长要求及存在时
 
 ## N02：材料理解与作者交接
 
-完整读取[`references/author-task-editing.md`](references/author-task-editing.md)。普通／full在同一`scratchPath/author-task.md`交付创作任务、写作范围和能独立读懂的研究笔记，保留主要变化的具体经过与必要解释，按实际用途处理疑点和细节取舍。任务书不设条数或长度，不锁定作者的讲述方案。再读取[发布输入方法](references/publication-author.md#解说完整创作的前置输入)，形成三路共用的`publication-input.md`，交清实际平台调查、专业方法、字段合同及所选横竖Cover规则与样图；不预写标题或封面，不引用尚不存在的候选。两份输入形成后进入N03。定点返工输入和锁定范围仍按本次范围形成；原始材料供Codex事实核对，YouTube公开署名所需的作者、作品名、原链接与实际用途沿发布输入方法交给原作者，不因此投递参考全文或锁定其讲述方案。
+完整读取[`references/author-task-editing.md`](references/author-task-editing.md)。普通／full在同一`scratchPath/author-task.md`交付创作任务、写作范围和能独立读懂的研究笔记，保留主要变化的具体经过与必要解释，按实际用途处理疑点和细节取舍。任务书不设条数或长度，不锁定作者的讲述方案。再读取[发布输入方法](references/publication-author.md#解说完整创作的前置输入)，形成三路共用的`publication-input.md`，交清实际平台调查、专业方法、字段合同及所选横竖Cover规则与样图；不预写标题或封面，不引用尚不存在的候选。两份输入形成后进入N03。定点返工输入和锁定范围仍按本次范围形成；内部保留真实参考视频，公开文献按发布输入方法从其线索反查并核读的底层材料与其它重要研究中合并取舍，不列二创参考视频。向原作者交清文献必要原文、书目信息与视觉素材元信息，不投递原参考视频全文或锁定讲述方案。
 
 ## N03：三份独立成稿
 
@@ -83,7 +83,7 @@ N02原样交接P0的本集展开意图、用户明确的时长要求及存在时
 
 ## 定点返工的发布内容
 
-仅narration或opener形成修订稿后，完整读取[发布内容作者方法](references/publication-author.md)，按本次范围交接发布内容，再进入N05。需要补写时只续接当前原作者一次；仅改正文且发布内容已原样完整返回时不追加调用。publication-copy、publication-all、cover-content工作单直接按该方法单路处理，不重新取材或选择正文。普通／full不经过本节。
+仅narration或opener形成修订稿后，完整读取[发布内容作者方法](references/publication-author.md)，按本次范围交接发布内容，再进入N05。需要补写时只续接当前原作者一次；仅改正文且发布内容已原样完整返回时不追加调用。publication-copy、publication-all、cover-content工作单直接按该方法单路处理，不重新取得或选择正文材料；公开文献所需补读按该方法保存在同一发布输入，不改变固定正文与原材料。普通／full不经过本节。
 
 ## N05：事实核对与接纳
 

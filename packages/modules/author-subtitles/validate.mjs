@@ -62,8 +62,9 @@ export function validate({ result, context = {} }) {
   ]) {
     if (!operations.has(required)) errors.push(`字幕校正证据缺少 ${required}`);
   }
+  // Keep the actual reviewer identity in previously completed subtitle evidence.
   if (["agy:subtitle-review", "codex:subtitle-review", 'claude:subtitle-review'].filter((operation) => operations.has(operation)).length !== 1) {
-    errors.push("字幕校正必须记录唯一实际复核执行者：agy、codex或claude的subtitle-review");
+    errors.push("字幕校正必须记录唯一实际复核执行者的subtitle-review");
   }
   if (result.evidence?.audioSha256 !== context.ttsResult?.rawAudio?.sha256) errors.push("字幕时间证据没有绑定当前音频摘要");
   const timing = result.evidence?.timingSource;

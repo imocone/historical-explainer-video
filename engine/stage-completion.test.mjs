@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile, symlink } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -111,6 +111,18 @@ test('P4默认不进入视频模块，也不依赖发布文案',async t=>{
  assert.equal(render.moduleId,'render-video');
  assert.equal(render.context.videoPlan,null);
  assert.equal(render.context.videoManifest,null);
+});
+
+test('P4片头文件与视频交付不允许软链到工作区外',async t=>{
+ const {options,paths}=await setup(t);
+ const outside=await mkdtemp(path.join(os.tmpdir(),'p4-path-outside-'));
+ t.after(()=>rm(outside,{recursive:true,force:true}));
+ for(const file of [paths.episodePackage,paths.videoPlan,paths.videoManifest]){
+   const bytes=await readFile(file),target=path.join(outside,path.basename(file));
+   await writeFile(target,bytes);await rm(file);await symlink(target,file);
+   try { await assert.rejects(resolveRenderInputs(options),/符号链接/); }
+   finally { await rm(file);await writeFile(file,bytes); }
+ }
 });
 
 test('P3不读取下游P4的视频选择',async t=>{

@@ -51,7 +51,7 @@ test("P0来源组合通过实际合同、接纳检查并投递到P1", async (t) 
     if (kind === "book") plan.episodes[0].episodeCreativeBrief = "解释原指定书的中心关系。材料：指定书 /local/book.txt，第2章，摘要 " + "c".repeat(64);
     if (video) { plan.referenceProgram = referenceProgram; plan.episodes[0].referenceVideoIds = ["video"]; }
     if (query) plan.researchLibrary = researchLibrary;
-    const request = requestFor(planningBasis);
+    const request = {...requestFor(planningBasis),openerTemplate:plan.openerTemplate};
     if (query) request.researchLibrary = { notebookId: researchLibrary.notebookId };
     await validateSchema(path.join(root, "contracts/program-request.schema.json"), request, "委托");
     await validateSchema(path.join(root, "packages/modules/plan-program/result.schema.json"), plan, "P0");

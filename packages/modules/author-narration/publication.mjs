@@ -177,6 +177,13 @@ export function validate({ result, context = {} }) {
         }
       }
     }
+    if (returnRequest.coverImageAdoption) {
+      for (const [variant, image] of Object.entries(returnRequest.coverImageAdoption.variants)) {
+        if (!isDeepStrictEqual(result.covers?.[variant]?.visibleText, image.visibleText)) {
+          errors.push(`P1指定成图接纳必须让 covers.${variant}.visibleText 与所选原图一致`);
+        }
+      }
+    }
   } else if (result.coverReuse != null) {
     errors.push("只有P1平台文案返工可以声明复用已接受封面");
   }

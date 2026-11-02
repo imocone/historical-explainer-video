@@ -1,3 +1,4 @@
+import { prepareProvidedCovers } from "../../../provided-covers.mjs";
 import assert from "node:assert/strict";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
@@ -6,10 +7,11 @@ import { spawn, spawnSync } from "node:child_process";
 import { once } from "node:events";
 import test from "node:test";
 
-import { hashObject, sha256, readData } from "../../../program-utils.mjs";
+import { hashObject, sha256, readData, atomicWriteData } from "../../../program-utils.mjs";
 import { getPublicationPaths } from "../../../publication-paths.mjs";
 import { inspect, run, replaceGeneration } from "./run.mjs";
-import { begin, deliver, generate } from "./builtin.mjs";
+import { begin, deliver } from "./builtin.mjs";
+import {assertPublicationRevisionHasNoRemoteActivity} from '../../../../engine/runtime/publication-requests.mjs';
 import { validateSchema } from "../../../../engine/runtime/schema.mjs";
 
 const png = (width, height, color) => {
@@ -131,39 +133,31 @@ const nativeBatch = async (root, task, sources = {}) => {
   return { batch, receipt: await run({ root, episodeId: "ep01", targetId: "release-main", task }) };
 };
 
-test('可选API封面沿原双图交付，已完成恢复不重复生成且来源如实记录',async()=>{
-  const root=await mkdtemp(path.join(os.tmpdir(),'api-covers-'));
-  const previous=process.env.IMAGE_PROVIDER;
-  process.env.IMAGE_PROVIDER='openai';
+test('历史API封面原图只读导入与本地交付，已完成回执不阻塞P1返工',async()=>{
+  const root=await mkdtemp(path.join(os.tmpdir(),'retained-api-covers-'));
   try{
     const task=await makeTask(root);
     const batch=await run({root,episodeId:'ep01',targetId:'release-main',task});
-    process.env.IMAGE_PROVIDER='builtin';
-    const retainedBatch=await run({root,episodeId:'ep01',targetId:'release-main',task});
-    assert(retainedBatch.requests.every(request=>request.backend==='openai'),'配置变化不改写原图片服务');
-    let calls=0;
+    await begin({root,episodeId:'ep01',requests:batch.requests});
     for(const request of batch.requests){
-      assert.equal(request.backend,'openai');
-      const options={root,episodeId:'ep01',variant:request.variant,record:request.record,apiKey:'local-test-key',
-        fetchImpl:async(url,{body})=>{
-          calls++;assert(url.endsWith('/edits'));assert.equal(body.get('prompt'),request.prompt);
-          return new Response(JSON.stringify({data:[{b64_json:(request.variant==='youtube'?widePng:verticalPng).toString('base64')}]}));
-        }};
-      await assert.rejects(generate(options),/付费许可/u);
-      assert.equal((await readData(request.statePath)).status,'prepared');
-      await generate({...options,authorizePaidImages:true});
-      await generate({...options,apiKey:''});
+      const state=await readData(request.statePath),bytes=request.variant==='youtube'?widePng:verticalPng;
+      const source=path.join(root,request.variant+'-original.png');await writeFile(source,bytes);
+      // Previously completed API response; no service is called by this test.
+      const job={prompt:request.prompt,referenced_image_paths:request.referencedImagePaths,transparent_background:false};
+      const generationReceipt=path.join(path.dirname(request.statePath),'api/generation.json');
+      await atomicWriteData(generationReceipt,{provider:'openai-images',state:'completed',model:'retained-model',
+        job,jobDigest:hashObject(job),outputSha256:sha256(bytes)});
+      await atomicWriteData(request.statePath,{...state,provider:'openai-images'});
+      await deliver({root,episodeId:'ep01',variant:request.variant,record:request.record,source,generationReceipt});
     }
-    assert.equal(calls,2);
     const receipt=await run({root,episodeId:'ep01',targetId:'release-main',task});
-    for(const record of Object.values(receipt.generation)){
-      assert.equal(record.provider,'openai-images');assert.equal(record.tool,'openai.images');assert(record.model);
-    }
-    await validateSchema(new URL('./cover-receipt.schema.json',import.meta.url).pathname,receipt,'API封面');
-  }finally{
-    if(previous===undefined)delete process.env.IMAGE_PROVIDER;else process.env.IMAGE_PROVIDER=previous;
-    await rm(root,{recursive:true,force:true});
-  }
+    for(const record of Object.values(receipt.generation))assert.equal(record.provider,'openai-images');
+    await validateSchema(path.resolve('packages/modules/produce-covers/cover/cover-receipt.schema.json'),receipt,'原API封面');
+    await assertPublicationRevisionHasNoRemoteActivity(getPublicationPaths(root,'ep01','release-main'));
+    const reused=await run({root,episodeId:'ep01',targetId:'release-main',task});
+    assert.equal(reused.files.youtube.sha256,receipt.files.youtube.sha256);
+    assert.equal(reused.generation.youtube.model,'retained-model');
+  }finally{await rm(root,{recursive:true,force:true});}
 });
 
 test("封面本地处理取消后不检查下一画幅，也不改写已交回图片", { timeout: 20000 }, async () => {
@@ -410,4 +404,73 @@ test("Engine next交回双图工具批次，不把未生成封面当成程序正
     await assert.rejects(readData(current.outputPath), error => error.code === "ENOENT");
     await assert.rejects(readData(path.join(root, "ep01/制作/p1/_work/program-execution.yaml")), error => error.code === "ENOENT");
   } finally { await rm(root, { recursive: true, force: true }); }
+});
+
+test("指定双图固定原件并交付真实来源，恢复不生图；文字或原件变化不能覆盖成果", async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "provided-covers-"));
+  try {
+    const task = await makeTask(root);
+    const manifest = {};
+    for (const variant of ["youtube", "vertical"]) {
+      const source = path.join(root, `selected-${variant}.png`);
+      await writeFile(source, variant === "youtube" ? widePng : verticalPng);
+      manifest[variant] = { source, visibleText: publication.covers[variant].visibleText };
+    }
+    const manifestPath = path.join(root, "selected.json");
+    await writeFile(manifestPath, JSON.stringify(manifest));
+    const paths = getPublicationPaths(root, "ep01", "release-main");
+    task.inputs.coverImageAdoption = await prepareProvidedCovers({ root,
+      work: path.join(paths.workRoot, "_work", "covers"), manifestPath });
+    // Recovery consumes the captured original, not a mutable external selection.
+    await writeFile(manifest.youtube.source, "external original changed");
+    assert.equal((await inspect({ root, episodeId: "ep01", targetId: "release-main", task })).readyToRun, true);
+    const receipt = await run({ root, episodeId: "ep01", targetId: "release-main", task });
+    await validateSchema(path.resolve("packages/modules/produce-covers/cover/cover-receipt.schema.json"), receipt, "cover-receipt");
+    for (const variant of ["youtube", "vertical"]) {
+      assert.equal(receipt.generation[variant].provider, "user-provided");
+      assert.equal(receipt.generation[variant].sourceSha256, task.inputs.coverImageAdoption.variants[variant].sha256);
+      assert.equal(receipt.generation[variant].tool, undefined);
+    }
+    assert.equal((await inspect({ root, episodeId: "ep01", targetId: "release-main", task })).valid, true);
+    const ordinary = structuredClone(task);
+    delete ordinary.inputs.coverImageAdoption;
+    assert.equal((await inspect({ root, episodeId: "ep01", targetId: "release-main", task: ordinary })).valid, true);
+    const finalHash = sha256(await readFile(paths.coverYoutube));
+    const wrongText = structuredClone(task);
+    wrongText.inputs.publication = structuredClone(publication);
+    wrongText.inputs.publication.covers.youtube.visibleText = ["different text"];
+    await assert.rejects(run({ root, episodeId: "ep01", targetId: "release-main", task: wrongText }), /尚未与用户指定成图对齐/u);
+    const captured = path.resolve(root, task.inputs.coverImageAdoption.variants.youtube.source);
+    await writeFile(captured, "corrupt");
+    await assert.rejects(run({ root, episodeId: "ep01", targetId: "release-main", task }), /原件摘要不一致/u);
+    assert.equal(sha256(await readFile(paths.coverYoutube)), finalHash);
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
+
+test('显式替换历史API未知封面后，新原生交付不被保留的旧底层回执误拦',async()=>{
+ const root=await mkdtemp(path.join(os.tmpdir(),'replaced-api-cover-'));
+ try{
+  const task=await makeTask(root);
+  const batch=await run({root,episodeId:'ep01',targetId:'release-main',task});
+  await begin({root,episodeId:'ep01',requests:batch.requests});
+  const original=batch.requests.find(x=>x.variant==='youtube'),other=batch.requests.find(x=>x.variant==='vertical');
+  const state=await readData(original.statePath);
+  await atomicWriteData(original.statePath,{...state,provider:'openai-images'});
+  const lowLevel=path.join(path.dirname(original.statePath),'api/generation.json');
+  await atomicWriteData(lowLevel,{provider:'openai-images',state:'unknown',requestId:'retained-original'});
+  const source=path.join(root,'vertical-original.png');await writeFile(source,verticalPng);
+  await deliver({root,episodeId:'ep01',...other,source});
+  await assert.rejects(assertPublicationRevisionHasNoRemoteActivity(getPublicationPaths(root,'ep01','release-main')),/未收口封面生图/);
+  await replaceGeneration({root,episodeId:'ep01',targetId:'release-main',task,variant:'youtube',record:original.record});
+  const replacement=await run({root,episodeId:'ep01',targetId:'release-main',task});
+  assert.deepEqual(replacement.requests.map(x=>x.variant),['youtube']);
+  await begin({root,episodeId:'ep01',requests:replacement.requests});
+  const wide=path.join(root,'wide-replacement.png');await writeFile(wide,widePng);
+  await deliver({root,episodeId:'ep01',...replacement.requests[0],source:wide});
+  const receipt=await run({root,episodeId:'ep01',targetId:'release-main',task});
+  assert.equal(receipt.generation.youtube.provider,'imagegen');
+  await assertPublicationRevisionHasNoRemoteActivity(getPublicationPaths(root,'ep01','release-main'));
+  assert.equal((await readData(lowLevel)).state,'unknown');
+  assert.equal((await readData(original.statePath)).status,'superseded');
+ }finally{await rm(root,{recursive:true,force:true});}
 });

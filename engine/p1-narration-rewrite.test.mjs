@@ -9,6 +9,9 @@ import { authorHandoff } from "../packages/modules/author-narration/scripts/auth
 import { validate as validatePublication } from "../packages/modules/author-narration/publication.mjs";
 import { validateCommon } from "../packages/modules/author-narration/validate.mjs";
 import { compactAcceptedNarrationMaterials, resolveReusableNarrationMaterials, validateReusableNarrationMaterials } from "./p1-revision-materials.mjs";
+import {getPublicationPaths} from '../packages/publication-paths.mjs';
+import {assertPublicationRevisionHasNoRemoteActivity} from './runtime/publication-requests.mjs';
+import {preparePublicationRevision} from './runtime/revise-publication.mjs';
 
 const oldAuthor = "11111111-1111-4111-8111-111111111111";
 const newAuthor = "22222222-2222-4222-8222-222222222222";
@@ -371,4 +374,34 @@ test("正文不能掩盖残缺Query；纪录片仍要求引用", async (t) => {
   await rm(path.join(f.source, "notebook-query.txt"));
   f.episodeBrief.programForm = "historical-documentary";
   await assert.rejects(resolve(), /主Query提示词不存在/u);
+});
+
+test('P1返工只读独立发布现场：未发布可改，已提交与已发布保留原交付', async t => {
+  const workspaceRoot=await mkdtemp(path.join(os.tmpdir(),'p1-publish-boundary-'));
+  t.after(()=>rm(workspaceRoot,{recursive:true,force:true}));
+  const paths=getPublicationPaths(workspaceRoot,'ep01','release-main');
+  const release=path.join(workspaceRoot,'ep01','制作','p5','release-main');
+  assert.equal(paths.release,release);
+  await assertPublicationRevisionHasNoRemoteActivity(paths);
+  const sessionFile=path.join(release,'_work','intents','douyin','browser.yaml');
+  const session={state:'submitted',submittedAt:'2026-11-02T01:00:00.000Z',fingerprint:'original',executionId:'original-upload'};
+  await atomicWriteData(sessionFile,session);
+  await atomicWriteData(paths.episodeBrief,{programForm:'historical-explainer'});
+  await assert.rejects(preparePublicationRevision({workspaceRoot,episodeId:'ep01',stageId:'p1',
+    revisePublication:true,current:{kind:'complete'}}),/独立发布意图/);
+  await assert.rejects(assertPublicationRevisionHasNoRemoteActivity(paths),/独立发布意图/);
+  await assert.rejects(assertPublicationRevisionHasNoRemoteActivity(paths,{allowEditingCopy:true,platforms:['douyin']}),/独立发布意图/);
+  assert.deepEqual(await readData(sessionFile),session);
+  await atomicWriteData(sessionFile,{...session,state:'editing',submittedAt:session.submittedAt});
+  await assert.rejects(assertPublicationRevisionHasNoRemoteActivity(paths,{allowEditingCopy:true,platforms:['douyin']}),/独立发布意图/);
+  const editing={state:'editing',fingerprint:'original',executionId:'original-upload'};
+  await atomicWriteData(sessionFile,editing);
+  await atomicWrite(path.join(path.dirname(sessionFile),'timing.jsonl'),'{"event":"session-open"}\n{"event":"block-end"}\n');
+  await assertPublicationRevisionHasNoRemoteActivity(paths,{allowEditingCopy:true,platforms:['douyin']});
+  await assert.rejects(assertPublicationRevisionHasNoRemoteActivity(paths),/独立发布意图/);
+  const receiptFile=path.join(release,'receipts','douyin.yaml'),receipt={remoteWorkId:'123456',fingerprint:'original'};
+  await atomicWriteData(receiptFile,receipt);
+  await assert.rejects(assertPublicationRevisionHasNoRemoteActivity(paths,{allowEditingCopy:true,platforms:['douyin']}),/独立发布回执/);
+  assert.deepEqual(await readData(receiptFile),receipt);
+  assert.deepEqual(await readData(sessionFile),editing);
 });

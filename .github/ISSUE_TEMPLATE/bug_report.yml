@@ -19,7 +19,7 @@ body:
     id: environment
     attributes:
       label: 运行环境
-      placeholder: macOS版本、Node.js版本、Codex或Claude Code版本
+      placeholder: macOS版本、Node.js版本、Codex版本
   - type: textarea
     id: logs
     attributes:

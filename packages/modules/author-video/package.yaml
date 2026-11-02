@@ -49,7 +49,7 @@
     "../../p4-opener-reference.mjs",
     "../../authored-images.mjs",
     "../render-video/runtime/media-process.mjs",
-    "../../image-generation.mjs",
+    "../../image-provenance.mjs",
     "../../runtime-config.mjs"
   ],
   "outputSchema": "../../../contracts/cinematic-video-plan.schema.json",

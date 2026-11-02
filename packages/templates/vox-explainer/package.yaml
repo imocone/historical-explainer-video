@@ -84,7 +84,7 @@
     "spatial/prepare-map.mjs",
     "../../modules/render-video/runtime/candidate-audio.mjs",
     "../../runtime-config.mjs",
-    "../../image-generation.mjs"
+    "../../image-provenance.mjs"
   ],
   "acceptanceRules": [
     "scene.mjs",

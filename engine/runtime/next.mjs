@@ -29,7 +29,6 @@ async function prepareNext({
   programId,
   targetId,
   stageId,
-  platform = null,
   segmentId = null,
   nodeId = null,
   claim = null,
@@ -57,6 +56,7 @@ async function prepareNext({
   coverRecord = null,
   cancelCoverRegeneration = false,
   adoptCoverExamples = false,
+  adoptCoverImages = null,
   coverVariants = [],
   authorizePaidTts = false
 }) {
@@ -88,6 +88,7 @@ async function prepareNext({
     coverRecord,
     cancelCoverRegeneration,
     adoptCoverExamples,
+    adoptCoverImages,
     coverVariants,
     authorizePaidTts,
   }));
@@ -129,7 +130,6 @@ async function prepareNext({
     targetId,
     stageId,
     model,
-    platform,
     segmentId,
     nodeId,
     preResolvedP1Replacement
@@ -211,7 +211,7 @@ async function prepareNext({
       preResolvedP1Replacement,
       current
     }));
-  if (revisePublication || reviseCover || regenerateCover || adoptCoverExamples)
+  if (revisePublication || reviseCover || regenerateCover || adoptCoverExamples || adoptCoverImages)
     ({ current } = await preparePublicationRevision({
       root,
       workspaceRoot,
@@ -225,6 +225,7 @@ async function prepareNext({
       publicationFields,
       regenerateCover,
       adoptCoverExamples,
+      adoptCoverImages,
       coverVariants,
       model,
       current
@@ -250,7 +251,6 @@ async function prepareNext({
     programId,
     targetId,
     stageId,
-    platform,
     segmentId,
     nodeId,
     authorizePaidTts,
@@ -321,7 +321,6 @@ const resolveNextCurrent = async ({
   targetId,
   stageId,
   model,
-  platform,
   segmentId,
   nodeId,
   preResolvedP1Replacement
@@ -335,10 +334,8 @@ const resolveNextCurrent = async ({
       programId,
       targetId,
       stageId,
-      platform,
       segmentId,
       nodeId,
-      materializePublicationRequest: stageId === "p4",
       model
     });
   } catch (error) {
@@ -363,10 +360,8 @@ const resolveNextCurrent = async ({
       programId,
       targetId,
       stageId,
-      platform,
       segmentId,
       nodeId,
-      materializePublicationRequest: stageId === "p4",
       model
     });
   }

@@ -154,20 +154,23 @@ const assertPublicationRevisionHasNoRemoteActivity = async (paths, { allowUnreso
   const receiptFiles = (await filesUnder(paths.receipts)).filter((file) =>
     !selectedPlatforms || selectedPlatforms.includes(path.basename(file, ".yaml")));
   if (receiptFiles.length > 0) {
-    throw new Error("本次修订涉及的平台已有P4发布回执，不能改写为另一份发布文案");
+    throw new Error("本次修订涉及的平台已有独立发布回执，不能改写为另一份发布文案");
   }
   const intentRoot = path.join(paths.release, "_work", "intents");
   for (const file of await filesUnder(intentRoot)) {
+    if (path.basename(file) === 'timing.jsonl') continue;
     if (selectedPlatforms && !selectedPlatforms.includes(path.relative(intentRoot, file).split(path.sep)[0])) continue;
     const intent = businessContent(await readData(file));
     if (intent.status !== "not-created"
       && !(allowEditingCopy && intent.state === "editing" && !("submittedAt" in intent))) {
-      throw new Error("本次修订涉及的平台已有P4发布意图或未知远端结果，不能返工文案");
+      throw new Error("本次修订涉及的平台已有独立发布意图或未知远端结果，不能返工文案");
     }
   }
   const coverWork = path.join(paths.workRoot, "_work", "covers");
   for (const file of (await filesUnder(coverWork)).filter(
-    (item) => path.basename(item) === "generation.json"
+    // produce-covers owns the lifecycle at variant/fingerprint/generation.json;
+    // nested provider receipts keep provenance, including superseded attempts.
+    (item) => path.basename(item) === "generation.json" && path.relative(coverWork,item).split(path.sep).length === 3
   )) {
     const generation = await readData(file);
     if (!allowUnresolvedCover && ['imagegen','openai-images'].includes(generation.provider)

@@ -19,7 +19,6 @@
     }
   },
   "devDependencies": {
-    "@playwright/mcp": "0.0.84",
     "@turf/turf": "7.3.5",
     "ajv": "^8.18.0",
     "bezier-easing": "3.2.0",

@@ -3,8 +3,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { assertProjectMutationTree, atomicWrite, atomicWriteData, fileSha256, readData, sha256, withProjectLock } from "../../../program-utils.mjs";
 import { getPublicationPaths } from "../../../publication-paths.mjs";
-import { generateApiImage, imageGenerationMetadata } from '../../../image-generation.mjs';
-import { runtimeValue } from '../../../runtime-config.mjs';
+import { imageGenerationMetadata } from '../../../image-provenance.mjs';
 
 const recordPaths = ({ root, episodeId, variant, record }) => {
   if (!["youtube", "vertical"].includes(variant) || !/^[a-f0-9]{64}$/u.test(record)) throw new Error("必须点名当前画幅与记录指纹");
@@ -67,31 +66,12 @@ export async function deliver(options) {
   } });
 }
 
-export async function generate(options) {
-  let record = await currentRecord(options);
-  if (record.state.provider !== 'openai-images') throw new Error('当前封面沿原生工具生成，不能自动切换图片服务');
-  if (record.state.status === 'prepared') {
-    if (!options.authorizePaidImages) throw new Error('首次封面API调用需要当前明确图片付费许可');
-    if (!(options.apiKey ?? runtimeValue('OPENAI_API_KEY'))) throw new Error('请先在本机 .env 设置 OPENAI_API_KEY');
-    await begin({...options,requests:[{variant:options.variant,record:options.record}]});
-    record = await currentRecord(options);
-  }
-  if (!['tool-intent','completed'].includes(record.state.status)) throw new Error('保留原失败封面记录，按原定点入口处理');
-  const result = await generateApiImage({
-    job:{prompt:(await readFile(record.files.prompt,'utf8')).replace(/\n$/u,''),referenced_image_paths:record.state.referenceFiles,transparent_background:false},
-    directory:path.join(record.files.directory,'api'),size:options.variant === 'youtube' ? '2048x1152' : '1536x2048',
-    authorizePaidImages:options.authorizePaidImages,
-    ...(options.apiKey !== undefined ? {apiKey:options.apiKey} : {}),...(options.fetchImpl ? {fetchImpl:options.fetchImpl} : {})
-  });
-  return deliver({...options,source:result.output,generationReceipt:result.receiptPath});
-}
 
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
   try {
     const [command, ...args] = process.argv.slice(2);
     const options = { requests: [] };
     for (let index = 0; index < args.length; index += 2) {
-      if (args[index] === '--authorize-paid-images') { options.authorizePaidImages = true; index -= 1; continue; }
       const value = args[index + 1];
       if (!value || value.startsWith("--")) throw new Error("参数缺少值");
       if (args[index] === "--request") {
@@ -105,7 +85,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
       }
     }
     if (!path.isAbsolute(options.root ?? "") || !/^ep[0-9]+$/u.test(options.episodeId ?? "")) throw new Error("必须提供绝对workspace与当前episode");
-    if (!["begin", "deliver", 'generate'].includes(command)) throw new Error("只支持begin、deliver或generate");
-    process.stdout.write(`${JSON.stringify(await ({ begin, deliver, generate }[command](options)))}\n`);
+    if (!["begin", "deliver"].includes(command)) throw new Error("只支持begin或deliver");
+    process.stdout.write(`${JSON.stringify(await ({ begin, deliver }[command](options)))}\n`);
   } catch (error) { process.stderr.write(`${error.message}\n`); process.exitCode = 1; }
 }

@@ -33,10 +33,8 @@ const resolveStageCurrent = async ({
   programId,
   targetId,
   stageId,
-  platform = null,
   segmentId = null,
   nodeId = null,
-  materializePublicationRequest = false,
   materializeWorkOrder = true,
   model = null
 }) => {
@@ -44,18 +42,12 @@ const resolveStageCurrent = async ({
   if (segmentId && (stageId !== "p3" || !/^TR[0-9]{3,}$/u.test(segmentId)))
     throw new Error("segmentId只用于P3的TR段编号");
   if (nodeId && (stageId !== "p4" || !["opener", "video", "video-assets", "render"].includes(nodeId)))
-    throw new Error("nodeId只用于P4的opener/video/video-assets节点");
-  if (platform && (stageId !== "p4" || !["youtube", "xiaohongshu", "douyin"].includes(platform)))
-    throw new Error("platform 只用于 P4 的 youtube / xiaohongshu / douyin");
+    throw new Error("nodeId只用于P4的opener/video/video-assets/render节点");
   model ??= await loadStageModel(root, { stageId, resourceScope: "stage" });
   const subject = (() => {
     if (model.workflowRecord.subjectKind === "program") {
       if (!programId) throw new Error(`${stageId} 必须提供 programId`);
       return { kind: "program", id: programId };
-    }
-    if (model.workflowRecord.subjectKind === "release-bundle") {
-      if (!episodeId || !targetId) throw new Error(`${stageId} 必须提供 episodeId 与 targetId`);
-      return { kind: "release-bundle", id: `${episodeId}.${targetId}` };
     }
     if (model.workflowRecord.subjectKind === "episode") {
       if (!episodeId) throw new Error(`${stageId} 必须提供 episodeId`);
@@ -63,7 +55,7 @@ const resolveStageCurrent = async ({
     }
     throw new Error(`不支持的 Subject kind: ${model.workflowRecord.subjectKind}`);
   })();
-  const pending = await pendingAcceptance({ workspaceRoot, episodeId, stageId, targetId, platform });
+  const pending = await pendingAcceptance({ workspaceRoot, episodeId, stageId, targetId });
   if (pending) return { kind: "recovery-required", subject, workflowId: model.workflowRecord.id, stageId,
     reason: "同一候选的接纳写入尚未收口；运行同参 next 或 accept 补完剩余提交" };
   const programCompletion = await pendingProgramCompletion({ workspaceRoot, episodeId, stageId });
@@ -78,10 +70,8 @@ const resolveStageCurrent = async ({
       episodeId,
       programId,
       targetId,
-      platform,
       segmentId,
       nodeId,
-      materializePublicationRequest,
       model
     });
   } catch (error) {
@@ -264,7 +254,6 @@ async function deriveStatus({
   programId,
   targetId,
   stageId,
-  platform = null,
   segmentId = null,
   nodeId = null
 }) {
@@ -277,7 +266,6 @@ async function deriveStatus({
     programId,
     targetId,
     stageId,
-    platform,
     segmentId,
     nodeId,
     model,
@@ -312,7 +300,6 @@ async function deriveStatus({
     runner: current.runner,
     reason: current.reason,
     ...(current.fingerprint ? { fingerprint: current.fingerprint } : {}),
-    ...(current.platformStates ? { platformStates: current.platformStates } : {}),
     ...(current.authorSegments ? { authorSegments: current.authorSegments } : {}),
     ...(current.retryAfterMinutes ? { retryAfterMinutes: current.retryAfterMinutes } : {}),
     queue

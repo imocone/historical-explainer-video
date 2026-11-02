@@ -85,11 +85,6 @@ const planningCoverPackageCatalog = async (root, resourceCache) => {
     .sort((left, right) => left.coverPackageId.localeCompare(right.coverPackageId));
 };
 
-const programPlanningRequest = (request) => {
-  const { publicationProfile: _publicationProfile, ...planningRequest } = request;
-  return planningRequest;
-};
-
 const resolveAcceptedProgramPlanCurrent = async ({
   root,
   workspaceRoot = root,
@@ -115,7 +110,7 @@ const resolveAcceptedProgramPlanCurrent = async ({
   );
   if (request.programId !== programId)
     throw new Error("program-request 的 programId 与当前节目不一致");
-  const planningRequest = programPlanningRequest(request);
+  const planningRequest = request;
   const visualPackageCatalog = await planningVisualPackageCatalog(root);
   const coverPackageCatalog = await planningCoverPackageCatalog(root, model.resourceCache);
   const openerTemplateCatalog = await planningOpenerTemplateCatalog(root, model.resourceCache);

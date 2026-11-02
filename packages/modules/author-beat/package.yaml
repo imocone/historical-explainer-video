@@ -77,7 +77,7 @@
     "../../authored-images.mjs",
     "../render-video/runtime/media-process.mjs",
     "batch-validation.mjs",
-    "../../image-generation.mjs",
+    "../../image-provenance.mjs",
     "../../runtime-config.mjs"
   ],
   "validator": "validate.mjs"

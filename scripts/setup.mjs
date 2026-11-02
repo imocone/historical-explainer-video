@@ -52,10 +52,7 @@ report('HyperFrames浏览器', Boolean(hyperframes && ready(process.execPath, [h
 
 // Availability only: do not log in, inspect credentials, query services or generate media.
 console.log(`配音：${runtimeValue('MINIMAX_API_KEY') && ttsVoice() ? '已配置' : '填写 .env 中的 MINIMAX_API_KEY'}`);
-const images = runtimeValue('IMAGE_PROVIDER', 'builtin');
-console.log(`图片：${images === 'openai'
-  ? (runtimeValue('OPENAI_API_KEY') ? 'OpenAI API 已配置（生成前仍需付费许可）' : 'OpenAI API；填写 .env 中的 OPENAI_API_KEY')
-  : (images === 'builtin' ? '使用宿主原生生图；Claude 用户按 README 配置 OpenAI API' : '请在 .env 将 IMAGE_PROVIDER 设为 builtin 或 openai')}`);
+console.log('图片：使用 Codex 原生生图，无图片 API 配置。');
 console.log(`NotebookLM：${await installed(notebookCommand()) ? '工具已安装，使用前自行登录' : '运行 npm run setup 安装'}`);
 console.log(`AGY：${await installed('agy') ? '工具已安装，使用前自行登录' : 'P1 正文与默认字幕需要；安装入口见 README'}`);
 console.log(`TypeSafe：${runtimeValue('TYPESAFE_API_KEY') ? '已配置' : '需要出处定位时配置 .env 中的 TYPESAFE_API_KEY，或使用原个人配置'}`);

@@ -52,7 +52,7 @@
     "../../authored-images.mjs",
     "../../runtime-config.mjs",
     "../synthesize-narration/minimax.mjs",
-    "../../image-generation.mjs"
+    "../../image-provenance.mjs"
   ],
   "validator": "validate.mjs"
 }

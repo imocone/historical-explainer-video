@@ -85,7 +85,6 @@ async function checkProject({ root, workspaceRoot = null, episodeId, programId, 
       "source-assets.schema.json",
       "narration-package.schema.json",
       "opener-narration.schema.json",
-      "release-bundle.schema.json",
       "visual-package.schema.json",
       "visual-render-tokens.schema.json",
       "visual-package-selection.schema.json"

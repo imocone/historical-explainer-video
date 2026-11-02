@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "video-browser": {
-      "command": "npx",
-      "args": ["--no-install", "@playwright/mcp", "--browser", "chrome", "--user-data-dir", ".cache/claude-browser", "--output-dir", ".cache/claude-browser-output", "--image-responses", "omit", "--allow-unrestricted-file-access"]
-    }
-  }
-}
