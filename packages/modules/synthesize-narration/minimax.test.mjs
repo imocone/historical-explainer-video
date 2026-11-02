@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { mkdtemp, writeFile, rm } from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
 
 import { createMiniMaxTtsService } from "./minimax.mjs";
+import { createOpenerMiniMaxTtsService } from '../author-bookend/validate.mjs';
 
 const contract = {
   model: "speech-2.8-hd",
@@ -22,6 +26,34 @@ const response = (body, status) => ({
   status,
   async text() {
     return JSON.stringify(body);
+  }
+});
+
+test('MiniMax 保留原默认地址，本机配置可选择账号对应区域且环境优先', async t => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'minimax-host-'));
+  t.after(() => rm(directory, {recursive:true, force:true}));
+  const envFile = path.join(directory, '.env');
+  await writeFile(envFile, 'MINIMAX_API_HOST=https://api.minimax.io/\n');
+  for (const factory of [createMiniMaxTtsService, createOpenerMiniMaxTtsService]) for (const [environment, file, expected] of [
+    [{}, path.join(directory, 'missing'), 'https://api.minimaxi.com'],
+    [{}, envFile, 'https://api.minimax.io'],
+    [{MINIMAX_API_HOST:'https://api.minimax.cn'}, envFile, 'https://api.minimax.cn']
+  ]) {
+    let calls = 0;
+    const actualContract = {...contract,rawFormat:factory === createMiniMaxTtsService ? 'flac' : 'mp3'};
+    const service = factory({apiKey:'test-key', environment, envFile:file, fetchImpl:async (url, request) => {
+      calls++; assert.equal(url, `${expected}/v1/t2a_v2`);
+      assert.equal(request.headers.Authorization, 'Bearer test-key');
+      assert.equal(JSON.parse(request.body).audio_setting.format,actualContract.rawFormat);
+      return response({base_resp:{status_code:0},data:{status:2,audio:'0001'}},200);
+    }});
+    assert.deepEqual((await service.synthesize({text:'甲。',contract:actualContract})).audio, Buffer.from([0,1]));
+    assert.equal(calls,1);
+  }
+  for (const factory of [createMiniMaxTtsService, createOpenerMiniMaxTtsService]) {
+    const invalid = factory({apiKey:'test-key', envFile, environment:{MINIMAX_API_HOST:'https://invalid.example'},
+      fetchImpl:async () => assert.fail('无效地址不得发送凭据')});
+    await assert.rejects(invalid.synthesize({text:'甲。',contract}), error => error.code === 'local-preflight-failed');
   }
 });
 

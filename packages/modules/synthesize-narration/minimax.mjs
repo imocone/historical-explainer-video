@@ -1,6 +1,7 @@
 import { runtimeEnvironment, runtimeEnvFile } from '../../runtime-config.mjs';
 
-const API_URL = "https://api.minimaxi.com/v1/t2a_v2";
+const DEFAULT_API_HOST = 'https://api.minimaxi.com';
+const API_HOSTS = new Set([DEFAULT_API_HOST, 'https://api.minimax.cn', 'https://api.minimax.io']);
 const DEFINITIVE_SERVICE_CODES = new Set([2013, 2049, 20132]);
 const DEFINITIVE_HTTP_STATUSES = new Set([400, 401, 403, 404, 422]);
 
@@ -24,6 +25,12 @@ export const resolveMiniMaxApiKey = ({
   envFile = runtimeEnvFile
 } = {}) => {
   return String(runtimeEnvironment({environment, envFile}).MINIMAX_API_KEY ?? '').trim();
+};
+
+export const miniMaxApiUrl = value => {
+  const host = String(value ?? '').trim().replace(/\/$/u, '') || DEFAULT_API_HOST;
+  if (!API_HOSTS.has(host)) throw localPreflightError('MINIMAX_API_HOST 须为 https://api.minimaxi.com、https://api.minimax.cn 或 https://api.minimax.io');
+  return `${host}/v1/t2a_v2`;
 };
 
 const audioFromHex = (value) => {
@@ -177,16 +184,18 @@ export const createMiniMaxTtsService = (options = {}) => {
   const apiKey = Object.hasOwn(options, "apiKey")
     ? options.apiKey
     : resolveMiniMaxApiKey({ environment, envFile });
+  const apiHost = runtimeEnvironment({environment, envFile}).MINIMAX_API_HOST;
   return {
     assertReady() {
       if (typeof apiKey !== "string" || !apiKey.trim()) throw localPreflightError("已获授权但缺少 MINIMAX_API_KEY，未发起远端请求");
       if (typeof fetchImpl !== "function") throw localPreflightError("当前运行时不支持 MiniMax 网络请求");
+      miniMaxApiUrl(apiHost);
     },
     async synthesize({ text, contract }) {
       this.assertReady();
       let response;
       try {
-        response = await fetchImpl(API_URL, {
+        response = await fetchImpl(miniMaxApiUrl(apiHost), {
           method: "POST",
           headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
           body: JSON.stringify(miniMaxPayload({ text, contract }))

@@ -50,7 +50,7 @@ node packages/runtime-config.mjs python -B packages/modules/author-narration/scr
 
 ## 读取与判断
 
-首次取材仍按下文完整读引用。此后核对一个具体命题、但不知道它在现有Query哪条原文时，运行 `node packages/modules/author-narration/scripts/find-evidence.mjs <原Query.json绝对路径> <命题文本文件绝对路径> <本单scratch绝对路径>`。命题文件只写本次正在核对的一句话，放本单临时目录；程序从原Query筛出source_id非空、citation_number非null且cited_text非空的文字引用，保留原数组位置对应的R编号、原文和来源；无效条目不阻断其它引用，整批无有效引用仍按原补缺或停止方法处理。不先由Codex重读或改写摘要。脚本沿同一TypeSafe选择与原缓存返回实际原引用，不复制SDK或凭据；用户提供进程环境`TYPESAFE_API_KEY`或原`~/.config/typesafe/api-key`。已知出处时直接读该条，不固定再调一次API。
+首次取材仍按下文完整读引用。此后核对一个具体命题、但不知道它在现有Query哪条原文时，运行 `node packages/modules/author-narration/scripts/find-evidence.mjs <原Query.json绝对路径> <命题文本文件绝对路径> <本单scratch绝对路径>`。命题文件只写本次正在核对的一句话，放本单临时目录；程序从原Query筛出source_id非空、citation_number非null且cited_text非空的文字引用，保留原数组位置对应的R编号、原文和来源；无效条目不阻断其它引用，整批无有效引用仍按原补缺或停止方法处理。不先由Codex重读或改写摘要。脚本沿同一TypeSafe选择与原缓存返回实际原引用，不复制SDK或凭据；用户在本机`.env`设置`TYPESAFE_API_KEY`，进程环境优先，仍可使用原`~/.config/typesafe/api-key`。已知出处时直接读该条，不固定再调一次API。
 
 入口从有效文字引用中直接选出一条完整支持该命题的出处，`selected.reference`原样保留原文和来源字段；没有完整支持时返回`decision: none`及`selected: null`。Codex直接使用所选出处继续原有事实核对，不再把整批引用重选一遍。`none`表示本批没有找到完整支持，不是史实为假，也不排除局部支持或相反证据；沿下文原有方法处理确实影响本集的材料缺口，不固定重扫全部引用、不自动补查。事实错误仍须有原文证据，不能仅凭`none`退稿。服务错误单独报错，由作者按原方法完成受影响的查找，不自动重投。首次完整阅读及交给作者的全部有效文字引用保持，不新增逐句调用、审稿轮次或事实表。
 

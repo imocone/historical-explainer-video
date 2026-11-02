@@ -52,7 +52,13 @@ report('HyperFrames浏览器', Boolean(hyperframes && ready(process.execPath, [h
 
 // Availability only: do not log in, inspect credentials, query services or generate media.
 console.log(`配音：${runtimeValue('MINIMAX_API_KEY') && ttsVoice() ? '已配置' : '填写 .env 中的 MINIMAX_API_KEY'}`);
+const images = runtimeValue('IMAGE_PROVIDER', 'builtin');
+console.log(`图片：${images === 'openai'
+  ? (runtimeValue('OPENAI_API_KEY') ? 'OpenAI API 已配置（生成前仍需付费许可）' : 'OpenAI API；填写 .env 中的 OPENAI_API_KEY')
+  : (images === 'builtin' ? '使用宿主原生生图；Claude 用户按 README 配置 OpenAI API' : '请在 .env 将 IMAGE_PROVIDER 设为 builtin 或 openai')}`);
 console.log(`NotebookLM：${await installed(notebookCommand()) ? '工具已安装，使用前自行登录' : '运行 npm run setup 安装'}`);
+console.log(`AGY：${await installed('agy') ? '工具已安装，使用前自行登录' : 'P1 正文与默认字幕需要；安装入口见 README'}`);
+console.log(`TypeSafe：${runtimeValue('TYPESAFE_API_KEY') ? '已配置' : '需要出处定位时配置 .env 中的 TYPESAFE_API_KEY，或使用原个人配置'}`);
 console.log(`VideoCaptioner：${runtimePath('VIDEO_CAPTIONER_ROOT') ? '已设置目录' : '需要备用识别或片头取时间时配置 VIDEO_CAPTIONER_ROOT'}`);
 console.log('AGY、即梦及宿主生图／浏览器：按实际阶段安装和登录；本命令不调用。');
 if (failures) process.exitCode = 1;
