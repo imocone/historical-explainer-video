@@ -5,6 +5,7 @@ import { gzipSync } from 'node:zlib';
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { homedir } from 'node:os';
+import { runtimeValue } from '../../../runtime-config.mjs';
 const selectCandidate = async ({state,items,instructions,matchDescription,noneDescription,cacheDirectory}) => {
   const started = performance.now();
   const request = {state,questions:{selection:{type:'choice',instructions,
@@ -18,13 +19,13 @@ const selectCandidate = async ({state,items,instructions,matchDescription,noneDe
     if (saved.requestSha256 === key && saved.response?.answers) { response = saved.response; cached = true; }
   } catch (error) { if (error.code !== 'ENOENT') throw error; }
   if (!response) {
-    // Keep the credential in its existing user-owned location; no SDK or key copy.
-    let apiKey = process.env.TYPESAFE_API_KEY?.trim();
+    // Use the shared local configuration; retain the existing user-owned fallback.
+    let apiKey = runtimeValue('TYPESAFE_API_KEY');
     if (!apiKey) {
       try { apiKey = (await readFile(path.join(homedir(),'.config/typesafe/api-key'),'utf8')).trim(); }
       catch (error) { if (error.code !== 'ENOENT') throw error; }
     }
-    if (!apiKey) throw new Error('出处定位需要用户自己的 TYPESAFE_API_KEY 或 ~/.config/typesafe/api-key');
+    if (!apiKey) throw new Error('请在本机 .env 设置 TYPESAFE_API_KEY，或使用原 ~/.config/typesafe/api-key');
     const result = await fetch('https://api.typesafe.ai/v1/systemone', {method:'POST',
       headers:{Authorization:`Bearer ${apiKey}`,'Content-Type':'application/json','Content-Encoding':'gzip'},
       body:gzipSync(JSON.stringify({...request,model:'jev-latest'})),signal:AbortSignal.timeout(10000)});

@@ -26,12 +26,11 @@ import {
 } from "../../templates/episode-opener/render-policy.mjs";
 import { createOpenerTimingService } from "./opener-timing.mjs";
 import { runMediaProcess } from "../render-video/runtime/media-process.mjs";
-import { resolveMiniMaxApiKey } from '../synthesize-narration/minimax.mjs';
-import { runtimeEnvFile, ttsVoice } from '../../runtime-config.mjs';
+import { resolveMiniMaxApiKey, miniMaxApiUrl } from '../synthesize-narration/minimax.mjs';
+import { runtimeEnvironment, runtimeEnvFile, ttsVoice } from '../../runtime-config.mjs';
 
 const exists = (file) => access(file).then(() => true, () => false);
 const contractUrl = new URL("./opener-tts-contract.json", import.meta.url);
-const MINIMAX_API_URL = "https://api.minimaxi.com/v1/t2a_v2";
 const DEFINITIVE_SERVICE_CODES = new Set([2013, 2049, 20132]);
 const DEFINITIVE_HTTP_STATUSES = new Set([400, 401, 403, 404, 422]);
 const mediaStopped = error => ["MEDIA_CANCELLED", "MEDIA_RESOURCE_STOPPED"].includes(error?.code);
@@ -126,18 +125,20 @@ export const createOpenerMiniMaxTtsService = (options = {}) => {
   const apiKey = Object.hasOwn(options, "apiKey")
     ? options.apiKey
     : resolveMiniMaxApiKey({ environment, envFile });
+  const apiHost = runtimeEnvironment({environment, envFile}).MINIMAX_API_HOST;
   return {
     assertReady() {
       if (typeof apiKey !== "string" || !apiKey.trim()) {
         throw localPreflightError("已获授权但缺少 MINIMAX_API_KEY，未发起片头远端请求");
       }
       if (typeof fetchImpl !== "function") throw localPreflightError("当前运行时不支持 MiniMax 网络请求");
+      miniMaxApiUrl(apiHost);
     },
     async synthesize({ text, contract }) {
       this.assertReady();
       let response;
       try {
-        response = await fetchImpl(MINIMAX_API_URL, {
+        response = await fetchImpl(miniMaxApiUrl(apiHost), {
           method: "POST",
           headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
           body: JSON.stringify(openerMiniMaxPayload({ text, contract }))

@@ -33,6 +33,7 @@ test('项目出处定位调用原服务且沿用原缓存身份，不改写原�
   const response={answers:{selection:{choice:'R5',probabilities:{R5:1}}},usage:{input_tokens:12,output_tokens:3}};
   t.mock.method(globalThis,'fetch',async(url,options)=>{
     calls++;assert.equal(url,'https://api.typesafe.ai/v1/systemone');
+    assert.equal(options.headers.Authorization,'Bearer local-test-key');
     assert.equal(options.headers['Content-Encoding'],'gzip');
     assert.deepEqual(JSON.parse(gunzipSync(options.body)),{...request,model:'jev-latest'});
     return new Response(JSON.stringify(response));
