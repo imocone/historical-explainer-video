@@ -1,0 +1,95 @@
+{
+  "name": "五张正文回忆加本集节目世界俯瞰字段示例",
+  "usageBoundary": "仅演示节目正式设定为北宋东京城时的字段合同；图纸、标题与俯瞰方案为非生产示例，真实作者必须使用当前工作单。",
+  "result": {
+    "templateId": "documentary-opener",
+    "episodeTitle": "一城烟火",
+    "memoryShots": [
+      {
+        "id": "D01",
+        "bodyRefs": [
+          "B001"
+        ],
+        "requestId": "AR001",
+        "focus": {
+          "x": 0.34,
+          "y": 0.58
+        },
+        "selectionReason": "手上劳动和作坊纵深打开本集生活。"
+      },
+      {
+        "id": "D02",
+        "bodyRefs": [
+          "B002"
+        ],
+        "requestId": "AR001",
+        "focus": {
+          "x": 0.63,
+          "y": 0.46
+        },
+        "selectionReason": "街市人物的行进接上劳动的动势。"
+      },
+      {
+        "id": "D03",
+        "bodyRefs": [
+          "B003"
+        ],
+        "requestId": "AR001",
+        "focus": {
+          "x": 0.42,
+          "y": 0.61
+        },
+        "selectionReason": "水路空间让视野由近及远。"
+      },
+      {
+        "id": "D04",
+        "bodyRefs": [
+          "B004"
+        ],
+        "requestId": "AR001",
+        "focus": {
+          "x": 0.59,
+          "y": 0.48
+        },
+        "selectionReason": "夜间相聚的生活气息承接白日。"
+      },
+      {
+        "id": "D05",
+        "bodyRefs": [
+          "B005"
+        ],
+        "requestId": "AR001",
+        "focus": {
+          "x": 0.43,
+          "y": 0.57
+        },
+        "selectionReason": "舟行纵深把视线带向宽阔末景。"
+      }
+    ],
+    "hero": {
+      "id": "D06",
+      "bodyRefs": [
+        "B006"
+      ],
+      "sourceRefs": [
+        "F006"
+      ],
+      "mustNotInvent": [
+        "不得补造来源未支持的具体城门、宫殿、河道或文字"
+      ],
+      "visualBrief": {
+        "subject": "北宋东京城完整城市肌理与本集市井生活",
+        "actionOrState": "高空俯视下，城郭、街坊与人流共同呈现都城正在运转",
+        "environment": "来源支持的北宋东京城城郭、街坊、屋宇与远处天际",
+        "visibleResult": "观众一眼辨认这是一座规模宏大的北宋都城，并从城市全貌进入本集生活",
+        "composition": "本期从城市外缘斜俯瞰，前中后景完整，城市核心偏左并沿对角线延伸"
+      },
+      "focus": {
+        "x": 0.48,
+        "y": 0.26
+      },
+      "framing": "panorama",
+      "selectionReason": "本集专用俯瞰以独立观察位呈现东京城整体尺度，并由本集生活内容建立进入方向。"
+    }
+  }
+}

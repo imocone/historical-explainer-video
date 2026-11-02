@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "episodeId", "seriesTitle", "language", "durationMs", "files", "evidence", "_producer"],
+  "properties": {
+    "schemaVersion": {"const": "1.1"},
+    "episodeId": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "seriesTitle": {"type": "string", "minLength": 1},
+    "language": {"const": "zh-CN"},
+    "durationMs": {"type": "integer", "minimum": 1},
+    "files": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["narration", "audio", "subtitles"],
+      "properties": {
+        "narration": {"$ref": "#/$defs/narrationFile"},
+        "audio": {"$ref": "#/$defs/audioFile"},
+        "subtitles": {"$ref": "#/$defs/subtitleFile"}
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["subtitleQuality"],
+      "properties": {
+        "subtitleQuality": {"$ref": "#/$defs/subtitleQualityFile"}
+      }
+    },
+    "_producer": {"$ref": "#/$defs/producer"}
+  },
+  "$defs": {
+    "path": {"type": "string", "minLength": 1, "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"},
+    "sha": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {"path": {"$ref": "#/$defs/path"}, "sha256": {"$ref": "#/$defs/sha"}}
+    },
+    "narrationFile": {
+      "allOf": [
+        {"$ref": "#/$defs/file"},
+        {"properties": {"path": {"const": "narration.txt"}}}
+      ]
+    },
+    "audioFile": {
+      "allOf": [
+        {"$ref": "#/$defs/file"},
+        {"properties": {"path": {"const": "narration.mp3"}}}
+      ]
+    },
+    "subtitleFile": {
+      "allOf": [
+        {"$ref": "#/$defs/file"},
+        {"properties": {"path": {"const": "narration.srt"}}}
+      ]
+    },
+    "subtitleQualityFile": {
+      "allOf": [
+        {"$ref": "#/$defs/file"},
+        {"properties": {"path": {"const": "subtitle-quality.yaml"}}}
+      ]
+    },
+    "producer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["moduleId", "nodeId", "taskDigest", "inputs", "outputSha256"],
+      "properties": {
+        "moduleId": {"const": "finalize-narration"},
+        "nodeId": {"const": "finalize-narration"},
+        "taskDigest": {"$ref": "#/$defs/sha"},
+        "inputs": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/sha"},
+          "uniqueItems": true
+        },
+        "outputSha256": {"$ref": "#/$defs/sha"}
+      }
+    }
+  }
+}

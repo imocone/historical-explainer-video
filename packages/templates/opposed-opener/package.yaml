@@ -1,0 +1,80 @@
+{
+  "kind": "template",
+  "id": "opposed-opener",
+  "catalog": {
+    "displayName": {
+      "en": "Opposed Opener",
+      "zh": "逐段错层对冲片头"
+    },
+    "purpose": "按口播原文逗号和句末标点逐段对冲，错层运镜后蓄力弹开并接入正文首镜",
+    "rejectWhen": "不是整集片头，或内容不能以清楚自然的短口播引出正文"
+  },
+  "implements": [
+    {
+      "moduleId": "author-narration",
+      "slotId": "opener-copy-template",
+      "majorVersion": 1
+    },
+    {
+      "moduleId": "author-documentary-narration",
+      "slotId": "opener-copy-template",
+      "majorVersion": 1
+    },
+    {
+      "moduleId": "author-bookend",
+      "slotId": "opener-template",
+      "majorVersion": 1
+    },
+    {
+      "moduleId": "render-video",
+      "slotId": "segment-template",
+      "majorVersion": 1
+    }
+  ],
+  "copyRules": [
+    "copy-method.md"
+  ],
+  "authorRules": [
+    "AUTHOR.md",
+    "../../authored-images.md"
+  ],
+  "acceptanceRules": [
+    "validate.mjs",
+    "copy-policy.mjs",
+    "render-policy.mjs",
+    "../../source-rights.mjs",
+    "../../authored-images.mjs"
+  ],
+  "assetContractRules": [
+    "asset-contract.mjs"
+  ],
+  "assetContractEntry": "asset-contract.mjs",
+  "outputSchema": "../../../contracts/opposed-opener-treatment.schema.json",
+  "validator": "validate.mjs",
+  "renderer": "render/index.jsx",
+  "renderPlanEntry": "render-plan.mjs",
+  "renderRules": [
+    "render-policy.mjs",
+    "render-plan.mjs",
+    "render/index.jsx",
+    "audio/sources.mjs",
+    "../episode-opener/audio/sources.mjs",
+    "../../modules/render-video/runtime/scene-view.jsx"
+  ],
+  "renderAssets": [
+    "audio/rush-one.wav",
+    "audio/rush-two.wav",
+    "../episode-opener/audio/strips-impact.wav",
+    "../episode-opener/audio/exit-reveal.wav",
+    "../episode-opener/audio/background-bed.wav"
+  ],
+  "runtimeResources": [
+    "audio/README.md",
+    "../../authored-images.mjs",
+    "../../runtime-config.mjs"
+  ],
+  "examples": [
+    "examples/golden.json",
+    "examples/negative.json"
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "kind": "feature",
+  "id": "background-music",
+  "implements": [
+    {"moduleId": "render-video", "slotId": "feature", "majorVersion": 1, "defaultSelected": true}
+  ],
+  "catalog": {
+    "displayName": {"en": "Background Music", "zh": "背景音乐"},
+    "purpose": "在不改变口播、字幕和内容时间线的前提下，为正文加入一条已登记且权利可用的背景音乐轨，并执行声音设计的收放意图",
+    "disabledBehavior": "关闭时即使输入目录存在音乐文件也保持静音，不自动猜测或混入",
+    "initialState": {}
+  },
+  "renderRules": ["render-entry.mjs", "render-policy.mjs", "dynamics.mjs", "../sound-effects/timing.mjs", "../sound-effects/library/catalog.json", "../../source-rights.mjs"],
+  "runtimeResources": ["DYNAMICS.md", "library/README.md", "../../runtime-config.mjs"],
+  "renderEntry": "render-entry.mjs"
+}

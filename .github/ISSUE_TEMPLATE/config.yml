@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 安装与配置
+    url: https://github.com/imocone/historical-explainer-video#快速开始
+    about: 查看安装步骤、外部服务配置和首次使用方法
+  - name: 私密安全报告
+    url: https://github.com/imocone/historical-explainer-video/security/advisories/new
+    about: 安全问题通过私密入口提交，不在公开Issue附上凭据

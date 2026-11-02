@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "episodeId", "language", "narrationSha256", "maxContentChars", "cues", "evidence"],
+  "properties": {
+    "schemaVersion": {"const": "3.0"},
+    "episodeId": {"type": "string", "pattern": "^ep[0-9]{2,}$"},
+    "language": {"const": "zh-CN"},
+    "narrationSha256": {"$ref": "#/$defs/sha"},
+    "maxContentChars": {"const": 32},
+    "cues": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/cue"}
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["operations", "timingSource", "audioSha256"],
+      "properties": {
+        "audioSha256": {"$ref": "#/$defs/sha"},
+        "operations": {
+          "type": "array",
+          "minItems": 4,
+          "items": {"type": "string", "minLength": 1},
+          "uniqueItems": true
+        },
+        "timingSource": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind", "provider", "granularity"],
+              "properties": {
+                "kind": {"const": "provider-native"},
+                "provider": {"type": "string", "minLength": 1},
+                "granularity": {"const": "word"}
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["kind", "provider", "granularity", "requestedModel", "actualModel", "fallbackOccurred", "wordCues", "nativeTimingIssue"],
+              "properties": {
+                "kind": {"const": "video-captioner-asr"},
+                "provider": {"const": "video-captioner"},
+                "granularity": {"const": "word"},
+                "requestedModel": {"enum": ["BIJIAN", "JIANYING"]},
+                "actualModel": {"enum": ["BIJIAN", "JIANYING"]},
+                "fallbackOccurred": {"type": "boolean"},
+                "nativeTimingIssue": {"type": "string", "minLength": 1},
+                "wordCues": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {"$ref": "#/$defs/cue"}
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "_producer": {"$ref": "#/$defs/producer"}
+  },
+  "$defs": {
+    "sha": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "cue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["startMs", "endMs", "text"],
+      "properties": {
+        "startMs": {"type": "integer", "minimum": 0},
+        "endMs": {"type": "integer", "minimum": 0},
+        "text": {"type": "string", "minLength": 1, "pattern": "\\S"}
+      }
+    },
+    "producer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["moduleId", "nodeId", "taskDigest", "inputs", "rules", "contract", "outputSha256"],
+      "properties": {
+        "moduleId": {"const": "author-subtitles"},
+        "nodeId": {"const": "author-subtitles"},
+        "taskDigest": {"$ref": "#/$defs/sha"},
+        "inputs": {"type": "array", "items": {"$ref": "#/$defs/sha"}, "uniqueItems": true},
+        "rules": {"type": "array", "items": {"$ref": "#/$defs/sha"}, "uniqueItems": true},
+        "contract": {"$ref": "#/$defs/sha"},
+        "outputSha256": {"$ref": "#/$defs/sha"}
+      }
+    }
+  }
+}

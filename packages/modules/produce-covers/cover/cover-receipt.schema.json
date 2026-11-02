@@ -1,0 +1,335 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "episodeId",
+    "targetId",
+    "publicationSha256",
+    "visual",
+    "cover",
+    "verticalCover",
+    "generation",
+    "files",
+    "_producer"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "11.0"
+    },
+    "episodeId": {
+      "$ref": "#/$defs/id"
+    },
+    "targetId": {
+      "const": "release-main"
+    },
+    "publicationSha256": {
+      "$ref": "#/$defs/sha"
+    },
+    "visual": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "packageId",
+        "version",
+        "profileId",
+        "coverDigest"
+      ],
+      "properties": {
+        "packageId": {
+          "$ref": "#/$defs/id"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        },
+        "profileId": {
+          "$ref": "#/$defs/id"
+        },
+        "coverDigest": {
+          "$ref": "#/$defs/sha"
+        }
+      }
+    },
+    "cover": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["packageId", "version", "coverDigest"],
+      "properties": {
+        "packageId": {"$ref": "#/$defs/id"},
+        "version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+        "coverDigest": {"$ref": "#/$defs/sha"}
+      }
+    },
+    "verticalCover": {"$ref": "#/properties/cover"},
+    "generation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "youtube",
+        "vertical"
+      ],
+      "properties": {
+        "youtube": {"oneOf": [{"$ref": "#/$defs/generation"}, {"$ref": "#/$defs/packageExample"}, {"$ref": "#/$defs/builtinGeneration"}]},
+        "vertical": {"oneOf": [{"$ref": "#/$defs/generation"}, {"$ref": "#/$defs/packageExample"}, {"$ref": "#/$defs/builtinGeneration"}]}
+      }
+    },
+    "files": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "youtube",
+        "vertical"
+      ],
+      "properties": {
+        "youtube": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/imageFile"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "width": {
+                  "const": 2048
+                },
+                "height": {
+                  "const": 1152
+                },
+                "byteLength": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 20971520
+                }
+              }
+            }
+          ]
+        },
+        "vertical": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/imageFile"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "width": {
+                  "const": 1536
+                },
+                "height": {
+                  "const": 2048
+                },
+                "byteLength": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 20971520
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "_producer": {
+      "$ref": "#/$defs/producer"
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "sha": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "path": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
+    },
+    "generation": {
+      "description": "已交付API成品的真实来源记录，仅作本地核对与复用。",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider",
+        "model",
+        "quality",
+        "generationSize",
+        "inputFingerprint",
+        "stableFingerprint",
+        "providerTaskId",
+        "promptSha256",
+        "sourceSha256"
+      ],
+      "properties": {
+        "provider": {
+          "const": "apimart"
+        },
+        "model": {
+          "enum": ["gpt-image-2", "gpt-image-2.5-ext"]
+        },
+        "quality": {
+          "const": "1k"
+        },
+        "generationSize": {
+          "enum": [
+            "16:9",
+            "3:4"
+          ]
+        },
+        "inputFingerprint": {
+          "$ref": "#/$defs/sha"
+        },
+        "stableFingerprint": {
+          "$ref": "#/$defs/sha"
+        },
+        "providerTaskId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "promptSha256": {
+          "$ref": "#/$defs/sha"
+        },
+        "sourceSha256": {
+          "$ref": "#/$defs/sha"
+        }
+      }
+    },
+    "packageExample": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider",
+        "packageId",
+        "version",
+        "source",
+        "sourceSha256",
+        "inputFingerprint",
+        "stableFingerprint"
+      ],
+      "properties": {
+        "provider": {"const": "package-example"},
+        "packageId": {"$ref": "#/$defs/id"},
+        "version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+        "source": {"$ref": "#/$defs/path"},
+        "sourceSha256": {"$ref": "#/$defs/sha"},
+        "inputFingerprint": {"$ref": "#/$defs/sha"},
+        "stableFingerprint": {"$ref": "#/$defs/sha"}
+      }
+    },
+    "imageFile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256",
+        "mediaType",
+        "byteLength",
+        "width",
+        "height"
+      ],
+      "properties": {
+        "path": {
+          "$ref": "#/$defs/path"
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha"
+        },
+        "mediaType": {
+          "const": "image/png"
+        },
+        "byteLength": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "width": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "producer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "moduleId",
+        "nodeId",
+        "taskDigest",
+        "inputs",
+        "outputSha256"
+      ],
+      "properties": {
+        "moduleId": {
+          "const": "produce-covers"
+        },
+        "nodeId": {
+          "const": "produce-covers"
+        },
+        "taskDigest": {
+          "$ref": "#/$defs/sha"
+        },
+        "inputs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/sha"
+          },
+          "uniqueItems": true
+        },
+        "outputSha256": {
+          "$ref": "#/$defs/sha"
+        }
+      }
+    },
+    "builtinGeneration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider",
+        "tool",
+        "generationSize",
+        "inputFingerprint",
+        "stableFingerprint",
+        "promptSha256",
+        "sourceSha256"
+      ],
+      "allOf": [
+        {"if":{"properties":{"provider":{"const":"openai-images"}}},"then":{"required":["model"],"properties":{"tool":{"const":"openai.images"}}}},
+        {"if":{"properties":{"provider":{"const":"imagegen"}}},"then":{"properties":{"tool":{"const":"image_gen.imagegen"}}}}
+      ],
+      "properties": {
+        "provider": {
+          "enum": ["imagegen", "openai-images"]
+        },
+        "tool": {
+          "enum": ["image_gen.imagegen", "openai.images"]
+        },
+        "model": {"type":"string","minLength":1},
+        "generationSize": {
+          "enum": [
+            "16:9",
+            "3:4"
+          ]
+        },
+        "inputFingerprint": {
+          "$ref": "#/$defs/sha"
+        },
+        "stableFingerprint": {
+          "$ref": "#/$defs/sha"
+        },
+        "promptSha256": {
+          "$ref": "#/$defs/sha"
+        },
+        "sourceSha256": {
+          "$ref": "#/$defs/sha"
+        }
+      }
+    }
+  }
+}

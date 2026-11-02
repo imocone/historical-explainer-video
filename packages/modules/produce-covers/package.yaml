@@ -1,0 +1,67 @@
+{
+  "kind": "module",
+  "id": "produce-covers",
+  "runner": "program",
+  "controllerEntry": "controller.json",
+  "slots": [
+    {
+      "id": "visual",
+      "majorVersion": 1,
+      "accepts": "visual",
+      "cardinality": "one",
+      "selectionSource": "program-visual",
+      "readRoles": [
+        "productionProfiles"
+      ],
+      "writeTargets": [
+        "cover-receipt"
+      ]
+    },
+    {
+      "id": "cover-design",
+      "majorVersion": 1,
+      "accepts": "cover",
+      "cardinality": "one",
+      "selectionSource": "program-cover",
+      "readRoles": [
+        "coverRules",
+        "examples"
+      ],
+      "optionalReadRoles": [
+        "finalExample"
+      ],
+      "writeTargets": [
+        "cover-receipt"
+      ]
+    },
+    {
+      "id": "vertical-cover-design",
+      "majorVersion": 1,
+      "accepts": "cover",
+      "cardinality": "one",
+      "selectionSource": "program-cover-vertical",
+      "readRoles": [
+        "coverRules",
+        "examples"
+      ],
+      "optionalReadRoles": [
+        "finalExample"
+      ],
+      "writeTargets": [
+        "cover-receipt"
+      ]
+    }
+  ],
+  "rules": [
+    "../../program-utils.mjs",
+    "../../workspace-paths.mjs",
+    "../../publication-paths.mjs",
+    "../render-video/runtime/media-process.mjs",
+    "cover/builtin.md",
+    "cover/builtin.mjs",
+    "../../image-generation.mjs",
+    "../../runtime-config.mjs"
+  ],
+  "outputSchema": "cover/cover-receipt.schema.json",
+  "programEntry": "cover/run.mjs"
+}

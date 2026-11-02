@@ -1,0 +1,32 @@
+{
+  "name": "逗号前后两段逐次对冲的非生产字段示例",
+  "result": {
+    "templateId": "glass-opener",
+    "flashbackLine": "他要进京赶考，为什么先卖家田？",
+    "flashbackShots": [
+      {
+        "id": "O01", "spokenText": "他要进京赶考，", "screenLines": ["他要进京赶考"], "highlight": "赶考",
+        "visualBrief": {
+          "subject": "准备赴京的匿名远方士人",
+          "actionOrState": "人物整理笔墨、粮袋与行囊，准备出发",
+          "environment": "通向远方的古代道路",
+          "visibleResult": "人物和行囊表明他正准备远行",
+          "composition": "完整16:9中景，脸和行囊保持可辨，画面不预制文字"
+        },
+        "bodyRefs": ["B001"], "sourceRefs": ["C001"], "mustNotInvent": ["不补造姓名、籍贯或考场地点"]
+      },
+      {
+        "id": "O02", "spokenText": "为什么先卖家田？", "screenLines": ["为什么先卖家田？"], "highlight": "卖家田",
+        "visualBrief": {
+          "subject": "为筹路费出售田产的匿名家庭",
+          "actionOrState": "家人交接没有可读字迹的田产凭据",
+          "environment": "田地边的普通院落",
+          "visibleResult": "田地与交接动作表明家庭先处理了田产",
+          "composition": "完整16:9中景，人物脸、凭据和田地保持可辨，不预制文字"
+        },
+        "bodyRefs": ["B002"], "sourceRefs": ["R001"], "mustNotInvent": ["不补造价格、契文或强迫交易"]
+      }
+    ]
+  },
+  "usageBoundary": "只教按原文逗号及句末标点分段、每段一图；当前节目人物、事实和句子由当前作者决定。"
+}

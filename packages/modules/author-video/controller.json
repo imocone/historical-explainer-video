@@ -1,0 +1,30 @@
+{
+  "primitive": "ai-video-plan",
+  "projection": "artifact",
+  "reads": [
+    {
+      "role": "video-plan",
+      "kind": "artifact"
+    },
+    {
+      "role": "storyboard",
+      "kind": "projection"
+    },
+    {
+      "role": "narration-package",
+      "kind": "artifact"
+    },
+    {
+      "role": "source-assets",
+      "kind": "external-input"
+    },
+    {
+      "role": "visual-package",
+      "kind": "catalog"
+    }
+  ],
+  "writes": [
+    "video-plan"
+  ],
+  "returnTo": []
+}

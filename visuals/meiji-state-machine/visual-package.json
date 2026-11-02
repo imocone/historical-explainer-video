@@ -1,0 +1,96 @@
+{
+  "kind": "visual",
+  "id": "meiji-state-machine",
+  "version": "5.4.0",
+  "catalog": {
+    "displayName": "明治工笔数字浮世绘",
+    "purpose": "适合日本历史、制度、社会生活及对外关系主题，以精细工笔线描、现代数字浮世绘构型、清晰哑光色面和自然成年造型呈现；实际时代、人物身份、衣冠、建筑及器物由本集内容决定，不固定为明治样图中的场面。",
+    "rejectWhen": "不适合以中国古代水墨、壁画或传统纸本气质为核心的节目。"
+  },
+  "implements": [
+    {
+      "moduleId": "produce-covers",
+      "slotId": "visual",
+      "majorVersion": 1
+    },
+    {
+      "moduleId": "render-video",
+      "slotId": "visual",
+      "majorVersion": 1
+    },
+    {
+      "moduleId": "author-video",
+      "slotId": "visual",
+      "majorVersion": 1
+    },
+    {
+      "moduleId": "produce-video-assets",
+      "slotId": "visual",
+      "majorVersion": 1
+    },
+    {
+      "moduleId": "author-beat",
+      "slotId": "visual",
+      "majorVersion": 1
+    },
+    {
+      "moduleId": "author-bookend",
+      "slotId": "visual",
+      "majorVersion": 1
+    }
+  ],
+  "style": "style.json",
+  "productionProfiles": {
+    "fullframe-image": {
+      "profileId": "meiji-fullframe-image-v15",
+      "referenceStyleScopes": [
+        "palette",
+        "linework",
+        "fill-finish",
+        "environment-rendering",
+        "character-proportion"
+      ]
+    },
+    "bookend-image": {
+      "profileId": "meiji-bookend-image-v15",
+      "referenceStyleScopes": [
+        "palette",
+        "linework",
+        "fill-finish",
+        "environment-rendering",
+        "character-proportion"
+      ]
+    },
+    "cover-image": {
+      "profileId": "meiji-cover-image-v15",
+      "referenceStyleScopes": [
+        "palette",
+        "linework",
+        "fill-finish",
+        "environment-rendering",
+        "character-proportion"
+      ]
+    }
+  },
+  "render": {
+    "tokens": "render/tokens.json"
+  },
+  "masterReference": {
+    "id": "meiji-style-storm-messenger-wide-v15",
+    "path": "references/assets/meiji-style-storm-messenger-wide-v15.png"
+  },
+  "supplementaryReferences": [
+    {
+      "id": "meiji-style-daylight-port-clean-v11",
+      "path": "references/assets/meiji-style-daylight-port-clean-v11.png"
+    },
+    {
+      "id": "meiji-style-fire-brigade-wide-v15",
+      "path": "references/assets/meiji-style-fire-brigade-wide-v15.png"
+    },
+    {
+      "id": "meiji-style-records-office-wide-v15",
+      "path": "references/assets/meiji-style-records-office-wide-v15.png"
+    }
+  ]
+}

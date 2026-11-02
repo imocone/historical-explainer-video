@@ -1,0 +1,17 @@
+{
+  "kind": "module",
+  "id": "synthesize-narration",
+  "runner": "program",
+  "controllerEntry": "controller.json",
+  "programEntry": "run.mjs",
+  "slots": [],
+  "rules": [
+    "../../program-utils.mjs",
+    "../../workspace-paths.mjs",
+    "minimax.mjs",
+    "tts-contract.json",
+    "tts-intent.schema.json",
+    "../../runtime-config.mjs"
+  ],
+  "outputSchema": "tts-result.schema.json"
+}

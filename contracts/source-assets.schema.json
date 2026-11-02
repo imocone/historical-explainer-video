@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "assets"],
+  "properties": {
+    "schemaVersion": {"const": "1.0"},
+    "assets": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/sourceAsset"}
+    }
+  },
+  "$defs": {
+    "path": {"type": "string", "minLength": 1, "pattern": "^sources/(?!\\.\\.(?:/|$))(?!.*?/\\.\\.(?:/|$))[^/].*$"},
+    "sha": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "sourceAsset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "mediaType",
+        "path",
+        "sha256",
+        "sourceCitation",
+        "creator",
+        "date",
+        "rightsStatus",
+        "usageNotes"
+      ],
+      "properties": {
+        "id": {"type": "string", "pattern": "^SA[0-9]{3}$"},
+        "mediaType": {"enum": ["document", "photo", "artifact", "video", "audio", "other"]},
+        "path": {"$ref": "#/$defs/path"},
+        "sha256": {"$ref": "#/$defs/sha"},
+        "sourceCitation": {"type": "string", "minLength": 1},
+        "creator": {"type": ["string", "null"], "minLength": 1},
+        "date": {"type": ["string", "null"], "minLength": 1},
+        "rightsStatus": {"enum": ["public-domain", "licensed", "permission-granted", "restricted", "unknown"]},
+        "usageNotes": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "episodeId", "targetId", "platforms"],
+  "properties": {
+    "schemaVersion": {"const": "3.0"},
+    "episodeId": {"$ref": "#/$defs/id"},
+    "targetId": {"const": "release-main"},
+    "platforms": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "maxProperties": 3,
+      "properties": {
+        "youtube": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["accountId", "accountAlias"],
+          "properties": {
+            "accountId": {"type": "string", "pattern": "^UC[A-Za-z0-9_-]{22}$"},
+            "accountAlias": {"type": "string", "minLength": 1}
+          }
+        },
+        "douyin": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["accountId", "accountAlias"],
+          "properties": {
+            "accountId": {"type": "string", "minLength": 1},
+            "accountAlias": {"type": "string", "minLength": 1}
+          }
+        },
+        "xiaohongshu": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["accountId", "accountAlias"],
+          "properties": {
+            "accountId": {"type": "string", "minLength": 1},
+            "accountAlias": {"type": "string", "minLength": 1}
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"}
+  }
+}

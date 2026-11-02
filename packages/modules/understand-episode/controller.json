@@ -1,0 +1,1 @@
+{"primitive":"ai-understanding","projection":"understanding","reads":[{"role":"narration-package","kind":"artifact"},{"role":"source-assets","kind":"external-input"}],"writes":["storyboard-understanding-section"],"returnTo":[]}

@@ -1,0 +1,57 @@
+{
+  "kind": "module",
+  "id": "author-video",
+  "runner": "ai",
+  "controllerEntry": "controller.json",
+  "slots": [
+    {
+      "id": "video-template",
+      "majorVersion": 1,
+      "accepts": "template",
+      "cardinality": "one",
+      "selectionSource": "fixed",
+      "fixedPackageIds": [
+        "cinematic-video"
+      ],
+      "readRoles": [
+        "authorRules",
+        "acceptanceRules",
+        "outputSchema",
+        "validator",
+        "examples"
+      ],
+      "writeTargets": [
+        "video-plan"
+      ],
+      "optionalReadRoles": [
+        "assetContractRules",
+        "assetContractEntry"
+      ]
+    },
+    {
+      "id": "visual",
+      "majorVersion": 1,
+      "accepts": "visual",
+      "cardinality": "one",
+      "selectionSource": "program-visual",
+      "readRoles": [
+        "productionProfiles"
+      ],
+      "writeTargets": [
+        "video-plan"
+      ]
+    }
+  ],
+  "rules": [
+    "SKILL.md"
+  ],
+  "runtimeResources": [
+    "../../p4-opener-reference.mjs",
+    "../../authored-images.mjs",
+    "../render-video/runtime/media-process.mjs",
+    "../../image-generation.mjs",
+    "../../runtime-config.mjs"
+  ],
+  "outputSchema": "../../../contracts/cinematic-video-plan.schema.json",
+  "validator": "validate.mjs"
+}

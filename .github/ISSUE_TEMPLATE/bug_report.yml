@@ -1,0 +1,28 @@
+name: 问题反馈
+description: 报告安装或使用中可以复现的问题
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: 遇到了什么问题
+      placeholder: 说明预期结果和实际结果。
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 如何复现
+      placeholder: 提供执行命令和最少操作步骤，去掉私人路径、凭据和素材。
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: 运行环境
+      placeholder: macOS版本、Node.js版本、Codex或Claude Code版本
+  - type: textarea
+    id: logs
+    attributes:
+      label: 相关错误
+      description: 不要粘贴API Key、令牌、密码、Cookie、恢复码或完整私人节目内容。安全漏洞请使用Security里的私密报告入口。
+      render: text

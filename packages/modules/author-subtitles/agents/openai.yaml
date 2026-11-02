@@ -1,0 +1,4 @@
+interface:
+  display_name: "字幕创作"
+  short_description: "AGY成稿后自查修正，Codex验收；AGY失败时Codex接手"
+  default_prompt: "使用 $author-subtitles 按现行 SKILL.md 及其按需方法执行或恢复当前已授权的P2字幕工作单，保持唯一候选，不重投已有配音或识别。"

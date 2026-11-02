@@ -1,0 +1,12 @@
+{
+  "primitive": "ai-visual-director",
+  "projection": "visual-plan",
+  "reads": [
+    {"role": "narration-package", "kind": "artifact"},
+    {"role": "storyboard-understanding-section", "kind": "artifact"},
+    {"role": "source-assets", "kind": "external-input"},
+    {"role": "template-catalog", "kind": "catalog"}
+  ],
+  "writes": ["storyboard-visual-plan"],
+  "returnTo": [{"primitive": "ai-understanding"}]
+}

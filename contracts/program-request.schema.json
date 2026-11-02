@@ -1,0 +1,176 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "allOf": [{
+    "if": {"properties": {"planningBasis": {"properties": {"kind": {"const": "video-led"}}}}},
+    "then": {"properties": {"programForm": {"const": "historical-explainer"}}}
+  }, {
+    "if": {"properties": {"programForm": {"const": "historical-documentary"}}},
+    "then": {"properties": {"explainerType": false}}
+  }],
+  "required": [
+    "schemaVersion",
+    "programId",
+    "programForm",
+    "idea",
+    "planningBasis",
+    "constraints"
+  ],
+  "properties": {
+    "schemaVersion": {"const": "3.0"},
+    "programId": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "programForm": {
+      "description": "Explicit programme form. It selects the P0/P1 author modules and must not be inferred from the topic or planning basis.",
+      "enum": ["historical-explainer", "historical-documentary"]
+    },
+    "explainerType": {
+      "description": "Optional explicit user choice within historical-explainer. P0 preserves it; when absent P0 determines the type from the current request and materials.",
+      "enum": ["general", "current-affairs"]
+    },
+    "idea": {"type": "string", "minLength": 1},
+    "planningBasis": {
+      "description": "The planning starting point, independent of research tools. Explainers can combine public texts, local materials and NotebookLM; video-led retains the supplied reference programme as its basis.",
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["kind", "referenceProgram"],
+          "properties": {
+            "kind": {"const": "video-led"},
+            "referenceProgram": {
+              "type": "object", "additionalProperties": false,
+              "required": ["path"],
+              "properties": {
+                "path": {"type": "string", "pattern": "^/"}
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": {
+            "kind": {"const": "topic-led"}
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "book"],
+          "properties": {
+            "kind": {"const": "book-led"},
+            "book": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["path", "sha256"],
+              "properties": {
+                "path": {"type": "string", "pattern": "^/[^\\u0000]+$"},
+                "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+              }
+            }
+          }
+        }
+      ]
+    },
+    "audience": {
+      "description": "Optional starting audience hypothesis. P0 determines the final audience within the authorized request.",
+      "type": "string",
+      "minLength": 1
+    },
+    "episodeCount": {
+      "description": "Optional starting preference. P0 decides the final count from the authorized request unless constraints explicitly fix it.",
+      "type": "integer",
+      "minimum": 1
+    },
+    "maxDurationSeconds": {
+      "description": "Optional programme-wide planning ceiling for every episode, requested by the user or platform. It is not a P1 acceptance limit.",
+      "type": "integer",
+      "minimum": 1
+    },
+    "constraints": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "uniqueItems": true
+    },
+    "visualPackage": {
+      "description": "Optional user preference for P0 to consider. P0 makes the final selection; downstream reads only program.yaml.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["visualPackageId", "version"],
+      "properties": {
+        "visualPackageId": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        }
+      }
+    },
+    "coverPackage": {
+      "description": "Optional user preference for P0 to consider. P0 makes the final cover selection; downstream reads only program.yaml.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["coverPackageId", "version"],
+      "properties": {
+        "coverPackageId": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+        "version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"}
+      }
+    },
+    "openerTemplate": {"description": "Optional initial opener choice. When absent P0 selects opposed-opener; downstream reads only program.yaml.", "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "publicationProfile": {
+      "description": "Optional programme-wide publication accounts and policies. P4 projects this once per episode into the immutable release-main request snapshot; detailed release validation remains owned by release-bundle.schema.json.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["platforms"],
+      "properties": {
+        "platforms": {
+          "type": "object",
+          "additionalProperties": false,
+          "minProperties": 1,
+          "maxProperties": 3,
+          "properties": {
+            "youtube": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["accountId", "accountAlias"],
+              "properties": {
+                "accountId": {"type": "string", "pattern": "^UC[A-Za-z0-9_-]{22}$"},
+                "accountAlias": {"type": "string", "minLength": 1}
+              }
+            },
+            "douyin": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["accountId", "accountAlias"],
+              "properties": {
+                "accountId": {"type": "string", "minLength": 1},
+                "accountAlias": {"type": "string", "minLength": 1}
+              }
+            },
+            "xiaohongshu": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["accountId", "accountAlias"],
+              "properties": {
+                "accountId": {"type": "string", "minLength": 1},
+                "accountAlias": {"type": "string", "minLength": 1}
+              }
+            }
+          }
+        }
+      }
+    },
+    "researchLibrary": {
+      "description": "Optional existing NotebookLM library. P0 compares its sources with the programme-wide material needs, acquires only genuine gaps within the authorized request, and reuses this single library instead of creating another one.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["notebookId"],
+      "properties": {
+        "notebookId": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}

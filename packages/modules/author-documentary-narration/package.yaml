@@ -1,0 +1,78 @@
+{
+  "kind": "module",
+  "id": "author-documentary-narration",
+  "runner": "ai",
+  "controllerEntry": "controller.json",
+  "slots": [
+    {
+      "id": "opener-copy-template",
+      "majorVersion": 1,
+      "accepts": "template",
+      "cardinality": "one",
+      "selectionSource": "segment-template",
+      "readRoles": [
+        "copyRules",
+        "validator"
+      ],
+      "writeTargets": []
+    },
+    {
+      "id": "cover-design",
+      "majorVersion": 1,
+      "accepts": "cover",
+      "cardinality": "one",
+      "selectionSource": "program-cover",
+      "readRoles": [
+        "coverRules",
+        "examples"
+      ],
+      "optionalReadRoles": [
+        "finalExample"
+      ],
+      "writeTargets": [
+        "publication"
+      ]
+    },
+    {
+      "id": "vertical-cover-design",
+      "majorVersion": 1,
+      "accepts": "cover",
+      "cardinality": "one",
+      "selectionSource": "program-cover-vertical",
+      "readRoles": [
+        "coverRules",
+        "examples"
+      ],
+      "optionalReadRoles": [
+        "finalExample"
+      ],
+      "writeTargets": [
+        "publication"
+      ]
+    }
+  ],
+  "rules": [
+    "SKILL.md"
+  ],
+  "runtimeResources": [
+    "../author-narration/scripts/author-handoff.mjs",
+    "../author-narration/references/author-handoff.md",
+    "../author-narration/scripts/find-evidence.mjs",
+    "references/evidence-and-query.md",
+    "references/documentary-author-prompt.md",
+    "references/documentary-narration-audit.md",
+    "../author-narration/scripts/notebook_lock.py",
+    "../author-narration/scripts/task_scratch.py",
+    "../author-narration/scripts/run-cited-query.py",
+    "../author-narration/publication.mjs",
+    "../author-narration/publication-text.mjs",
+    "../author-narration/references/platform-packaging-method.md",
+    "../author-narration/references/cover-content-method.md",
+    "../../../contracts/publication.schema.json",
+    "../author-narration/references/publication-author.md",
+    "../author-narration/youtube-description.mjs",
+    "../../runtime-config.mjs"
+  ],
+  "outputSchema": "result.schema.json",
+  "validator": "validate.mjs"
+}

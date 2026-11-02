@@ -1,0 +1,390 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "shared",
+    "p4"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "minLength": 1
+    },
+    "shared": {
+      "$ref": "#/$defs/shared"
+    },
+    "p4": {
+      "$ref": "#/$defs/p4"
+    }
+  },
+  "$defs": {
+    "text": {
+      "type": "string",
+      "minLength": 1
+    },
+    "hexColor": {
+      "type": "string",
+      "pattern": "^#[A-Fa-f0-9]{6}(?:[A-Fa-f0-9]{2})?$"
+    },
+    "opaqueHexColor": {
+      "type": "string",
+      "pattern": "^#[A-Fa-f0-9]{6}$"
+    },
+    "font": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "family",
+        "file",
+        "sha256",
+        "format",
+        "weight",
+        "style"
+      ],
+      "properties": {
+        "family": {
+          "$ref": "#/$defs/text"
+        },
+        "file": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "format": {
+          "$ref": "#/$defs/text"
+        },
+        "weight": {
+          "$ref": "#/$defs/text"
+        },
+        "style": {
+          "$ref": "#/$defs/text"
+        }
+      }
+    },
+    "familyList": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/text"
+      }
+    },
+    "shared": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "palette",
+        "fonts",
+        "fontFamilies",
+        "drawing"
+      ],
+      "properties": {
+        "palette": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "surfaceLight",
+            "surfaceMuted",
+            "ink",
+            "bgMid",
+            "slate",
+            "moss",
+            "cinnabar",
+            "copper",
+            "textPrimary",
+            "textSecondary",
+            "black"
+          ],
+          "properties": {
+            "surfaceLight": {
+              "$ref": "#/$defs/hexColor"
+            },
+            "surfaceMuted": {
+              "$ref": "#/$defs/hexColor"
+            },
+            "ink": {
+              "$ref": "#/$defs/hexColor"
+            },
+            "bgMid": {
+              "$ref": "#/$defs/hexColor"
+            },
+            "slate": {
+              "$ref": "#/$defs/hexColor"
+            },
+            "moss": {
+              "$ref": "#/$defs/hexColor"
+            },
+            "cinnabar": {
+              "$ref": "#/$defs/hexColor"
+            },
+            "copper": {
+              "$ref": "#/$defs/hexColor"
+            },
+            "textPrimary": {
+              "$ref": "#/$defs/hexColor"
+            },
+            "textSecondary": {
+              "$ref": "#/$defs/hexColor"
+            },
+            "black": {
+              "$ref": "#/$defs/hexColor"
+            }
+          }
+        },
+        "fonts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "masthead",
+            "title",
+            "body",
+            "cover",
+            "bookend"
+          ],
+          "properties": {
+            "masthead": {
+              "$ref": "#/$defs/font"
+            },
+            "title": {
+              "$ref": "#/$defs/font"
+            },
+            "body": {
+              "$ref": "#/$defs/font"
+            },
+            "cover": {
+              "$ref": "#/$defs/font"
+            },
+            "bookend": {
+              "$ref": "#/$defs/font"
+            }
+          }
+        },
+        "fontFamilies": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "masthead",
+            "title",
+            "sans",
+            "cover",
+            "bookend"
+          ],
+          "properties": {
+            "masthead": {
+              "$ref": "#/$defs/familyList"
+            },
+            "title": {
+              "$ref": "#/$defs/familyList"
+            },
+            "sans": {
+              "$ref": "#/$defs/familyList"
+            },
+            "cover": {
+              "$ref": "#/$defs/familyList"
+            },
+            "bookend": {
+              "$ref": "#/$defs/familyList"
+            }
+          }
+        },
+        "drawing": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "strokeWidth",
+            "roughness",
+            "bowing",
+            "labelStrokeWidth",
+            "labelRoughness",
+            "plainLabelStrokeWidth"
+          ],
+          "properties": {
+            "strokeWidth": {
+              "type": "number",
+              "minimum": 0
+            },
+            "roughness": {
+              "type": "number",
+              "minimum": 0
+            },
+            "bowing": {
+              "type": "number",
+              "minimum": 0
+            },
+            "labelStrokeWidth": {
+              "type": "number",
+              "minimum": 0
+            },
+            "labelRoughness": {
+              "type": "number",
+              "minimum": 0
+            },
+            "plainLabelStrokeWidth": {
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        }
+      }
+    },
+    "p4": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "shadows",
+        "surfaces",
+        "subtitle"
+      ],
+      "properties": {
+        "shadows": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "contextText",
+            "citationText",
+            "personText",
+            "badge",
+            "bookendTitle",
+            "bookendCard",
+            "documentaryTitle"
+          ],
+          "properties": {
+            "contextText": {
+              "$ref": "#/$defs/text"
+            },
+            "citationText": {
+              "$ref": "#/$defs/text"
+            },
+            "personText": {
+              "$ref": "#/$defs/text"
+            },
+            "badge": {
+              "$ref": "#/$defs/text"
+            },
+            "bookendTitle": {
+              "$ref": "#/$defs/text"
+            },
+            "bookendCard": {
+              "$ref": "#/$defs/text"
+            },
+            "documentaryTitle": {
+              "$ref": "#/$defs/text"
+            }
+          }
+        },
+        "surfaces": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "canvas",
+            "bookend",
+            "documentary"
+          ],
+          "properties": {
+            "canvas": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "background"
+              ],
+              "properties": {
+                "background": {
+                  "$ref": "#/$defs/hexColor"
+                }
+              }
+            },
+            "bookend": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "background",
+                "cardAccentColor",
+                "cardTitleColor",
+                "flashbackImageFilter",
+                "stripImageFilter"
+              ],
+              "properties": {
+                "background": {
+                  "$ref": "#/$defs/hexColor"
+                },
+                "cardAccentColor": {
+                  "$ref": "#/$defs/hexColor"
+                },
+                "cardTitleColor": {
+                  "$ref": "#/$defs/hexColor"
+                },
+                "flashbackImageFilter": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "stripImageFilter": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            },
+            "documentary": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "titleColor",
+                "vignetteColor",
+                "tintColor",
+                "imageBrightness",
+                "backgroundBrightness"
+              ],
+              "properties": {
+                "titleColor": {
+                  "$ref": "#/$defs/hexColor"
+                },
+                "vignetteColor": {
+                  "$ref": "#/$defs/hexColor"
+                },
+                "tintColor": {
+                  "$ref": "#/$defs/hexColor"
+                },
+                "imageBrightness": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "backgroundBrightness": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              }
+            }
+          }
+        },
+        "subtitle": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "font",
+            "primaryColor",
+            "outlineColor",
+            "shadowColor"
+          ],
+          "properties": {
+            "font": {
+              "$ref": "#/$defs/font"
+            },
+            "primaryColor": {
+              "$ref": "#/$defs/hexColor"
+            },
+            "outlineColor": {
+              "$ref": "#/$defs/hexColor"
+            },
+            "shadowColor": {
+              "$ref": "#/$defs/hexColor"
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,97 @@
+{
+  "kind": "template",
+  "id": "documentary-opener",
+  "catalog": {
+    "displayName": {
+      "en": "Documentary Memory Opener",
+      "zh": "回忆画流片头"
+    },
+    "purpose": "从本集P3图纸选择五张回忆画面，并依据节目正式世界设定为每期自由设计一张不同位置、角度和构图的鸟瞰全景由当前作者生成实图；10.5秒无旁白居中呈现明确原典名并单次溶换至本集标题并经呼吸黑场进入正文，配原创钢琴主题",
+    "rejectWhen": "正文不足五张不同的完整场景，或本期鸟瞰全景缺少节目设定与本集来源支持"
+  },
+  "implements": [
+    {
+      "moduleId": "author-documentary-narration",
+      "slotId": "opener-copy-template",
+      "majorVersion": 1
+    },
+    {
+      "moduleId": "author-narration",
+      "slotId": "opener-copy-template",
+      "majorVersion": 1
+    },
+    {
+      "moduleId": "author-bookend",
+      "slotId": "opener-template",
+      "majorVersion": 1
+    },
+    {
+      "moduleId": "render-video",
+      "slotId": "segment-template",
+      "majorVersion": 1
+    }
+  ],
+  "copyRules": [
+    "references/documentary-opener-copy-method.md"
+  ],
+  "authorRules": [
+    "AUTHOR.md",
+    "references/documentary-cold-open-standard.md",
+    "../../authored-images.md"
+  ],
+  "acceptanceRules": [
+    "copy-policy.mjs",
+    "timing-policy.mjs",
+    "render-policy.mjs",
+    "../../video-spec.mjs",
+    "../../source-rights.mjs",
+    "context-runtime.mjs",
+    "selection.mjs",
+    "../../authored-images.mjs"
+  ],
+  "assetContractRules": [
+    "asset-contract.mjs",
+    "selection.mjs"
+  ],
+  "assetContractEntry": "asset-contract.mjs",
+  "outputSchema": "../../../contracts/documentary-opener-treatment.schema.json",
+  "validator": "validate.mjs",
+  "renderer": "render/index.jsx",
+  "renderPlanEntry": "render-plan.mjs",
+  "renderRules": [
+    "timing-policy.mjs",
+    "render-plan.mjs",
+    "render-policy.mjs",
+    "render/index.jsx",
+    "selection.mjs",
+    "audio/sources.mjs",
+    "asset-contract.mjs",
+    "../../modules/render-video/runtime/scene-view.jsx",
+    "../../modules/render-video/runtime/motion-math.mjs"
+  ],
+  "examples": [
+    "examples/golden.json",
+    "examples/negative.json"
+  ],
+  "authorContextEntry": "context-runtime.mjs",
+  "renderAssets": [
+    "audio/memory-piano.wav"
+  ],
+  "runtimeResources": [
+    "audio/README.md",
+    "audio/compose.py",
+    "audio/piano.sfz",
+    "audio/samples/CC0.txt",
+    "audio/samples/F#2vL.flac",
+    "audio/samples/C3vL.flac",
+    "audio/samples/A3vL.flac",
+    "audio/samples/C2vL.flac",
+    "audio/samples/A2vL.flac",
+    "audio/samples/F#3vL.flac",
+    "audio/samples/C4vL.flac",
+    "audio/samples/F#4vL.flac",
+    "audio/samples/A4vL.flac",
+    "audio/samples/C5vL.flac",
+    "../../authored-images.mjs"
+  ]
+}

@@ -1,0 +1,572 @@
+{
+  "episodeId": "succession-explanation-study",
+  "width": 1920,
+  "height": 1080,
+  "fps": 60,
+  "visualStyle": {
+    "schemaVersion": "song-celadon-guoman-render-tokens-v2",
+    "shared": {
+      "palette": {
+        "surfaceLight": "#F1E8D4",
+        "surfaceMuted": "#C8D6CE",
+        "ink": "#182B2B",
+        "bgMid": "#173B42",
+        "slate": "#667F7A",
+        "moss": "#607C6A",
+        "cinnabar": "#C95B3F",
+        "copper": "#A66B45",
+        "textPrimary": "#F7F1E4",
+        "textSecondary": "#D7DFD5",
+        "black": "#000000"
+      },
+      "fonts": {
+        "masthead": {
+          "family": "ZCOOL XiaoWei",
+          "file": "render/fonts/ZCOOLXiaoWei-Regular.ttf",
+          "sha256": "a42b620140f493db42f741351dfbf343c0936d58588ee8004b8b2a218d997ff1",
+          "format": "truetype",
+          "weight": "400",
+          "style": "normal",
+          "publicPath": "visuals/song-celadon-guoman/render/fonts/ZCOOLXiaoWei-Regular.ttf"
+        },
+        "title": {
+          "family": "LXGW WenKai GB",
+          "file": "render/fonts/LXGWWenKaiGB-Medium.ttf",
+          "sha256": "b885c51ec0d3f325974013801dfcefda1a9ba0bf385c607cf5f2582dafa2e5ab",
+          "format": "truetype",
+          "weight": "500",
+          "style": "normal",
+          "publicPath": "visuals/song-celadon-guoman/render/fonts/LXGWWenKaiGB-Medium.ttf"
+        },
+        "body": {
+          "family": "Noto Sans SC",
+          "file": "render/fonts/NotoSansSC-Medium.ttf",
+          "sha256": "09f17deea660cdd9cc2ba1e8b90adad18eabeca73b62b3c5f76b7ec3b61b33e0",
+          "format": "truetype",
+          "weight": "500",
+          "style": "normal",
+          "publicPath": "visuals/song-celadon-guoman/render/fonts/NotoSansSC-Medium.ttf"
+        },
+        "cover": {
+          "family": "Ma Shan Zheng",
+          "file": "render/fonts/MaShanZheng-Regular.ttf",
+          "sha256": "6d2546bb189c732a8ca29af9e22457b152387d158aa459e4ac2ce1e51788b7fb",
+          "format": "truetype",
+          "weight": "400",
+          "style": "normal",
+          "publicPath": "visuals/song-celadon-guoman/render/fonts/MaShanZheng-Regular.ttf"
+        },
+        "bookend": {
+          "family": "Ma Shan Zheng",
+          "file": "render/fonts/MaShanZheng-Regular.ttf",
+          "sha256": "6d2546bb189c732a8ca29af9e22457b152387d158aa459e4ac2ce1e51788b7fb",
+          "format": "truetype",
+          "weight": "400",
+          "style": "normal",
+          "publicPath": "visuals/song-celadon-guoman/render/fonts/MaShanZheng-Regular.ttf"
+        }
+      },
+      "fontFamilies": {
+        "masthead": [
+          "ZCOOL XiaoWei",
+          "LXGW WenKai GB",
+          "serif"
+        ],
+        "title": [
+          "LXGW WenKai GB",
+          "serif"
+        ],
+        "sans": [
+          "Noto Sans SC",
+          "sans-serif"
+        ],
+        "cover": [
+          "Ma Shan Zheng",
+          "LXGW WenKai GB",
+          "serif"
+        ],
+        "bookend": [
+          "Ma Shan Zheng",
+          "LXGW WenKai GB",
+          "serif"
+        ]
+      },
+      "drawing": {
+        "strokeWidth": 6,
+        "roughness": 0.65,
+        "bowing": 0.55,
+        "labelStrokeWidth": 3.5,
+        "labelRoughness": 0.45,
+        "plainLabelStrokeWidth": 1.5
+      }
+    },
+    "p4": {
+      "shadows": {
+        "contextText": "0 0 10px rgba(0,0,0,0.9), 0 0 28px rgba(0,0,0,0.55), 0 2px 6px rgba(0,0,0,0.9)",
+        "citationText": "0 1px 4px rgba(0,0,0,0.9), 0 0 12px rgba(0,0,0,0.55)",
+        "personText": "0 1px 3px rgba(0,0,0,0.96), 0 3px 12px rgba(0,0,0,0.82), 0 0 24px rgba(0,0,0,0.48)",
+        "badge": "0 2px 8px rgba(0,0,0,0.68)",
+        "bookendTitle": "0 8px 30px #173B42c2",
+        "bookendCard": "0 18px 38px #173B427a",
+        "documentaryTitle": "0 3px 14px rgba(0,0,0,.45)"
+      },
+      "surfaces": {
+        "canvas": {
+          "background": "#173B42"
+        },
+        "bookend": {
+          "background": "#173B42",
+          "cardAccentColor": "#C95B3F",
+          "cardTitleColor": "#182B2B",
+          "flashbackImageFilter": "saturate(.80) contrast(1.12) brightness(.78)",
+          "stripImageFilter": "saturate(.72) contrast(1.1) brightness(.74)"
+        },
+        "documentary": {
+          "titleColor": "#F7F1E4",
+          "vignetteColor": "#10272C52",
+          "tintColor": "#10272C26",
+          "imageBrightness": 1.05,
+          "backgroundBrightness": 0.6
+        }
+      },
+      "subtitle": {
+        "font": {
+          "family": "Noto Sans SC",
+          "file": "render/fonts/NotoSansSC-Medium.ttf",
+          "sha256": "09f17deea660cdd9cc2ba1e8b90adad18eabeca73b62b3c5f76b7ec3b61b33e0",
+          "format": "truetype",
+          "weight": "500",
+          "style": "normal"
+        },
+        "primaryColor": "#FFFFFF",
+        "outlineColor": "#10141A",
+        "shadowColor": "#000000B8",
+        "fontName": "Noto Sans SC",
+        "fontPublicPath": "visuals/song-celadon-guoman/render/fonts/NotoSansSC-Medium.ttf",
+        "fontWeight": "500",
+        "fontFormat": "truetype",
+        "fontStyle": "normal"
+      }
+    }
+  },
+  "durationMs": 52783.33333333333,
+  "segments": [
+    {
+      "id": "succession-study",
+      "templateId": "vox-explainer",
+      "visualStyle": {
+        "schemaVersion": "song-celadon-guoman-render-tokens-v2",
+        "shared": {
+          "palette": {
+            "surfaceLight": "#F1E8D4",
+            "surfaceMuted": "#C8D6CE",
+            "ink": "#182B2B",
+            "bgMid": "#173B42",
+            "slate": "#667F7A",
+            "moss": "#607C6A",
+            "cinnabar": "#C95B3F",
+            "copper": "#A66B45",
+            "textPrimary": "#F7F1E4",
+            "textSecondary": "#D7DFD5",
+            "black": "#000000"
+          },
+          "fonts": {
+            "masthead": {
+              "family": "ZCOOL XiaoWei",
+              "file": "render/fonts/ZCOOLXiaoWei-Regular.ttf",
+              "sha256": "a42b620140f493db42f741351dfbf343c0936d58588ee8004b8b2a218d997ff1",
+              "format": "truetype",
+              "weight": "400",
+              "style": "normal",
+              "publicPath": "visuals/song-celadon-guoman/render/fonts/ZCOOLXiaoWei-Regular.ttf"
+            },
+            "title": {
+              "family": "LXGW WenKai GB",
+              "file": "render/fonts/LXGWWenKaiGB-Medium.ttf",
+              "sha256": "b885c51ec0d3f325974013801dfcefda1a9ba0bf385c607cf5f2582dafa2e5ab",
+              "format": "truetype",
+              "weight": "500",
+              "style": "normal",
+              "publicPath": "visuals/song-celadon-guoman/render/fonts/LXGWWenKaiGB-Medium.ttf"
+            },
+            "body": {
+              "family": "Noto Sans SC",
+              "file": "render/fonts/NotoSansSC-Medium.ttf",
+              "sha256": "09f17deea660cdd9cc2ba1e8b90adad18eabeca73b62b3c5f76b7ec3b61b33e0",
+              "format": "truetype",
+              "weight": "500",
+              "style": "normal",
+              "publicPath": "visuals/song-celadon-guoman/render/fonts/NotoSansSC-Medium.ttf"
+            },
+            "cover": {
+              "family": "Ma Shan Zheng",
+              "file": "render/fonts/MaShanZheng-Regular.ttf",
+              "sha256": "6d2546bb189c732a8ca29af9e22457b152387d158aa459e4ac2ce1e51788b7fb",
+              "format": "truetype",
+              "weight": "400",
+              "style": "normal",
+              "publicPath": "visuals/song-celadon-guoman/render/fonts/MaShanZheng-Regular.ttf"
+            },
+            "bookend": {
+              "family": "Ma Shan Zheng",
+              "file": "render/fonts/MaShanZheng-Regular.ttf",
+              "sha256": "6d2546bb189c732a8ca29af9e22457b152387d158aa459e4ac2ce1e51788b7fb",
+              "format": "truetype",
+              "weight": "400",
+              "style": "normal",
+              "publicPath": "visuals/song-celadon-guoman/render/fonts/MaShanZheng-Regular.ttf"
+            }
+          },
+          "fontFamilies": {
+            "masthead": [
+              "ZCOOL XiaoWei",
+              "LXGW WenKai GB",
+              "serif"
+            ],
+            "title": [
+              "LXGW WenKai GB",
+              "serif"
+            ],
+            "sans": [
+              "Noto Sans SC",
+              "sans-serif"
+            ],
+            "cover": [
+              "Ma Shan Zheng",
+              "LXGW WenKai GB",
+              "serif"
+            ],
+            "bookend": [
+              "Ma Shan Zheng",
+              "LXGW WenKai GB",
+              "serif"
+            ]
+          },
+          "drawing": {
+            "strokeWidth": 6,
+            "roughness": 0.65,
+            "bowing": 0.55,
+            "labelStrokeWidth": 3.5,
+            "labelRoughness": 0.45,
+            "plainLabelStrokeWidth": 1.5
+          }
+        },
+        "p4": {
+          "shadows": {
+            "contextText": "0 0 10px rgba(0,0,0,0.9), 0 0 28px rgba(0,0,0,0.55), 0 2px 6px rgba(0,0,0,0.9)",
+            "citationText": "0 1px 4px rgba(0,0,0,0.9), 0 0 12px rgba(0,0,0,0.55)",
+            "personText": "0 1px 3px rgba(0,0,0,0.96), 0 3px 12px rgba(0,0,0,0.82), 0 0 24px rgba(0,0,0,0.48)",
+            "badge": "0 2px 8px rgba(0,0,0,0.68)",
+            "bookendTitle": "0 8px 30px #173B42c2",
+            "bookendCard": "0 18px 38px #173B427a",
+            "documentaryTitle": "0 3px 14px rgba(0,0,0,.45)"
+          },
+          "surfaces": {
+            "canvas": {
+              "background": "#173B42"
+            },
+            "bookend": {
+              "background": "#173B42",
+              "cardAccentColor": "#C95B3F",
+              "cardTitleColor": "#182B2B",
+              "flashbackImageFilter": "saturate(.80) contrast(1.12) brightness(.78)",
+              "stripImageFilter": "saturate(.72) contrast(1.1) brightness(.74)"
+            },
+            "documentary": {
+              "titleColor": "#F7F1E4",
+              "vignetteColor": "#10272C52",
+              "tintColor": "#10272C26",
+              "imageBrightness": 1.05,
+              "backgroundBrightness": 0.6
+            }
+          },
+          "subtitle": {
+            "font": {
+              "family": "Noto Sans SC",
+              "file": "render/fonts/NotoSansSC-Medium.ttf",
+              "sha256": "09f17deea660cdd9cc2ba1e8b90adad18eabeca73b62b3c5f76b7ec3b61b33e0",
+              "format": "truetype",
+              "weight": "500",
+              "style": "normal"
+            },
+            "primaryColor": "#FFFFFF",
+            "outlineColor": "#10141A",
+            "shadowColor": "#000000B8",
+            "fontName": "Noto Sans SC",
+            "fontPublicPath": "visuals/song-celadon-guoman/render/fonts/NotoSansSC-Medium.ttf",
+            "fontWeight": "500",
+            "fontFormat": "truetype",
+            "fontStyle": "normal"
+          }
+        }
+      },
+      "durationInFrames": 3167,
+      "entranceLeadFrames": 0,
+      "runtimeTiming": {
+        "semanticFrameOffset": 0
+      },
+      "assetRefs": [
+        {
+          "provider": "image-gen",
+          "file": "assets/people.png",
+          "sha256": "e6be9879f331c68684f7410daf4cff20376031b4d1b260c874d6e6a21d332ea6",
+          "mimeType": "image/png",
+          "width": 1536,
+          "height": 1024,
+          "explainerPlacement": {
+            "contentBounds": {
+              "x": 0.014973958333333334,
+              "y": 0.0146484375,
+              "width": 0.9680989583333334,
+              "height": 0.9482421875
+            },
+            "anchors": {}
+          },
+          "requestId": "AR001",
+          "kind": "explainer-visual",
+          "mediaType": "image"
+        },
+        {
+          "provider": "image-gen",
+          "file": "assets/ministers.png",
+          "sha256": "1c6c77528f9f27f031254de6c21923f5e59dda2eb152e79ccde99bea61a8eb3f",
+          "mimeType": "image/png",
+          "width": 1774,
+          "height": 887,
+          "explainerPlacement": {
+            "contentBounds": {
+              "x": 0.03269447576099211,
+              "y": 0.0033821871476888386,
+              "width": 0.9171364148816235,
+              "height": 0.979706877113867
+            },
+            "anchors": {}
+          },
+          "requestId": "AR002",
+          "kind": "explainer-visual",
+          "mediaType": "image"
+        }
+      ],
+      "renderData": {
+        "resourceFiles": [
+          "packages/templates/vox-explainer/fonts/NotoSansSC-Medium.ttf",
+          "packages/templates/vox-explainer/fonts/NotoSansCJKsc-Black.otf"
+        ],
+        "entranceLeadFrames": 30,
+        "voxExplainer": {
+          "appearance": {
+            "source": "vox-explainer",
+            "art": "editorial-cutout",
+            "tone": "neutral",
+            "palette": {
+              "background": "#e7dfce",
+              "paper": "#f7f1e3",
+              "ink": "#30372f",
+              "accent": "#9f503b",
+              "secondary": "#516d7c",
+              "zong": "#796884",
+              "yu": "#b87847",
+              "han": "#537e99",
+              "jun": "#5b8c77"
+            },
+            "fonts": {
+              "body": {
+                "family": "VoxBody",
+                "file": "packages/templates/vox-explainer/fonts/NotoSansSC-Medium.ttf",
+                "publicPath": "packages/templates/vox-explainer/fonts/NotoSansSC-Medium.ttf",
+                "weight": "500",
+                "style": "normal",
+                "format": "truetype"
+              },
+              "title": {
+                "family": "VoxTitle",
+                "file": "packages/templates/vox-explainer/fonts/NotoSansCJKsc-Black.otf",
+                "publicPath": "packages/templates/vox-explainer/fonts/NotoSansCJKsc-Black.otf",
+                "weight": "900",
+                "style": "normal",
+                "format": "opentype"
+              }
+            }
+          },
+          "actionTimings": [
+            {
+              "target": "M001",
+              "action": "advance-explainer",
+              "frame": 0
+            },
+            {
+              "target": "M002",
+              "action": "advance-explainer",
+              "frame": 220
+            },
+            {
+              "target": "M003",
+              "action": "advance-explainer",
+              "frame": 473
+            },
+            {
+              "target": "M004",
+              "action": "advance-explainer",
+              "frame": 783
+            },
+            {
+              "target": "M005",
+              "action": "advance-explainer",
+              "frame": 1078
+            },
+            {
+              "target": "M006",
+              "action": "advance-explainer",
+              "frame": 1280
+            },
+            {
+              "target": "M007",
+              "action": "advance-explainer",
+              "frame": 1432
+            },
+            {
+              "target": "M008",
+              "action": "advance-explainer",
+              "frame": 1726
+            },
+            {
+              "target": "M009",
+              "action": "advance-explainer",
+              "frame": 2125
+            },
+            {
+              "target": "M010",
+              "action": "advance-explainer",
+              "frame": 2279
+            },
+            {
+              "target": "M011",
+              "action": "advance-explainer",
+              "frame": 2493
+            },
+            {
+              "target": "M012",
+              "action": "advance-explainer",
+              "frame": 2785
+            }
+          ],
+          "durationInFrames": 3167,
+          "policy": {
+            "fps": 60,
+            "width": 1920,
+            "height": 1080
+          },
+          "transition": {
+            "incomingLeadFrames": 30,
+            "exitTailFrames": 0
+          }
+        }
+      },
+      "segmentType": "body",
+      "startFrame": 0,
+      "startMs": 0,
+      "endMs": 52783.33333333333,
+      "appliedEntranceLeadFrames": 0,
+      "appliedExitTailFrames": 0,
+      "appliedTransitionFrames": 0,
+      "appliedVisualFrameOffset": 0,
+      "appliedCameraPrerollFrames": 0,
+      "appliedHoldIncomingVisualAtStart": false
+    }
+  ],
+  "overlays": [],
+  "transitions": [],
+  "ending": null,
+  "previewNotice": null,
+  "captions": [
+    {
+      "id": 139,
+      "startMs": 2.3333333333721384,
+      "endMs": 3144.333333333372,
+      "text": "皇帝暴毙之后，内廷死讯被严密封锁。"
+    },
+    {
+      "id": 140,
+      "startMs": 3660.333333333372,
+      "endMs": 7732.333333333372,
+      "text": "尚书左仆射等几位重臣秘密集议大局，朝臣分裂成了两派："
+    },
+    {
+      "id": 141,
+      "startMs": 7887.333333333372,
+      "endMs": 12852.333333333372,
+      "text": "一部分人认为皇孙拓跋浚年幼，主张拥立成年有威望的秦王拓跋翰；"
+    },
+    {
+      "id": 142,
+      "startMs": 13046.333333333372,
+      "endMs": 17274.333333333372,
+      "text": "另一部分人则主张坚守嫡长秩序，拥立正统皇孙拓跋浚。"
+    },
+    {
+      "id": 143,
+      "startMs": 17963.333333333372,
+      "endMs": 21221.333333333372,
+      "text": "两派大臣争执不休，却忽略了谁在控制深宫门户。"
+    },
+    {
+      "id": 144,
+      "startMs": 21338.333333333372,
+      "endMs": 23820.333333333372,
+      "text": "宗爱深知自己平日与秦王不和，"
+    },
+    {
+      "id": 145,
+      "startMs": 23859.333333333372,
+      "endMs": 28358.333333333372,
+      "text": "更与皇孙拓跋浚势同水火，无论谁即位自己都难逃一死。"
+    },
+    {
+      "id": 146,
+      "startMs": 28767.333333333372,
+      "endMs": 34896.33333333337,
+      "text": "为了自保夺权，宗爱秘密联络了与自己私交亲近的拓跋焘幼子、南安王拓跋余。"
+    },
+    {
+      "id": 147,
+      "startMs": 35416.33333333337,
+      "endMs": 37937.33333333337,
+      "text": "随后，宗爱假借赫连皇后的诏命，"
+    },
+    {
+      "id": 148,
+      "startMs": 37976.33333333337,
+      "endMs": 41505.33333333337,
+      "text": "将正在议立新君的几位领头重臣诱入宫中杀害，"
+    },
+    {
+      "id": 149,
+      "startMs": 41544.33333333337,
+      "endMs": 46121.33333333337,
+      "text": "又派人矫诏赐死秦王拓跋翰，强行将南安王拓跋余扶上了皇位。"
+    },
+    {
+      "id": 150,
+      "startMs": 46422.33333333337,
+      "endMs": 50572.33333333337,
+      "text": "一个低微的内廷宦官，凭借控制宫禁的便利和矫诏杀伐的毒辣手段，"
+    },
+    {
+      "id": 151,
+      "startMs": 50611.33333333337,
+      "endMs": 52783.33333333337,
+      "text": "竟在瞬间改写了皇位归属。"
+    }
+  ],
+  "audioTracks": [
+    {
+      "id": "study-narration",
+      "file": "narration.wav",
+      "startMs": 0,
+      "endMs": 52783.33333333333,
+      "sourceStartFrame": 0,
+      "volume": 1,
+      "loop": false
+    }
+  ]
+}

@@ -1,0 +1,61 @@
+// Upright Piano KW 2022-02-21, CC0; subset used by compose.py.
+<region>
+lokey=35 hikey=37
+ pitch_keycenter=36
+ loop_start=397535
+ loop_end=510386
+ sample=samples/C2vL.flac
+<region>
+lokey=41 hikey=43
+ pitch_keycenter=42
+ loop_start=327987
+ loop_end=438561
+ sample=samples/F#2vL.flac
+<region>
+lokey=44 hikey=46
+ pitch_keycenter=45
+ loop_start=240292
+ loop_end=361157
+ sample=samples/A2vL.flac
+<region>
+lokey=47 hikey=49
+ pitch_keycenter=48
+ loop_start=137735
+ loop_end=212674
+ fil_type=lpf_2p
+ cutoff=2500
+ sample=samples/C3vL.flac
+<region>
+lokey=53 hikey=55
+ pitch_keycenter=54
+ loop_start=134294
+ loop_end=213980
+ sample=samples/F#3vL.flac
+<region>
+lokey=56 hikey=58
+ pitch_keycenter=57
+ loop_start=173690
+ loop_end=283676
+ sample=samples/A3vL.flac
+<region>
+lokey=59 hikey=61
+ pitch_keycenter=60
+ loop_start=199374
+ loop_end=354248
+ fil_type=lpf_2p
+ cutoff=2200
+ sample=samples/C4vL.flac
+<region>
+lokey=65 hikey=67
+ pitch_keycenter=66
+ loop_start=151730
+ loop_end=255601
+ sample=samples/F#4vL.flac
+<region>
+lokey=68 hikey=70
+ pitch_keycenter=69
+ sample=samples/A4vL.flac
+<region>
+lokey=71 hikey=73
+ pitch_keycenter=72
+ sample=samples/C5vL.flac

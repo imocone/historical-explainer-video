@@ -1,0 +1,107 @@
+{
+  "schemaVersion": "visual-style-v4",
+  "shared": {
+    "artDirection": [
+      "唯一画法是精细工笔线描、现代数字浮世绘构型与冷暖受控的电影块面光影；中细墨线清晰、流畅、柔韧且有收锋，只在人物轮廓、必要衣褶、发丝、建筑接缝和器物关键结构处疏密变化，大色面以少量结构线保持完整。白昼、夜晚与室内只改变有叙事依据的局部光色，不改变同一线面画法。",
+      "使用连续、均匀、通透且边缘明确的受控哑光色面，以两至三级克制色阶塑造形体；细节集中在轮廓、衣褶和器物关键结构，大面积墙面、天空、衣料与暗部保留完整平静色面。木、纸、泥、雨、锈、烟只作为当前场景的局部形体、颜色和光线，不得扩散成全画面的木纹、纸纹、颗粒、排线或做旧表面。",
+      "人物采用自然成年比例、清透的皮肤色面和含蓄而有情绪张力的历史神情；肤色、发式与衣冠服从当前人物设定，不同人物保持独立脸型、五官、年龄和体态，既不做照片皮肤，也不做商业动漫美型、普通国潮国漫或粗犷写实武者。",
+      "既定内容存在风、雨、烟、雾、旗帜或衣摆时，以斜向线势、流动丝带形和大块黑白冷暖对比强化真实动势；这些动态只服务当前任务，母图中的具体人物、服装、地点、物件、姿势、构图和光向不进入新画面。"
+    ],
+    "mediumFamilies": [
+      "historical-illustration"
+    ],
+    "fill": "controlled-matte-color",
+    "fillFinish": "clean-matte-fill",
+    "shading": "cinematic-block-chiaroscuro",
+    "surfaceTreatment": "none",
+    "linework": {
+      "contourWeight": "medium",
+      "contourCharacter": "stable-soft-deep-ink",
+      "interiorDetail": "restrained-structural",
+      "finish": "natural-taper"
+    },
+    "palette": {
+      "whiteBalance": "cool-controlled",
+      "baseColors": [
+        "#05090D",
+        "#071C2A",
+        "#0D3550",
+        "#17658A",
+        "#79BFC3",
+        "#F1E4C5",
+        "#E5422B"
+      ],
+      "accentColors": [
+        "#FF5A36",
+        "#F4B968",
+        "#DDF5F2"
+      ],
+      "forbiddenCasts": [
+        "yellow-brown-wash",
+        "old-photo-sepia"
+      ]
+    },
+    "renderExclusions": [
+      "photorealism",
+      "commercial-anime",
+      "war-game-art",
+      "xianxia-art",
+      "moe-large-eyes",
+      "high-gloss-3d-rendering",
+      "plastic-gloss-rendering"
+    ]
+  },
+  "profiles": {
+    "fullframe-image": {
+      "characterRendering": {
+        "proportion": "adult-natural",
+        "faceTreatment": "natural-individual-differences",
+        "colorTreatment": "controlled-matte-tonal-planes",
+        "lineTreatment": "shared-linework"
+      },
+      "environmentRendering": {
+        "shapeLanguage": "digital-ukiyo-e-scene",
+        "finish": "shared-matte"
+      },
+      "typographyRendering": {
+        "glyphStyle": "plain-print",
+        "weight": "regular",
+        "finish": "flat-ink"
+      }
+    },
+    "bookend-image": {
+      "characterRendering": {
+        "proportion": "adult-natural",
+        "faceTreatment": "natural-individual-differences",
+        "colorTreatment": "controlled-matte-tonal-planes",
+        "lineTreatment": "shared-linework"
+      },
+      "environmentRendering": {
+        "shapeLanguage": "digital-ukiyo-e-scene",
+        "finish": "shared-matte"
+      },
+      "typographyRendering": {
+        "glyphStyle": "plain-print",
+        "weight": "regular",
+        "finish": "flat-ink"
+      }
+    },
+    "cover-image": {
+      "characterRendering": {
+        "proportion": "adult-natural",
+        "faceTreatment": "natural-individual-differences",
+        "colorTreatment": "controlled-matte-tonal-planes",
+        "lineTreatment": "shared-linework"
+      },
+      "environmentRendering": {
+        "shapeLanguage": "digital-ukiyo-e-scene",
+        "finish": "shared-matte"
+      },
+      "typographyRendering": {
+        "glyphStyle": "plain-print",
+        "weight": "heavy",
+        "finish": "flat-ink"
+      }
+    }
+  }
+}

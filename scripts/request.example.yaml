@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "3.0",
+  "programId": "first-video",
+  "programForm": "historical-explainer",
+  "idea": "解释一个自己感兴趣的历史问题，请替换这段委托。",
+  "planningBasis": { "kind": "topic-led" },
+  "constraints": []
+}

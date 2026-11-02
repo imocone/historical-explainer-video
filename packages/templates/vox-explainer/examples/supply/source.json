@@ -1,0 +1,493 @@
+{
+  "episodeId": "supply-explanation-study",
+  "width": 1920,
+  "height": 1080,
+  "fps": 60,
+  "visualStyle": {
+    "schemaVersion": "modern-editorial-render-tokens-v1",
+    "shared": {
+      "palette": {
+        "surfaceLight": "#F4F2EA",
+        "surfaceMuted": "#AABDB4",
+        "ink": "#263A3F",
+        "bgMid": "#38545C",
+        "slate": "#647D86",
+        "moss": "#6B806A",
+        "cinnabar": "#BB5C44",
+        "copper": "#DDA779",
+        "textPrimary": "#F4F2EA",
+        "textSecondary": "#DCE5E2",
+        "black": "#000000"
+      },
+      "fonts": {
+        "masthead": {
+          "family": "Noto Sans SC",
+          "file": "render/fonts/NotoSansSC-Medium.ttf",
+          "sha256": "09f17deea660cdd9cc2ba1e8b90adad18eabeca73b62b3c5f76b7ec3b61b33e0",
+          "format": "truetype",
+          "weight": "500",
+          "style": "normal",
+          "publicPath": "visuals/modern-editorial/render/fonts/NotoSansSC-Medium.ttf"
+        },
+        "title": {
+          "family": "Noto Sans SC",
+          "file": "render/fonts/NotoSansSC-Medium.ttf",
+          "sha256": "09f17deea660cdd9cc2ba1e8b90adad18eabeca73b62b3c5f76b7ec3b61b33e0",
+          "format": "truetype",
+          "weight": "500",
+          "style": "normal",
+          "publicPath": "visuals/modern-editorial/render/fonts/NotoSansSC-Medium.ttf"
+        },
+        "body": {
+          "family": "Noto Sans SC",
+          "file": "render/fonts/NotoSansSC-Medium.ttf",
+          "sha256": "09f17deea660cdd9cc2ba1e8b90adad18eabeca73b62b3c5f76b7ec3b61b33e0",
+          "format": "truetype",
+          "weight": "500",
+          "style": "normal",
+          "publicPath": "visuals/modern-editorial/render/fonts/NotoSansSC-Medium.ttf"
+        },
+        "cover": {
+          "family": "Noto Sans SC",
+          "file": "render/fonts/NotoSansSC-Medium.ttf",
+          "sha256": "09f17deea660cdd9cc2ba1e8b90adad18eabeca73b62b3c5f76b7ec3b61b33e0",
+          "format": "truetype",
+          "weight": "500",
+          "style": "normal",
+          "publicPath": "visuals/modern-editorial/render/fonts/NotoSansSC-Medium.ttf"
+        },
+        "bookend": {
+          "family": "Noto Sans SC",
+          "file": "render/fonts/NotoSansSC-Medium.ttf",
+          "sha256": "09f17deea660cdd9cc2ba1e8b90adad18eabeca73b62b3c5f76b7ec3b61b33e0",
+          "format": "truetype",
+          "weight": "500",
+          "style": "normal",
+          "publicPath": "visuals/modern-editorial/render/fonts/NotoSansSC-Medium.ttf"
+        }
+      },
+      "fontFamilies": {
+        "masthead": [
+          "Noto Sans SC",
+          "PingFang SC",
+          "Microsoft YaHei",
+          "sans-serif"
+        ],
+        "title": [
+          "Noto Sans SC",
+          "PingFang SC",
+          "Microsoft YaHei",
+          "sans-serif"
+        ],
+        "sans": [
+          "Noto Sans SC",
+          "PingFang SC",
+          "Microsoft YaHei",
+          "sans-serif"
+        ],
+        "cover": [
+          "Noto Sans SC",
+          "PingFang SC",
+          "Microsoft YaHei",
+          "sans-serif"
+        ],
+        "bookend": [
+          "Noto Sans SC",
+          "PingFang SC",
+          "Microsoft YaHei",
+          "sans-serif"
+        ]
+      },
+      "drawing": {
+        "strokeWidth": 3.5,
+        "roughness": 0.5,
+        "bowing": 0.3,
+        "labelStrokeWidth": 2.5,
+        "labelRoughness": 0.3,
+        "plainLabelStrokeWidth": 1.5
+      }
+    },
+    "p4": {
+      "shadows": {
+        "contextText": "0 0 10px rgba(0,0,0,0.9), 0 0 28px rgba(0,0,0,0.55), 0 2px 6px rgba(0,0,0,0.9)",
+        "citationText": "0 1px 4px rgba(0,0,0,0.9), 0 0 12px rgba(0,0,0,0.55)",
+        "personText": "0 1px 3px rgba(0,0,0,0.96), 0 3px 12px rgba(0,0,0,0.82), 0 0 24px rgba(0,0,0,0.48)",
+        "badge": "0 2px 8px rgba(0,0,0,0.68)",
+        "bookendTitle": "0 6px 24px #152D39b3",
+        "bookendCard": "0 14px 32px #263A3F66",
+        "documentaryTitle": "0 3px 12px rgba(15,35,43,.5)"
+      },
+      "surfaces": {
+        "canvas": {
+          "background": "#E7ECE9"
+        },
+        "bookend": {
+          "background": "#253B40",
+          "cardAccentColor": "#BD744A",
+          "cardTitleColor": "#263A3F",
+          "flashbackImageFilter": "saturate(.90) contrast(1.05) brightness(.82)",
+          "stripImageFilter": "saturate(.86) contrast(1.05) brightness(.80)"
+        },
+        "documentary": {
+          "titleColor": "#F4F2EA",
+          "vignetteColor": "#1228313D",
+          "tintColor": "#1228311F",
+          "imageBrightness": 1,
+          "backgroundBrightness": 0.6
+        }
+      },
+      "subtitle": {
+        "font": {
+          "family": "Noto Sans SC",
+          "file": "render/fonts/NotoSansSC-Medium.ttf",
+          "sha256": "09f17deea660cdd9cc2ba1e8b90adad18eabeca73b62b3c5f76b7ec3b61b33e0",
+          "format": "truetype",
+          "weight": "500",
+          "style": "normal"
+        },
+        "primaryColor": "#FFFFFF",
+        "outlineColor": "#10141A",
+        "shadowColor": "#000000B8",
+        "fontName": "Noto Sans SC",
+        "fontPublicPath": "visuals/modern-editorial/render/fonts/NotoSansSC-Medium.ttf",
+        "fontWeight": "500",
+        "fontFormat": "truetype",
+        "fontStyle": "normal"
+      }
+    }
+  },
+  "durationMs": 60633.333333333336,
+  "segments": [
+    {
+      "id": "supply-explanation-study",
+      "templateId": "vox-explainer",
+      "visualStyle": {
+        "schemaVersion": "modern-editorial-render-tokens-v1",
+        "shared": {
+          "palette": {
+            "surfaceLight": "#F4F2EA",
+            "surfaceMuted": "#AABDB4",
+            "ink": "#263A3F",
+            "bgMid": "#38545C",
+            "slate": "#647D86",
+            "moss": "#6B806A",
+            "cinnabar": "#BB5C44",
+            "copper": "#DDA779",
+            "textPrimary": "#F4F2EA",
+            "textSecondary": "#DCE5E2",
+            "black": "#000000"
+          },
+          "fonts": {
+            "masthead": {
+              "family": "Noto Sans SC",
+              "file": "render/fonts/NotoSansSC-Medium.ttf",
+              "sha256": "09f17deea660cdd9cc2ba1e8b90adad18eabeca73b62b3c5f76b7ec3b61b33e0",
+              "format": "truetype",
+              "weight": "500",
+              "style": "normal",
+              "publicPath": "visuals/modern-editorial/render/fonts/NotoSansSC-Medium.ttf"
+            },
+            "title": {
+              "family": "Noto Sans SC",
+              "file": "render/fonts/NotoSansSC-Medium.ttf",
+              "sha256": "09f17deea660cdd9cc2ba1e8b90adad18eabeca73b62b3c5f76b7ec3b61b33e0",
+              "format": "truetype",
+              "weight": "500",
+              "style": "normal",
+              "publicPath": "visuals/modern-editorial/render/fonts/NotoSansSC-Medium.ttf"
+            },
+            "body": {
+              "family": "Noto Sans SC",
+              "file": "render/fonts/NotoSansSC-Medium.ttf",
+              "sha256": "09f17deea660cdd9cc2ba1e8b90adad18eabeca73b62b3c5f76b7ec3b61b33e0",
+              "format": "truetype",
+              "weight": "500",
+              "style": "normal",
+              "publicPath": "visuals/modern-editorial/render/fonts/NotoSansSC-Medium.ttf"
+            },
+            "cover": {
+              "family": "Noto Sans SC",
+              "file": "render/fonts/NotoSansSC-Medium.ttf",
+              "sha256": "09f17deea660cdd9cc2ba1e8b90adad18eabeca73b62b3c5f76b7ec3b61b33e0",
+              "format": "truetype",
+              "weight": "500",
+              "style": "normal",
+              "publicPath": "visuals/modern-editorial/render/fonts/NotoSansSC-Medium.ttf"
+            },
+            "bookend": {
+              "family": "Noto Sans SC",
+              "file": "render/fonts/NotoSansSC-Medium.ttf",
+              "sha256": "09f17deea660cdd9cc2ba1e8b90adad18eabeca73b62b3c5f76b7ec3b61b33e0",
+              "format": "truetype",
+              "weight": "500",
+              "style": "normal",
+              "publicPath": "visuals/modern-editorial/render/fonts/NotoSansSC-Medium.ttf"
+            }
+          },
+          "fontFamilies": {
+            "masthead": [
+              "Noto Sans SC",
+              "PingFang SC",
+              "Microsoft YaHei",
+              "sans-serif"
+            ],
+            "title": [
+              "Noto Sans SC",
+              "PingFang SC",
+              "Microsoft YaHei",
+              "sans-serif"
+            ],
+            "sans": [
+              "Noto Sans SC",
+              "PingFang SC",
+              "Microsoft YaHei",
+              "sans-serif"
+            ],
+            "cover": [
+              "Noto Sans SC",
+              "PingFang SC",
+              "Microsoft YaHei",
+              "sans-serif"
+            ],
+            "bookend": [
+              "Noto Sans SC",
+              "PingFang SC",
+              "Microsoft YaHei",
+              "sans-serif"
+            ]
+          },
+          "drawing": {
+            "strokeWidth": 3.5,
+            "roughness": 0.5,
+            "bowing": 0.3,
+            "labelStrokeWidth": 2.5,
+            "labelRoughness": 0.3,
+            "plainLabelStrokeWidth": 1.5
+          }
+        },
+        "p4": {
+          "shadows": {
+            "contextText": "0 0 10px rgba(0,0,0,0.9), 0 0 28px rgba(0,0,0,0.55), 0 2px 6px rgba(0,0,0,0.9)",
+            "citationText": "0 1px 4px rgba(0,0,0,0.9), 0 0 12px rgba(0,0,0,0.55)",
+            "personText": "0 1px 3px rgba(0,0,0,0.96), 0 3px 12px rgba(0,0,0,0.82), 0 0 24px rgba(0,0,0,0.48)",
+            "badge": "0 2px 8px rgba(0,0,0,0.68)",
+            "bookendTitle": "0 6px 24px #152D39b3",
+            "bookendCard": "0 14px 32px #263A3F66",
+            "documentaryTitle": "0 3px 12px rgba(15,35,43,.5)"
+          },
+          "surfaces": {
+            "canvas": {
+              "background": "#E7ECE9"
+            },
+            "bookend": {
+              "background": "#253B40",
+              "cardAccentColor": "#BD744A",
+              "cardTitleColor": "#263A3F",
+              "flashbackImageFilter": "saturate(.90) contrast(1.05) brightness(.82)",
+              "stripImageFilter": "saturate(.86) contrast(1.05) brightness(.80)"
+            },
+            "documentary": {
+              "titleColor": "#F4F2EA",
+              "vignetteColor": "#1228313D",
+              "tintColor": "#1228311F",
+              "imageBrightness": 1,
+              "backgroundBrightness": 0.6
+            }
+          },
+          "subtitle": {
+            "font": {
+              "family": "Noto Sans SC",
+              "file": "render/fonts/NotoSansSC-Medium.ttf",
+              "sha256": "09f17deea660cdd9cc2ba1e8b90adad18eabeca73b62b3c5f76b7ec3b61b33e0",
+              "format": "truetype",
+              "weight": "500",
+              "style": "normal"
+            },
+            "primaryColor": "#FFFFFF",
+            "outlineColor": "#10141A",
+            "shadowColor": "#000000B8",
+            "fontName": "Noto Sans SC",
+            "fontPublicPath": "visuals/modern-editorial/render/fonts/NotoSansSC-Medium.ttf",
+            "fontWeight": "500",
+            "fontFormat": "truetype",
+            "fontStyle": "normal"
+          }
+        }
+      },
+      "durationInFrames": 3638,
+      "entranceLeadFrames": 0,
+      "runtimeTiming": {
+        "semanticFrameOffset": 0
+      },
+      "assetRefs": [],
+      "renderData": {
+        "resourceFiles": [
+          "packages/templates/vox-explainer/fonts/NotoSansSC-Medium.ttf",
+          "packages/templates/vox-explainer/fonts/NotoSansCJKsc-Black.otf"
+        ],
+        "entranceLeadFrames": 30,
+        "voxExplainer": {
+          "appearance": {
+            "source": "vox-explainer",
+            "art": "editorial-cutout",
+            "tone": "neutral",
+            "palette": {
+              "background": "#e7dfce",
+              "paper": "#f7f1e3",
+              "ink": "#30372f",
+              "accent": "#a34232",
+              "secondary": "#38766c",
+              "wood": "#96623c",
+              "grain": "#c69c59"
+            },
+            "fonts": {
+              "body": {
+                "family": "VoxBody",
+                "file": "packages/templates/vox-explainer/fonts/NotoSansSC-Medium.ttf",
+                "publicPath": "packages/templates/vox-explainer/fonts/NotoSansSC-Medium.ttf",
+                "weight": "500",
+                "style": "normal",
+                "format": "truetype"
+              },
+              "title": {
+                "family": "VoxTitle",
+                "file": "packages/templates/vox-explainer/fonts/NotoSansCJKsc-Black.otf",
+                "publicPath": "packages/templates/vox-explainer/fonts/NotoSansCJKsc-Black.otf",
+                "weight": "900",
+                "style": "normal",
+                "format": "opentype"
+              }
+            }
+          },
+          "actionTimings": [
+            {
+              "target": "M001",
+              "action": "advance-explainer",
+              "frame": 0
+            },
+            {
+              "target": "M002",
+              "action": "advance-explainer",
+              "frame": 507
+            },
+            {
+              "target": "M003",
+              "action": "advance-explainer",
+              "frame": 879
+            },
+            {
+              "target": "M004",
+              "action": "advance-explainer",
+              "frame": 1386
+            },
+            {
+              "target": "M005",
+              "action": "advance-explainer",
+              "frame": 1792
+            },
+            {
+              "target": "M006",
+              "action": "advance-explainer",
+              "frame": 2285
+            },
+            {
+              "target": "M007",
+              "action": "advance-explainer",
+              "frame": 2819
+            },
+            {
+              "target": "M008",
+              "action": "advance-explainer",
+              "frame": 3305
+            }
+          ],
+          "durationInFrames": 3638,
+          "policy": {
+            "fps": 60,
+            "width": 1920,
+            "height": 1080
+          },
+          "transition": {
+            "incomingLeadFrames": 30,
+            "exitTailFrames": 0
+          }
+        }
+      },
+      "segmentType": "body",
+      "startFrame": 0,
+      "startMs": 0,
+      "endMs": 60633.333333333336,
+      "appliedEntranceLeadFrames": 0,
+      "appliedExitTailFrames": 0,
+      "appliedTransitionFrames": 0,
+      "appliedVisualFrameOffset": 0,
+      "appliedCameraPrerollFrames": 0,
+      "appliedHoldIncomingVisualAtStart": false
+    }
+  ],
+  "overlays": [],
+  "transitions": [],
+  "ending": null,
+  "previewNotice": null,
+  "captions": [
+    {
+      "id": 1,
+      "startMs": 0,
+      "endMs": 8147,
+      "text": "仓库里粮食充足，前线却可能断粮。问题不只在有多少粮，还在每天能送到多少。"
+    },
+    {
+      "id": 2,
+      "startMs": 8450,
+      "endMs": 14343,
+      "text": "假设一支军队每天消耗十车粮，后方每天可以发出二十车。"
+    },
+    {
+      "id": 3,
+      "startMs": 14650,
+      "endMs": 22793,
+      "text": "运输途中有一座窄桥，每天最多放行六车。前线每天缺四车，只能靠存粮补上。"
+    },
+    {
+      "id": 4,
+      "startMs": 23100,
+      "endMs": 29563,
+      "text": "如果前线原有二十车存粮，这个缺口持续五天，存粮就会耗尽。"
+    },
+    {
+      "id": 5,
+      "startMs": 29867,
+      "endMs": 37782,
+      "text": "此时再给后方增加粮食或车队，桥的能力没有改变，到达前线的仍然最多只有六车。"
+    },
+    {
+      "id": 6,
+      "startMs": 38083,
+      "endMs": 46682,
+      "text": "如果把桥的通行能力提高到每天十车，在其它条件足够的情况下，供给才刚好赶上消耗。"
+    },
+    {
+      "id": 7,
+      "startMs": 46983,
+      "endMs": 54769,
+      "text": "但刚好够吃，不等于能重新攒起存粮。要补回储备，送到的还得超过每天吃掉的。"
+    },
+    {
+      "id": 8,
+      "startMs": 55083,
+      "endMs": 60625,
+      "text": "所以，库存、运输能力和实际到达量，是三件不同的事。"
+    }
+  ],
+  "audioTracks": [
+    {
+      "id": "preview-narration",
+      "file": "narration.wav",
+      "startMs": 0,
+      "endMs": 60633.333333333336,
+      "sourceStartFrame": 0,
+      "volume": 1,
+      "loop": false
+    }
+  ]
+}

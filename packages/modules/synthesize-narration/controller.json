@@ -1,0 +1,1 @@
+{"primitive":"program-narration-synthesize","projection":"artifact","reads":[{"role":"script-package","kind":"artifact"}],"writes":["tts-result"],"returnTo":[]}

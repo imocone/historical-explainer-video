@@ -1,0 +1,88 @@
+{
+  "kind": "template",
+  "id": "episode-opener",
+  "catalog": {
+    "displayName": {
+      "en": "Episode Opener Template",
+      "zh": "经典三画面片头"
+    },
+    "purpose": "在正文开始前用P1唯一片头口播贯穿三画面闪回，经三横带收束后直接进入正文",
+    "rejectWhen": "当前内容属于正文分拍、事实结算或片尾余味，而不是整集观看入口"
+  },
+  "implements": [
+    {
+      "moduleId": "author-narration",
+      "slotId": "opener-copy-template",
+      "majorVersion": 1
+    },
+    {
+      "moduleId": "author-documentary-narration",
+      "slotId": "opener-copy-template",
+      "majorVersion": 1
+    },
+    {
+      "moduleId": "author-bookend",
+      "slotId": "opener-template",
+      "majorVersion": 1
+    },
+    {
+      "moduleId": "render-video",
+      "slotId": "segment-template",
+      "majorVersion": 1
+    }
+  ],
+  "copyRules": [
+    "references/opener-copy-method.md"
+  ],
+  "authorRules": [
+    "AUTHOR.md",
+    "references/opener-treatment-standard.md",
+    "../../authored-images.md"
+  ],
+  "acceptanceRules": [
+    "copy-policy.mjs",
+    "timing-policy.mjs",
+    "render-policy.mjs",
+    "../../video-spec.mjs",
+    "../../source-rights.mjs",
+    "../../authored-images.mjs"
+  ],
+  "assetContractRules": [
+    "asset-contract.mjs"
+  ],
+  "assetContractEntry": "asset-contract.mjs",
+  "outputSchema": "../../../contracts/opener-treatment.schema.json",
+  "validator": "validate.mjs",
+  "renderer": "render/index.jsx",
+  "renderPlanEntry": "render-plan.mjs",
+  "renderRules": [
+    "timing-policy.mjs",
+    "render-plan.mjs",
+    "render-policy.mjs",
+    "audio-policy.mjs",
+    "audio/sources.mjs",
+    "render/index.jsx",
+    "asset-contract.mjs",
+    "../../modules/render-video/runtime/scene-view.jsx",
+    "../../modules/render-video/runtime/motion-math.mjs"
+  ],
+  "renderAssets": [
+    "audio/opening-flash.wav",
+    "audio/cut-one.wav",
+    "audio/cut-two.wav",
+    "audio/strips-pass.wav",
+    "audio/strips-impact.wav",
+    "audio/strips-inertia.wav",
+    "audio/exit-reveal.wav",
+    "audio/exit-reveal-extended.wav",
+    "audio/background-bed.wav"
+  ],
+  "examples": [
+    "examples/golden.json",
+    "examples/negative.json"
+  ],
+  "runtimeResources": [
+    "../../authored-images.mjs",
+    "../../runtime-config.mjs"
+  ]
+}

@@ -1,0 +1,36 @@
+<style>
+:host{display:block;width:100%;height:100%;background:var(--background);font-family:var(--font-body)}*{box-sizing:border-box}svg{display:block;width:1920px;height:1080px;font-family:var(--font-body);font-weight:500}text{fill:#243e46;text-anchor:middle}.heavy{font-family:var(--font-title);font-weight:900}.muted{fill:#617873}.red{fill:#cc573e}
+</style>
+<svg id="stage" viewBox="0 0 1920 1080" role="img" aria-label="布雷斯悖论：新增通道使两段拥堵路同时承载全部车流，行程由65分钟增至80分钟">
+<defs>
+<pattern id="grid" width="64" height="64" patternUnits="userSpaceOnUse"><path d="M64 0H0V64" fill="none" stroke="#718a7a" stroke-width="1" opacity=".12"/></pattern>
+<linearGradient id="water" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#90b9b1"/><stop offset="1" stop-color="#b5cec3"/></linearGradient>
+<filter id="shadow"><feGaussianBlur stdDeviation="12"/></filter>
+<clipPath id="frameClip"><rect width="1920" height="938"/></clipPath>
+<clipPath id="bridgeClip"><rect id="bridgeClipTop" x="795" y="305" width="150" height="0"/><rect id="bridgeClipBottom" x="795" y="730" width="150" height="0"/></clipPath>
+<symbol id="car" viewBox="-20 -11 40 22"><ellipse cx="2" cy="3" rx="19" ry="10" fill="#152f37" opacity=".2"/><rect x="-12" y="-10" width="8" height="4" rx="1" fill="#233c43"/><rect x="-12" y="6" width="8" height="4" rx="1" fill="#233c43"/><rect x="8" y="-10" width="7" height="4" rx="1" fill="#233c43"/><rect x="8" y="6" width="7" height="4" rx="1" fill="#233c43"/><path d="M-16-8H12Q19-8 19-3V3Q19 8 12 8H-16Q-20 8-20 3V-3Q-20-8-16-8Z" fill="currentColor"/><path d="M-9-6H4L9-3V3L4 6H-9Z" fill="#274a54"/><path d="M-3-6V6" stroke="#9dbcb0" stroke-width="2"/><path d="M16-6V-2M16 2V6" stroke="#f4e7bc" stroke-width="2"/></symbol>
+</defs>
+<rect width="1920" height="1080" fill="#e9eade"/><rect width="1920" height="938" fill="url(#grid)"/>
+<g clip-path="url(#frameClip)">
+<g id="camera"><g id="city">
+<ellipse cx="970" cy="840" rx="880" ry="65" fill="#59786a" opacity=".16" filter="url(#shadow)"/>
+<path d="M120 268H1770V837L1728 871H80V300Z" fill="#bdcaba"/><path d="M80 300H1728V871H80Z" fill="#e1e4d3"/><path d="M1728 300L1770 268V837L1728 871Z" fill="#9bac9e"/><path d="M80 837H1728V871H80Z" fill="#b0bfac"/>
+<path d="M670 490C745 455 790 550 870 514S1000 520 1090 484L1165 536C1070 572 990 575 900 570S755 525 670 552Z" fill="url(#water)"/><path d="M674 485C750 451 798 544 870 509S1000 513 1090 479M670 559C755 531 806 586 904 576S1070 581 1167 542" stroke="#c4cabb" stroke-width="8" fill="none"/>
+<g stroke="#eaf0df" stroke-width="2" opacity=".5"><path d="M750 500l25 5M965 537l29-3M1058 513l32-8M834 543l27 4"/></g>
+<g id="buildings"/><g id="trees"/>
+</g>
+<g id="reference"><text x="300" y="386" text-anchor="start" font-size="58" class="muted">原来 65分钟</text><path d="M300 450H1340" stroke="#a8bbaa" stroke-width="38" stroke-linecap="butt"/><path d="M620 431V469" stroke="#e9eade" stroke-width="3"/><path d="M1340 455V493H1580V455" stroke="#cc573e" stroke-width="4" fill="none"/><text x="1460" y="425" font-size="76" class="red heavy">+15</text></g>
+<g id="roads"/><g id="bridge" clip-path="url(#bridgeClip)"><path id="bridgeShadow" fill="none" stroke="#8b5b43" stroke-width="70"/><path id="bridgeSurface" fill="none" stroke="#d7a16a" stroke-width="58"/><path id="bridgeDashes" fill="none" stroke="#fbecd0" stroke-width="3" stroke-dasharray="12 14"/></g>
+<g id="junctions"/>
+<g id="gate"><path d="M830 345V358M910 345V358" stroke="#6a7d6a" stroke-width="8"/><g id="gateArm"><rect x="830" y="342" width="80" height="12" rx="3" fill="#d7ded0"/><path d="M838 343L848 353M858 343L868 353M878 343L888 353M898 343L908 353" stroke="#cd5d42" stroke-width="5"/></g><circle cx="830" cy="348" r="9" fill="#344e50"/><circle id="gateLight" cx="920" cy="347" r="8" fill="#cc573e"/></g>
+<g id="cars"/><path id="tracer" fill="none" stroke="#e8b342" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/><g id="heroCar"><use href="#car" x="-40" y="-22" width="80" height="44" style="color:#f0bc51"/></g>
+<g id="nodeLabels"><text id="startLabel" x="172" y="542" font-size="60" class="heavy">起点</text><text id="endLabel" x="1607" y="542" font-size="60" class="heavy">终点</text></g>
+<g id="clocks"/>
+<g id="bridgeLabel"><rect x="1002" y="456" width="310" height="118" rx="9" fill="#f6ecd2" stroke="#cd9156" stroke-width="3"/><text x="1157" y="500" font-size="37">新通道 · 忽略耗时</text><text x="1157" y="552" font-size="48" class="heavy">≈ 0 分钟</text></g>
+</g>
+<g id="headline"><text id="title" x="960" y="123" font-size="88" class="heavy"/><text id="subtitle" x="960" y="210" font-size="52" class="muted"/></g>
+<g id="hook"><text x="540" y="520" font-size="170" class="heavy">+1<tspan font-size="84">条路</tspan></text><text x="1320" y="520" font-size="170" class="heavy red">+15<tspan font-size="84">分钟？</tspan></text><path d="M840 466H995M965 438L997 466L965 494" stroke="#243e46" stroke-width="9" fill="none"/></g>
+<g id="calculation"><rect x="350" y="816" width="1220" height="100" rx="50" fill="#f7f1de"/><text id="calc" x="960" y="890" font-size="68" class="heavy"/></g>
+<g id="finish"><text x="960" y="413" font-size="144" class="heavy"><tspan>65</tspan><tspan font-size="78"> → </tspan><tspan class="red">80</tspan><tspan font-size="78"> → </tspan><tspan>65</tspan><tspan font-size="65">分钟</tspan></text><text x="960" y="510" font-size="58">同样4,000辆车，改变的是选择</text></g>
+</g>
+</svg>

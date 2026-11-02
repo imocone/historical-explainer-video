@@ -1,0 +1,15 @@
+{
+  "primitive": "program-covers",
+  "projection": "artifact",
+  "reads": [
+    {
+      "role": "publication",
+      "kind": "artifact"
+    }
+  ],
+  "writes": [
+    "cover-receipt",
+    "cover-images"
+  ],
+  "returnTo": []
+}

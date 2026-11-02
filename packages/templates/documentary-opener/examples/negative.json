@@ -1,0 +1,32 @@
+{
+  "cases": [
+    {
+      "violation": "给前五张另写图片提示或重复生成正文原图；D06复用或改写P3正文图片",
+      "owner": "documentary-opener"
+    },
+    {
+      "violation": "引用未完成Beat、不存在的请求或讲解图表，或把特写标成全景",
+      "owner": "documentary-opener"
+    },
+    {
+      "violation": "复制同一图片凑五张，未通读本集便机械按编号抽取",
+      "owner": "documentary-opener"
+    },
+    {
+      "violation": "D06复用内置、其它节目或其它集图片；鸟瞰全景偏离节目正式世界设定、没有本集来源支持，或把观察方位当作具体史实",
+      "owner": "documentary-opener"
+    },
+    {
+      "violation": "D06套用固定集数序列、复用历集构图，或把本节目世界替换成其它节目或一般化场景",
+      "owner": "documentary-opener"
+    },
+    {
+      "violation": "改写P1口播、另拟本集标题，或添加正式节目名与剧集身份中没有的书名、卷次、季号",
+      "owner": "documentary-opener"
+    },
+    {
+      "violation": "使用闪白横带、机械飞字、为P1片头句生成旁白，或偏离固定10.5秒的时间线",
+      "owner": "documentary-opener"
+    }
+  ]
+}

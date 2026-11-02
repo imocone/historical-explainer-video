@@ -1,0 +1,4 @@
+interface:
+  display_name: "整集语义理解"
+  short_description: "只写唯一分镜施工图中的整集稳定语义区"
+  default_prompt: "Use $understand-episode to produce the current episode understanding candidate from its work order."

@@ -1,0 +1,104 @@
+# Track the production system and its registered resources. Keep real programs,
+# standalone films and one-off production/validation projects outside this repo,
+# including their authoring source, media, renders and review images.
+
+# New root paths are ignored by default, regardless of their name or file type.
+/*
+!/.gitignore
+!/AGENTS.md
+!/README.md
+!/package.json
+!/package-lock.json
+!/LICENSE
+!/THIRD_PARTY_NOTICES.md
+!/CONTRIBUTING.md
+!/SECURITY.md
+!/.github/
+!/.env.example
+!/requirements.txt
+!/scripts/
+!/CLAUDE.md
+!/.mcp.json
+!/.agents/
+!/.claude/
+!/.codex/
+!/contracts/
+!/development/
+!/director/
+!/engine/
+!/packages/
+!/visuals/
+!/workflow/
+
+# Only the shared project configuration belongs in version control.
+/.codex/*
+
+# Expose one director source to both hosts; keep private host state local.
+/.agents/*
+!/.agents/skills/
+/.agents/skills/*
+!/.agents/skills/director
+/.claude/*
+!/.claude/skills/
+/.claude/skills/*
+!/.claude/skills/director
+
+# Personal music stays local; the public checkout has no default track.
+/local-media/
+/packages/features/background-music/library/*
+!/packages/features/background-music/library/README.md
+
+# Development contains system documentation, governance and decision records.
+# New ad hoc study or demonstration directories are ignored by default.
+/development/*
+!/development/ARCHITECTURE.md
+!/development/documentary-design.md
+!/development/ai-responsibility/
+!/development/ai-responsibility-protection.json
+!/development/verify-ai-responsibility-change.mjs
+!/development/decisions/
+/development/decisions/*
+!/development/decisions/README.md
+
+# Generated output and local state are ignored at every depth. Registered
+# example source, reference images, audio and fonts remain project resources.
+node_modules/
+.venv/
+.env
+.env.*
+!.env.example
+CLAUDE.local.md
+.gemini-mcp/
+__pycache__/
+.cache/
+.pytest_cache/
+coverage/
+dist/
+build/
+out/
+output/
+outputs/
+tmp/
+temp/
+_work/
+.DS_Store
+*.log
+*.tmp
+*.tmp-*
+*.py[cod]
+
+# Rendered videos stay local, including teaching previews.
+*.[mM][pP]4
+*.[mM][oO][vV]
+*.[wW][eE][bB][mM]
+*.[mM][kK][vV]
+*.[aA][vV][iI]
+*.[mM]4[vV]
+*.[mM][pP][eE][gG]
+*.[mM][pP][gG]
+*.[mM][tT][sS]
+*.[mM]2[tT][sS]
+*.[fF][lL][vV]
+
+# Local generation request records are not teaching source.
+/packages/templates/vox-explainer/examples/pulley/assets/imagegen-call.json

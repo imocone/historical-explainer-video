@@ -1,0 +1,35 @@
+// 原片为60fps；每个动作以对应Cue加帧偏移定位，保留已认可的句内提前量与延迟。
+const at=(id,offsetFrames=0)=>(cue(id)*60+offsetFrames)/60;
+const q=id=>select('#'+id),cl=x=>Math.max(0,Math.min(1,x)),ease=x=>{x=cl(x);return x*x*(3-2*x)},r=(t,a,d=.5)=>ease((t-a)/d),mix=(a,b,p)=>a+(b-a)*p;
+const op=(id,n)=>q(id).setAttribute('opacity',cl(n)),tr=(id,x,y,z=1,rot=0)=>q(id).setAttribute('transform','translate('+x+' '+y+') scale('+z+') rotate('+rot+')');
+const show=(t,a,b,d=.25)=>r(t,a,d)*(1-r(t,b,d));
+onFrame(({time:t})=>{
+ const scenes=[['sealed',at('M001',0),at('M002',-10)],['debate',at('M002',-10),at('M005',-4)],['control',at('M005',-4),at('M006',-5)],['danger',at('M006',-5),at('M008',-4)],['alliance',at('M008',-4),at('M009',-4)],['forgery',at('M009',-4),at('M010',-2)],['ambush',at('M010',-2),at('M011',-3)],['hanDeath',at('M011',-3),at('M011',138)],['result',at('M011',138),at('M012',455)]];
+ for(const [id,a,b] of scenes)op(id,(a===0?1:r(t,a,.22))*(1-r(t,b,.22)));
+ const close=r(t,at('M001',27),1.1);tr('shutterL',-515*(1-close),0);tr('shutterR',515*(1-close),0);op('sealedWords',r(t,at('M001',96),.35));
+ op('hanField',.7*r(t,at('M003',7),.7));op('junField',.7*r(t,at('M004',0),.7));
+ op('campHan',r(t,at('M003',1),.5));op('campJun',r(t,at('M003',40),.5)*(.45+.55*r(t,at('M004',0),.5)));
+ op('adultReason',r(t,at('M003',73),.5));op('junAge',1-r(t,at('M004',0),.3));op('junClaim',r(t,at('M004',0),.4));
+ op('assemblyName',1-r(t,at('M002',236),.35));
+ tr('speakerA',mix(730,170,r(t,at('M003',1),.7)),800,mix(1.1,.9,r(t,at('M003',1),.7)));
+ tr('speakerB',mix(1180,1750,r(t,at('M004',0),.7)),800,mix(1.1,.9,r(t,at('M004',0),.7)));
+ const shut=r(t,at('M005',17),.7);tr('controlDoorL',mix(650,990,shut),200);tr('controlDoorR',mix(1710,1370,shut),200);tr('bar',-70*(1-r(t,at('M005',62),.5)),0);op('bar',r(t,at('M005',62),.5));
+ op('controlGL',r(t,at('M005',77),.5));op('controlGR',r(t,at('M005',86),.5));
+ const threatB=r(t,at('M007',-1),.5);op('rivalHan',1-.55*threatB);op('rivalJun',.18+.82*threatB);op('dangerShadeL',r(t,at('M006',4),.5));op('dangerShadeR',threatB);op('dangerWords',r(t,at('M007',74),.6));
+ tr('zongDanger',960,750,1-.08*r(t,at('M007',68),.7));
+ op('allyYu',r(t,at('M008',26),.65));op('closeness',r(t,at('M008',140),.6));
+ const issue=r(t,at('M009',-4),.55);tr('summonPaper',mix(850,1190,issue),490,mix(.8,1,issue));op('falseSeal',r(t,at('M009',41),.2));
+ const approach=r(t,at('M010',4),1.1),fall=r(t,at('M010',148),.35),doorShut=r(t,at('M010',85),.65),seize=r(t,at('M010',82),.6);
+ tr('trapDoorL',mix(280,620,doorShut),130);tr('trapDoorR',mix(1300,960,doorShut),130);
+ tr('victimA',mix(850,825,approach),mix(700,865,approach),mix(.78,1.25,approach),-77*fall);
+ tr('victimB',mix(1070,1090,approach),mix(700,865,approach),mix(.78,1.25,approach),77*fall);
+ q('victimA').style.filter=q('victimB').style.filter='grayscale('+fall+') brightness('+(1-.35*fall)+')';
+ op('victimA',1-.25*fall);op('victimB',1-.25*fall);
+ tr('trapGL',mix(330,600,seize),910);tr('trapGR',mix(1590,1320,seize),910);
+ q('trapGL').style.filter=q('trapGR').style.filter='brightness('+(.17+.83*seize)+')';
+ op('trapFlash',.65*show(t,at('M010',145),at('M010',154),.07));op('assemblyEnded',r(t,at('M010',163),.2));
+ const edict=r(t,at('M011',0),.6);tr('deathPaper',mix(1480,1250,edict),510);op('deathSeal',r(t,at('M011',51),.18));q('hanFinal').style.filter='grayscale('+r(t,at('M011',48),.3)+')';
+ const enthrone=r(t,at('M011',153),1.25);tr('newEmperor',mix(600,960,enthrone),795,mix(.85,1,enthrone));op('newEmperor',r(t,at('M011',147),.4));
+ op('emperorName',r(t,at('M011',228),.4));
+ const final=r(t,at('M012',191),1.4);tr('coronation',-80*final,-30*final,1+.08*final);tr('kingmaker',290-25*final,845,1+.04*final);
+});

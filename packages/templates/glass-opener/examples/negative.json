@@ -1,0 +1,8 @@
+{
+  "cases": [
+    {"violation": "把原文逗号前后的两段合为一张图，或在没有断句标点处硬拆、补句凑图", "owner": "glass-opener"},
+    {"violation": "改写、遗漏、重排或重复正式片头口播，或屏幕字与当前段不一致", "owner": "glass-opener"},
+    {"violation": "图片预制文字和分割线，或上下错层裁切后丢失脸、关键动作与证据", "owner": "glass-opener"},
+    {"violation": "以静止替身图替代真实正文首镜，或改变正文旁白与字幕时钟", "owner": "glass-opener"}
+  ]
+}

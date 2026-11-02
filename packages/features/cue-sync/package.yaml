@@ -1,0 +1,20 @@
+{
+  "kind": "feature",
+  "id": "cue-sync",
+  "implements": [
+    {"moduleId": "author-beat", "slotId": "beat-feature", "majorVersion": 1},
+    {"moduleId": "render-video", "slotId": "feature", "majorVersion": 1}
+  ],
+  "catalog": {
+    "displayName": {"en": "Cue Synchronization", "zh": "卡点同步"},
+    "purpose": "把模板动作绑定到正式字幕 cue 的起点或终点，使内容动作与口播边界确定同步",
+    "disabledBehavior": "正文工作流不允许关闭；缺失时Visual Director可创作性核验、Author与P4必须失败，片头继续使用固定模板时间",
+    "initialState": {"bindings": {}}
+  },
+  "authorRules": ["AUTHOR.md"],
+  "acceptanceRules": ["resolve.mjs", "validate-runtime.mjs", "../../cue-boundaries.mjs", "../../video-spec.mjs"],
+  "outputSchema": "../../../contracts/cue-sync.schema.json",
+  "validator": "validate.mjs",
+  "renderEntry": "render-entry.mjs",
+  "renderRules": ["render-entry.mjs", "resolve.mjs", "../../cue-boundaries.mjs", "../../video-spec.mjs"]
+}

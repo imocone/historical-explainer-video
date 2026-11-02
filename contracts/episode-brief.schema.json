@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "episodeId",
+    "programId",
+    "programForm",
+    "seriesTitle",
+    "episodeTitle",
+    "audience",
+    "_producer"
+  ],
+  "properties": {
+    "referenceProgram": {
+      "type": "object", "additionalProperties": false,
+      "required": ["path"],
+      "properties": {
+        "path": {"type": "string", "pattern": "^/"}
+      }
+    },
+    "referenceVideoIds": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "schemaVersion": {"enum": ["7.3", "8.1"]},
+    "episodeId": {"type": "string", "pattern": "^ep[0-9]{2,}$"},
+    "programId": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "programForm": {"enum": ["historical-explainer", "historical-documentary"]},
+    "explainerType": {"enum": ["general", "current-affairs"]},
+    "seriesTitle": {"type": "string", "minLength": 1},
+    "maxDurationSeconds": {"type": "integer", "minimum": 1},
+    "episodeTitle": {"type": "string", "minLength": 1, "maxLength": 30},
+    "episodeQuestion": {"type": "string", "minLength": 1},
+    "episodeAnswer": {"type": "string", "minLength": 1},
+    "episodeConcept": {"type": "string", "minLength": 1},
+    "episodeThroughline": {"type": "string", "minLength": 1},
+    "episodeCreativeBrief": {"type": "string", "minLength": 1},
+    "episodeScope": {"type": "string", "minLength": 1},
+    "episodeBenefit": {"type": "string", "minLength": 1},
+    "storyWorld": {"$ref": "#/$defs/storyWorld"},
+    "storyOutline": {"$ref": "#/$defs/storyOutline"},
+    "audience": {"type": "string", "minLength": 1},
+    "_producer": {"$ref": "#/$defs/producer"}
+  },
+  "oneOf": [
+    {
+      "properties": {
+        "schemaVersion": {"const": "7.3"},
+        "programForm": {"const": "historical-explainer"},
+        "episodeConcept": false,
+        "episodeThroughline": false,
+        "storyWorld": false,
+        "storyOutline": false
+      },
+      "required": ["explainerType", "episodeQuestion", "episodeAnswer", "episodeCreativeBrief", "episodeScope", "episodeBenefit"]
+    },
+    {
+      "properties": {
+        "schemaVersion": {"const": "8.1"},
+        "programForm": {"const": "historical-documentary"},
+        "explainerType": false,
+        "referenceProgram": false,
+        "referenceVideoIds": false,
+        "episodeQuestion": false,
+        "episodeAnswer": false
+      },
+      "required": ["episodeConcept", "episodeThroughline", "episodeCreativeBrief", "episodeScope", "episodeBenefit", "storyWorld", "storyOutline"]
+    }
+  ],
+  "$defs": {
+    "text": {"type": "string", "minLength": 1, "pattern": "\\S"},
+    "sha": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "storyWorld": {
+      "type": "object", "additionalProperties": false,
+      "required": ["worldFrame", "recurringElements", "continuityPrinciple", "episodeGrammar", "reconstructionBoundary"],
+      "properties": {
+        "worldFrame": {"$ref": "#/$defs/text"},
+        "recurringElements": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "object", "additionalProperties": false, "required": ["id", "kind", "function"], "properties": {"id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"}, "kind": {"enum": ["role", "place", "object", "time"]}, "function": {"$ref": "#/$defs/text"}}}},
+        "continuityPrinciple": {"$ref": "#/$defs/text"},
+        "episodeGrammar": {"type": "array", "minItems": 3, "maxItems": 8, "items": {"$ref": "#/$defs/text"}},
+        "reconstructionBoundary": {"$ref": "#/$defs/text"}
+      }
+    },
+    "storyOutline": {
+      "type": "object", "additionalProperties": false,
+      "required": ["storyMode", "viewpoint", "centralProcess", "actionChain", "meaningReveals", "environment", "ending", "continuityLinks", "reconstruction"],
+      "properties": {
+        "storyMode": {"$ref": "#/$defs/text"}, "viewpoint": {"$ref": "#/$defs/text"}, "centralProcess": {"$ref": "#/$defs/text"},
+        "actionChain": {"type": "array", "minItems": 3, "maxItems": 12, "items": {"$ref": "#/$defs/text"}},
+        "meaningReveals": {"type": "array", "minItems": 1, "maxItems": 3, "items": {"$ref": "#/$defs/text"}},
+        "environment": {"$ref": "#/$defs/text"}, "ending": {"$ref": "#/$defs/text"},
+        "continuityLinks": {"type": "array", "maxItems": 4, "items": {"$ref": "#/$defs/text"}},
+        "reconstruction": {"$ref": "#/$defs/text"}
+      }
+    },
+    "producer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["moduleId", "nodeId", "outputSha256"],
+      "properties": {
+        "moduleId": {"type": "string", "minLength": 1},
+        "nodeId": {"type": "string", "minLength": 1},
+        "outputSha256": {"$ref": "#/$defs/sha"}
+      }
+    }
+  }
+}

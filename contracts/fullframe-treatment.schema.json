@@ -1,0 +1,650 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["templateId", "calloutGate", "assetRequests", "continuity", "incomingTransition"],
+  "properties": {
+    "templateId": {"const": "fullframe-narrative"},
+    "calloutGate": {"$ref": "#/$defs/calloutGate"},
+    "assetRequests": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 2,
+      "items": {"$ref": "#/$defs/fullframeRequest"}
+    },
+    "continuity": {"$ref": "#/$defs/continuity"},
+    "incomingTransition": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/narrativeTransition"}]},
+    "_producer": {"$ref": "#/$defs/producer"}
+  },
+  "$defs": {
+    "narrativeTransition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "durationMs",
+        "reason"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "dissolve",
+            "dip-to-black"
+          ]
+        },
+        "durationMs": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1800
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        }
+      }
+    },
+    "text": {"type": "string", "minLength": 1, "pattern": "\\S"},
+    "quoteText": {"type": "string", "minLength": 1, "maxLength": 32, "pattern": "\\S"},
+    "calloutHeading": {"type": "string", "minLength": 1, "maxLength": 12, "pattern": "\\S"},
+    "calloutBody": {"type": "string", "minLength": 1, "maxLength": 30, "pattern": "\\S"},
+    "sha": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "sourceRef": {"type": "string", "pattern": "^(?:C[0-9]{3,}|(?:F|R|E|SA)[0-9]{3})$"},
+    "requestId": {"type": "string", "pattern": "^AR[0-9]{3}$"},
+    "calloutGate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["historical-quote", "person-intro", "term-gloss"],
+      "properties": {
+        "historical-quote": {"enum": ["reserved", "required", "not-triggered", "deferred-no-source"]},
+        "person-intro": {"enum": ["required", "not-triggered"]},
+        "term-gloss": {"enum": ["required", "not-triggered"]}
+      }
+    },
+    "fullframeRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "allOf": [{"if": {"properties": {"frameId": {"const": "B"}}}, "then": {"required": ["incomingTransition"]}, "else": {"properties": {"incomingTransition": false}}}],
+      "required": [
+        "requestId",
+        "kind",
+        "frameId",
+        "cameraRelation",
+        "purpose",
+        "sourceRefs",
+        "mustNotInvent",
+        "required",
+        "acceptanceCriteria",
+        "attentionPlan",
+        "motion",
+        "sceneDescription",
+        "asset"
+      ],
+      "properties": {
+        "requestId": {"$ref": "#/$defs/requestId"},
+        "kind": {"const": "fullframe-image"},
+        "frameId": {"enum": ["A", "B"]},
+        "incomingTransition": {"$ref": "#/$defs/narrativeTransition"},
+        "cameraRelation": {"enum": ["first", "continue", "reset", "motivated-reverse", "visual-match"]},
+        "purpose": {"$ref": "#/$defs/text"},
+        "sourceRefs": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/sourceRef"}
+        },
+        "mustNotInvent": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/text"}
+        },
+        "required": {"const": true},
+        "acceptanceCriteria": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/text"}
+        },
+        "attentionPlan": {"$ref": "#/$defs/attentionPlan"},
+        "sceneDescription": {"$ref": "#/$defs/text"},
+        "motion": {"$ref": "#/$defs/motion"},
+        "effects": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/effect"
+          }
+        },
+        "callouts": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/callout"}
+        },
+        "exactTexts": {
+          "description": "作者决定画入图中的准确文字，可为概括标签或有据原文；逐字交给生图，内容与引述真实性由作者负责。",
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/text"}
+        },
+        "asset": {
+          "$ref": "#/$defs/authoredImage"
+        },
+        "effectAnchors": {
+          "$ref": "#/$defs/effectAnchors"
+        }
+      }
+    },
+    "effect": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "intensity",
+        "timing",
+        "reason"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "snow",
+            "foreground",
+            "emotion",
+            "fog",
+            "dust",
+            "soft-light",
+            "grain"
+          ]
+        },
+        "intensity": {
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ]
+        },
+        "timing": {
+          "enum": [
+            "scene",
+            "cue"
+          ]
+        },
+        "reason": {
+          "$ref": "#/$defs/text"
+        },
+        "durationMs": {
+          "type": "integer",
+          "minimum": 500,
+          "maximum": 8000
+        },
+        "preset": {
+          "enum": [
+            "pine",
+            "foliage"
+          ]
+        },
+        "symbol": {
+          "enum": [
+            "focus",
+            "question"
+          ]
+        },
+        "side": {"enum": ["left", "right"]},
+        "anchorFocus": {"$ref": "#/$defs/text"},
+        "region": {
+          "enum": [
+            "lower",
+            "full"
+          ]
+        },
+        "direction": {
+          "enum": [
+            "calm",
+            "left",
+            "right"
+          ]
+        },
+        "source": {
+          "enum": [
+            "top-left",
+            "top-right"
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "timing": {
+                "const": "cue"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "durationMs"
+            ]
+          },
+          "else": {
+            "properties": {
+              "durationMs": false
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "foreground"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "preset"
+            ]
+          },
+          "else": {
+            "properties": {
+              "preset": false,
+              "side": false
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "emotion"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "symbol",
+              "anchorFocus"
+            ],
+            "properties": {
+              "timing": {
+                "const": "cue"
+              },
+              "durationMs": {
+                "minimum": 800,
+                "maximum": 2400
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "symbol": false
+            }
+          }
+        },
+        {
+          "if": {"properties": {"type": {"enum": ["emotion", "soft-light"]}}},
+          "then": {"required": ["anchorFocus"]},
+          "else": {"properties": {"anchorFocus": false}}
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "enum": [
+                  "fog",
+                  "dust"
+                ]
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "region": false
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "enum": [
+                  "snow",
+                  "fog",
+                  "dust"
+                ]
+              }
+            }
+          },
+          "else": {"properties": {"direction": false}}
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "soft-light"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "source"
+            ]
+          },
+          "else": {
+            "properties": {
+              "source": false
+            }
+          }
+        }
+      ]
+    },
+    "attentionPlan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["entryFocus", "landingFocus", "safeEndFocus", "viewerChange"],
+      "properties": {
+        "entryFocus": {"$ref": "#/$defs/text"},
+        "landingFocus": {"$ref": "#/$defs/text"},
+        "safeEndFocus": {"$ref": "#/$defs/text"},
+        "viewerChange": {"$ref": "#/$defs/text"}
+      }
+    },
+    "motion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "speedRatio",
+        "startViewport",
+        "routeWaypoints",
+        "semanticEndViewport",
+        "safeEndViewport"
+      ],
+      "properties": {
+        "type": {"enum": ["push-in", "pull-out", "traverse"]},
+        "speedRatio": {"type": "number", "minimum": 1, "description": "作者选择的起始运动速度；原运动族基准为1，不设统一上限。省略speedChanges时保持此速度。"},
+        "speedChanges": {
+          "type": "array",
+          "minItems": 1,
+          "description": "作者指定的速度变化点，timeMs从本图运镜开始计时，严格递增；点间线性变速，末点后保持该速度。",
+          "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["timeMs", "speedRatio"],
+            "properties": {
+              "timeMs": {"type": "integer", "minimum": 1},
+              "speedRatio": {"type": "number", "minimum": 1}
+            }
+          }
+        },
+        "startViewport": {"$ref": "#/$defs/viewport"},
+        "routeWaypoints": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/semanticWaypoint"}
+        },
+        "semanticEndViewport": {"$ref": "#/$defs/viewport"},
+        "safeEndViewport": {"$ref": "#/$defs/viewport"}
+      }
+    },
+    "semanticWaypoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["focus", "viewport"],
+      "properties": {
+        "focus": {"$ref": "#/$defs/text"},
+        "viewport": {"$ref": "#/$defs/viewport"}
+      }
+    },
+    "viewport": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "y", "width", "height"],
+      "properties": {
+        "x": {"type": "number", "minimum": 0, "maximum": 1},
+        "y": {"type": "number", "minimum": 0, "maximum": 1},
+        "width": {"type": "number", "exclusiveMinimum": 0, "maximum": 1},
+        "height": {"type": "number", "exclusiveMinimum": 0, "maximum": 1}
+      }
+    },
+    "callout": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/historicalQuoteIntent"
+        },
+        {
+          "$ref": "#/$defs/historicalQuoteCallout"
+        },
+        {
+          "$ref": "#/$defs/personIntroCallout"
+        },
+        {
+          "$ref": "#/$defs/termGlossCallout"
+        }
+      ]
+    },
+    "historicalQuoteIntent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "request", "anchorFocus"],
+      "properties": {
+        "kind": {"const": "historical-quote"},
+        "request": {"type": "string", "minLength": 1, "maxLength": 500, "pattern": "\\S"},
+        "anchorFocus": {"$ref": "#/$defs/text"}
+      }
+    },
+    "historicalQuoteCallout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "text", "citation", "sourceId", "sourceTitle", "citedTextSha256", "anchorFocus"],
+      "properties": {
+        "kind": {"const": "historical-quote"},
+        "text": {"$ref": "#/$defs/quoteText", "description": "上屏引文必须为中文；非中文原文须忠实翻译成中文，原文保留在现有来源记录中。"},
+        "citation": {"type": "string", "minLength": 1, "maxLength": 28, "pattern": "\\S"},
+        "sourceId": {"type": "string", "minLength": 1, "pattern": "\\S"},
+        "sourceTitle": {"type": "string", "minLength": 1, "pattern": "\\S"},
+        "citedTextSha256": {"$ref": "#/$defs/sha"},
+        "anchorFocus": {"$ref": "#/$defs/text"}
+      }
+    },
+    "personIntroCallout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "people", "anchorFocus"],
+      "properties": {
+        "kind": {"const": "person-intro"},
+        "people": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 2,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/personIntro"}
+        },
+        "anchorFocus": {"$ref": "#/$defs/text"}
+      }
+    },
+    "personIntro": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "brief"],
+      "properties": {
+        "name": {"$ref": "#/$defs/calloutHeading"},
+        "brief": {"$ref": "#/$defs/calloutBody"}
+      }
+    },
+    "termGlossCallout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "term", "gloss", "anchorFocus"],
+      "properties": {
+        "kind": {"const": "term-gloss"},
+        "term": {"$ref": "#/$defs/calloutHeading"},
+        "gloss": {"$ref": "#/$defs/calloutBody"},
+        "anchorFocus": {"$ref": "#/$defs/text"}
+      }
+    },
+    "continuity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["period", "location", "continuesPreviousScene", "subjects", "props", "carryToNext"],
+      "properties": {
+        "period": {"$ref": "#/$defs/text"},
+        "location": {"$ref": "#/$defs/text"},
+        "continuesPreviousScene": {"type": "boolean", "default": false},
+        "subjects": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/text"},
+          "uniqueItems": true
+        },
+        "props": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/text"},
+          "uniqueItems": true
+        },
+        "carryToNext": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["subjects", "props"],
+          "properties": {
+            "subjects": {"type": "array", "items": {"$ref": "#/$defs/text"}, "uniqueItems": true},
+            "props": {"type": "array", "items": {"$ref": "#/$defs/text"}, "uniqueItems": true}
+          }
+        }
+      }
+    },
+    "producer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["moduleId", "nodeId", "taskDigest", "inputs", "rules", "contract", "outputSha256"],
+      "properties": {
+        "moduleId": {"type": "string"},
+        "nodeId": {"type": "string"},
+        "taskDigest": {"$ref": "#/$defs/sha"},
+        "inputs": {"type": "array", "items": {"$ref": "#/$defs/sha"}, "uniqueItems": true},
+        "rules": {"type": "array", "items": {"$ref": "#/$defs/sha"}, "uniqueItems": true},
+        "contract": {"$ref": "#/$defs/sha"},
+        "outputSha256": {"$ref": "#/$defs/sha"}
+      }
+    },
+    "authoredImage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider",
+        "file",
+        "sha256",
+        "mimeType",
+        "width",
+        "height",
+        "drawingDigest",
+        "visual",
+        "promptFile",
+        "promptSha256"
+      ],
+      "allOf": [{"if":{"properties":{"provider":{"const":"openai-images"}},"required":["provider"]},"then":{"required":["model"]}}],
+      "properties": {
+        "provider": { "enum": ["image-gen", "openai-images"] },
+        "model": { "type": "string", "minLength": 1 },
+        "file": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "mimeType": {
+          "enum": [
+            "image/png",
+            "image/jpeg",
+            "image/webp"
+          ]
+        },
+        "width": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "drawingDigest": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "visual": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "packageId",
+            "version",
+            "profileId",
+            "profileDigest",
+            "referenceId"
+          ],
+          "properties": {
+            "packageId": {
+              "type": "string",
+              "minLength": 1
+            },
+            "version": {
+              "type": "string",
+              "minLength": 1
+            },
+            "profileId": {
+              "type": "string",
+              "minLength": 1
+            },
+            "profileDigest": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "referenceId": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "promptFile": {
+          "type": "string",
+          "minLength": 1
+        },
+        "promptSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      }
+    },
+    "effectAnchors": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^(0|[1-9][0-9]*)$"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "anchorFocus",
+          "x",
+          "y"
+        ],
+        "properties": {
+          "anchorFocus": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "x": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "y": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,106 @@
+{
+  "schemaVersion": "visual-style-v4",
+  "shared": {
+    "artDirection": [
+      "唯一画法是成熟电影化宋风轻Q历史国漫：人物、木构、桥船、器物和远景共用细而自然收束的深褐结构线、温润哑光色面和两至三级大块明暗；所有对象保持同等Q化程度，禁止人物与背景切换造型语言。",
+      "所有成年人物统一约5—5.5头身：头部明显略大、颈肩较窄、躯干与四肢适度缩短，轮廓柔和凝练；保留成年中国骨相、身份和克制神态，眼睛只适度放大，手势简化但结构可信，禁止幼儿化与萌系巨眼。",
+      "屋舍、桥船、树木、家具和器物在本集已定时代形制下同步概括：屋顶与飞檐略放大、楼体较紧凑、承重与道具组块更清楚，碎细节合并为可读形体；木、石、陶瓷等差异用选择性线条与绘画色面表达，不覆盖全画面纹理。保留前中远纵深，禁止写实背景承托卡通人物；参考不提供实体形制。",
+      "共用深青瓷、黛蓝、炭灰、豆青与木褐；将当前场景已有光照画成两至三级大块冷暖明暗。日光可用低饱和蓝灰表达，已有灯火可用局部琥珀色表达，不据此新增灯具、改定时段、天气、光向或明暗重点；避免全局黄褐罩染、无差别提亮和塑料高光。"
+    ],
+    "mediumFamilies": [
+      "cinematic-ink-color-comic"
+    ],
+    "fill": "matte-flat-color",
+    "fillFinish": "clean-matte-fill",
+    "shading": "cinematic-block-chiaroscuro",
+    "surfaceTreatment": "none",
+    "linework": {
+      "contourWeight": "medium",
+      "contourCharacter": "stable-soft-deep-ink",
+      "interiorDetail": "restrained-structural",
+      "finish": "natural-taper"
+    },
+    "palette": {
+      "whiteBalance": "warm-controlled",
+      "baseColors": [
+        "#D8D1BE",
+        "#7C8A78",
+        "#10272C",
+        "#173B42",
+        "#3A322A",
+        "#6B513E"
+      ],
+      "accentColors": [
+        "#C96B3D",
+        "#D99652",
+        "#D7B87C"
+      ],
+      "forbiddenCasts": [
+        "yellow-brown-wash",
+        "old-photo-sepia"
+      ]
+    },
+    "renderExclusions": [
+      "photorealism",
+      "commercial-anime",
+      "war-game-art",
+      "xianxia-art",
+      "moe-large-eyes",
+      "high-gloss-3d-rendering",
+      "plastic-gloss-rendering"
+    ]
+  },
+  "profiles": {
+    "fullframe-image": {
+      "characterRendering": {
+        "proportion": "adult-cartoon-5.0-5.5-heads",
+        "faceTreatment": "mature-guochao-guoman",
+        "colorTreatment": "cinematic-cel-matte",
+        "lineTreatment": "shared-linework"
+      },
+      "environmentRendering": {
+        "shapeLanguage": "rounded-block-historical-comic",
+        "finish": "shared-matte"
+      },
+      "typographyRendering": {
+        "glyphStyle": "plain-print",
+        "weight": "regular",
+        "finish": "flat-ink"
+      }
+    },
+    "bookend-image": {
+      "characterRendering": {
+        "proportion": "adult-cartoon-5.0-5.5-heads",
+        "faceTreatment": "mature-guochao-guoman",
+        "colorTreatment": "cinematic-cel-matte",
+        "lineTreatment": "shared-linework"
+      },
+      "environmentRendering": {
+        "shapeLanguage": "rounded-block-historical-comic",
+        "finish": "shared-matte"
+      },
+      "typographyRendering": {
+        "glyphStyle": "plain-print",
+        "weight": "regular",
+        "finish": "flat-ink"
+      }
+    },
+    "cover-image": {
+      "characterRendering": {
+        "proportion": "adult-cartoon-5.0-5.5-heads",
+        "faceTreatment": "mature-guochao-guoman",
+        "colorTreatment": "cinematic-cel-matte",
+        "lineTreatment": "shared-linework"
+      },
+      "environmentRendering": {
+        "shapeLanguage": "rounded-block-historical-comic",
+        "finish": "shared-matte"
+      },
+      "typographyRendering": {
+        "glyphStyle": "brush-kai",
+        "weight": "regular",
+        "finish": "flat-ink"
+      }
+    }
+  }
+}

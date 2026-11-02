@@ -1,0 +1,17 @@
+{
+  "kind": "module",
+  "id": "plan-program",
+  "runner": "ai",
+  "controllerEntry": "controller.json",
+  "slots": [],
+  "rules": [
+    "SKILL.md"
+  ],
+  "runtimeResources": [
+    "references/video-led.md",
+    "references/explainer-planning-method.md",
+    "../../runtime-config.mjs"
+  ],
+  "outputSchema": "result.schema.json",
+  "validator": "validate.mjs"
+}

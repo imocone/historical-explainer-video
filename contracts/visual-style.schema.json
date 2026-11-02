@@ -1,0 +1,358 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "shared",
+    "profiles"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "visual-style-v4"
+    },
+    "shared": {
+      "$ref": "#/$defs/shared"
+    },
+    "profiles": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "fullframe-image": {
+          "$ref": "#/$defs/profile"
+        },
+        "bookend-image": {
+          "$ref": "#/$defs/profile"
+        },
+        "cover-image": {
+          "$ref": "#/$defs/profile"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "hexColor": {
+      "type": "string",
+      "pattern": "^#[A-Fa-f0-9]{6}$"
+    },
+    "mediumFamily": {
+      "enum": [
+        "historical-illustration",
+        "historical-comic",
+        "edo-ukiyo-e-warrior-print",
+        "cinematic-ink-color-comic",
+        "animated-scene-illustration",
+        "youth-manga",
+        "mineral-ink-mural"
+      ]
+    },
+    "forbiddenCast": {
+      "enum": [
+        "yellow-brown-wash",
+        "old-photo-sepia"
+      ]
+    },
+    "renderExclusion": {
+      "enum": [
+        "photorealism",
+        "commercial-anime",
+        "ukiyo-e-imitation",
+        "war-game-art",
+        "xianxia-art",
+        "moe-large-eyes",
+        "high-gloss-3d-rendering",
+        "plastic-gloss-rendering"
+      ]
+    },
+    "linework": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contourWeight",
+        "contourCharacter",
+        "interiorDetail",
+        "finish"
+      ],
+      "properties": {
+        "contourWeight": {
+          "enum": [
+            "fine",
+            "medium",
+            "medium-bold",
+            "bold-graphic"
+          ]
+        },
+        "contourCharacter": {
+          "enum": [
+            "light-responsive-colored",
+            "stable-deep-ink",
+            "stable-soft-deep-ink"
+          ]
+        },
+        "interiorDetail": {
+          "enum": [
+            "essential-only",
+            "restrained-structural"
+          ]
+        },
+        "finish": {
+          "enum": [
+            "natural-taper",
+            "slight-hand-drawn-variation",
+            "dry-ink-edge-variation"
+          ]
+        }
+      }
+    },
+    "palette": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "whiteBalance",
+        "baseColors",
+        "accentColors",
+        "forbiddenCasts"
+      ],
+      "properties": {
+        "whiteBalance": {
+          "enum": [
+            "neutral",
+            "warm-controlled",
+            "cool-controlled"
+          ]
+        },
+        "baseColors": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 8,
+          "items": {
+            "$ref": "#/$defs/hexColor"
+          },
+          "uniqueItems": true
+        },
+        "accentColors": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 4,
+          "items": {
+            "$ref": "#/$defs/hexColor"
+          },
+          "uniqueItems": true
+        },
+        "forbiddenCasts": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 5,
+          "items": {
+            "$ref": "#/$defs/forbiddenCast"
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "shared": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artDirection",
+        "mediumFamilies",
+        "fill",
+        "fillFinish",
+        "shading",
+        "surfaceTreatment",
+        "linework",
+        "palette",
+        "renderExclusions"
+      ],
+      "properties": {
+        "artDirection": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 4,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 12,
+            "maxLength": 180,
+            "pattern": "^(?!\\s)(?!.*[\\r\\n]).*\\S$"
+          }
+        },
+        "mediumFamilies": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 3,
+          "items": {
+            "$ref": "#/$defs/mediumFamily"
+          },
+          "uniqueItems": true
+        },
+        "fill": {
+          "enum": [
+            "layered-matte-color",
+            "matte-flat-color",
+            "controlled-matte-color",
+            "matte-mineral-ink"
+          ]
+        },
+        "fillFinish": {
+          "enum": [
+            "subtle-painted-material",
+            "clean-matte-fill",
+            "subtle-bokashi-flat-fill",
+            "subtle-mineral-pigment-variation"
+          ]
+        },
+        "shading": {
+          "enum": [
+            "natural-cel-lighting",
+            "minimal-planar",
+            "cinematic-block-chiaroscuro",
+            "restrained-ink-wash"
+          ]
+        },
+        "surfaceTreatment": {
+          "enum": [
+            "none",
+            "washi-woodblock-grain",
+            "neutral-xuan-paper"
+          ]
+        },
+        "linework": {
+          "$ref": "#/$defs/linework"
+        },
+        "palette": {
+          "$ref": "#/$defs/palette"
+        },
+        "renderExclusions": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "items": {
+            "$ref": "#/$defs/renderExclusion"
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "characterRendering": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "proportion",
+        "faceTreatment",
+        "colorTreatment",
+        "lineTreatment"
+      ],
+      "properties": {
+        "proportion": {
+          "enum": [
+            "adult-semi-q-3.0-3.4-heads",
+            "adult-cartoon-5.0-5.5-heads",
+            "adult-natural"
+          ]
+        },
+        "faceTreatment": {
+          "enum": [
+            "mature-animated-illustration",
+            "natural-individual-differences",
+            "refined-japanese-musha-e",
+            "mature-chinese-comic",
+            "mature-guochao-guoman"
+          ]
+        },
+        "colorTreatment": {
+          "enum": [
+            "cel-lit-matte",
+            "matte-flat",
+            "controlled-matte-tonal-planes",
+            "crisp-bokashi-flat",
+            "matte-mineral",
+            "cinematic-cel-matte"
+          ]
+        },
+        "lineTreatment": {
+          "const": "shared-linework"
+        }
+      }
+    },
+    "environmentRendering": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "shapeLanguage",
+        "finish"
+      ],
+      "properties": {
+        "shapeLanguage": {
+          "enum": [
+            "cinematic-everyday-scene",
+            "rounded-block-historical-comic",
+            "cinematic-historical-comic",
+            "ukiyo-e-woodblock-scene",
+            "digital-ukiyo-e-scene",
+            "foreground-component-assembly",
+            "mineral-ink-mural",
+            "xuan-paper-ink-wash-scene"
+          ]
+        },
+        "finish": {
+          "enum": [
+            "shared-matte",
+            "shared-ink-color-matte",
+            "shared-mineral-matte"
+          ]
+        }
+      }
+    },
+    "typographyRendering": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "glyphStyle",
+        "weight",
+        "finish"
+      ],
+      "properties": {
+        "glyphStyle": {
+          "enum": [
+            "plain-print",
+            "modern-sans",
+            "modern-bold-block",
+            "brush-kai"
+          ]
+        },
+        "weight": {
+          "enum": [
+            "regular",
+            "bold",
+            "heavy"
+          ]
+        },
+        "finish": {
+          "const": "flat-ink"
+        }
+      }
+    },
+    "profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "characterRendering",
+        "environmentRendering",
+        "typographyRendering"
+      ],
+      "properties": {
+        "characterRendering": {
+          "$ref": "#/$defs/characterRendering"
+        },
+        "environmentRendering": {
+          "$ref": "#/$defs/environmentRendering"
+        },
+        "typographyRendering": {
+          "$ref": "#/$defs/typographyRendering"
+        }
+      }
+    }
+  }
+}

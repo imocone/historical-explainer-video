@@ -1,0 +1,21 @@
+{
+  "primitive": "ai-narration",
+  "projection": "artifact",
+  "reads": [
+    {
+      "kind": "artifact",
+      "role": "episode-brief"
+    },
+    {
+      "kind": "artifact",
+      "role": "program-plan"
+    }
+  ],
+  "writes": [
+    "script-package",
+    "opener-narration",
+    "publication",
+    "publication-text"
+  ],
+  "returnTo": []
+}

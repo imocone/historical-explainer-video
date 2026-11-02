@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["items"],
+  "properties": {
+    "items": {
+      "type": "array", "minItems": 2,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["beatId", "treatment"],
+        "properties": {
+          "beatId": {"type": "string", "pattern": "^B[0-9]{3}$"},
+          "treatment": {"type": "object"},
+          "featureResults": {"type": "object", "additionalProperties": {"type": "object"}}
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "kind": "module",
+  "id": "direct-episode",
+  "runner": "ai",
+  "controllerEntry": "controller.json",
+  "slots": [
+    {
+      "id": "body-template-catalog",
+      "majorVersion": 1,
+      "accepts": "template",
+      "cardinality": "many",
+      "selectionSource": "catalog",
+      "readRoles": [
+        "catalog"
+      ],
+      "optionalReadRoles": [
+        "cuePolicy"
+      ],
+      "writeTargets": [
+        "storyboard-visual-plan"
+      ]
+    }
+  ],
+  "rules": [
+    "SKILL.md"
+  ],
+  "runtimeResources": [
+    "references/whole-album-method.md",
+    "historical-context/README.md",
+    "historical-context/research-method.md",
+    "historical-context/research.schema.json",
+    "historical-context/handoff.mjs",
+    "references/period-appearance-method.md",
+    "../../templates/fullframe-narrative/references/scene-selection-method.md",
+    "references/beat-page-method.md",
+    "inspect-boundaries.mjs",
+    "lock-boundaries.mjs",
+    "inspect-authorability.mjs",
+    "authorability.mjs",
+    "step-locks.mjs",
+    "../../p3-task-view.mjs",
+    "../../task-step-lock.mjs",
+    "references/template-selection-method.md",
+    "../../explainer-template-selection.mjs",
+    "../../p3-sources.mjs",
+    "../../p3-sources.md"
+  ],
+  "outputSchema": "result.schema.json",
+  "validator": "validate.mjs"
+}

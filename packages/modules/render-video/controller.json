@@ -1,0 +1,35 @@
+{
+  "primitive": "program-render",
+  "projection": "artifact",
+  "reads": [
+    {
+      "role": "storyboard",
+      "kind": "projection"
+    },
+    {
+      "role": "narration-package",
+      "kind": "artifact"
+    },
+    {
+      "role": "source-assets",
+      "kind": "external-input"
+    },
+    {
+      "role": "visual-package",
+      "kind": "catalog"
+    },
+    {
+      "role": "video-plan",
+      "kind": "artifact"
+    },
+    {
+      "role": "video-manifest",
+      "kind": "artifact"
+    }
+  ],
+  "writes": [
+    "final-video",
+    "render-receipt"
+  ],
+  "returnTo": []
+}

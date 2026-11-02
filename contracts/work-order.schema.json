@@ -1,0 +1,204 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "required": ["moduleId"],
+        "properties": {"moduleId": {"enum": ["author-narration", "author-documentary-narration", "author-subtitles", "understand-episode", "direct-episode", "author-beat", "author-bookend"]}}
+      },
+      "then": {"required": ["scratchPath"]}
+    }
+  ],
+  "required": ["taskId", "executionId", "taskDigest", "subject", "workflowId", "stageId", "nodeId", "moduleId", "runner", "workflow", "workflowNode", "moduleManifest", "inputArtifactHashes", "inputs", "resolvedRules", "resolvedAssembly", "outputContract", "validator", "allowedWrite", "allowedReturnTargets", "candidatePath"],
+  "properties": {
+    "taskId": {"type": "string", "minLength": 1},
+    "executionId": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "taskDigest": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "subject": {"$ref": "#/$defs/subject"},
+    "workflowId": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "stageId": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "nodeId": {"type": "string", "minLength": 1},
+    "moduleId": {"type": "string", "minLength": 1},
+    "runner": {"const": "ai"},
+    "workflow": {"$ref": "#/$defs/resourceObject"},
+    "workflowNode": {"type": "object"},
+    "moduleManifest": {"$ref": "#/$defs/resourceObject"},
+    "inputArtifactHashes": {
+      "type": "array",
+      "items": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+      "uniqueItems": true
+    },
+    "inputs": {"type": "object"},
+    "resolvedRules": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["source", "sha256", "content"],
+        "properties": {
+          "source": {"type": "string", "minLength": 1},
+          "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+          "content": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "resolvedAssembly": {"$ref": "#/$defs/resolvedAssembly"},
+    "outputContract": {
+      "$ref": "#/$defs/resourceObject"
+    },
+    "validator": {"$ref": "#/$defs/resourcePath"},
+    "allowedWrite": {"type": "string", "minLength": 1},
+    "allowedReturnTargets": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "uniqueItems": true
+    },
+    "candidatePath": {"$ref": "#/$defs/path"},
+    "scratchPath": {"$ref": "#/$defs/path"}
+  },
+  "$defs": {
+    "path": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
+    },
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "id"],
+      "properties": {
+        "kind": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+        "id": {"type": "string", "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"}
+      }
+    },
+    "resourcePath": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "sha256"],
+      "properties": {
+        "source": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+      }
+    },
+    "resourceObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "sha256", "content"],
+      "properties": {
+        "source": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "content": {"type": "object"}
+      }
+    },
+    "assemblyResource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "source", "sha256"],
+      "properties": {
+        "role": {"type": "string", "minLength": 1},
+        "source": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "content": {}
+      }
+    },
+    "templateExample": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "source"],
+      "properties": {
+        "role": {"const": "examples"},
+        "source": {"type": "string", "minLength": 1}
+      }
+    },
+    "assemblyImplementation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["packageId", "kind", "majorVersion", "manifest", "resources"],
+      "properties": {
+        "packageId": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+        "kind": {"enum": ["template", "feature", "visual", "cover"]},
+        "majorVersion": {"type": "integer", "minimum": 1},
+        "packageVersion": {"type": "string", "minLength": 1},
+        "manifest": {"$ref": "#/$defs/assemblyResource"},
+        "resources": {
+          "type": "array"
+        }
+      },
+      "allOf": [{
+        "if": {"properties": {"kind": {"const": "template"}}, "required": ["kind"]},
+        "then": {"properties": {"resources": {"items": {"anyOf": [
+          {"$ref": "#/$defs/assemblyResource"},
+          {"$ref": "#/$defs/templateExample"}
+        ]}}}},
+        "else": {"properties": {"resources": {"items": {"$ref": "#/$defs/assemblyResource"}}}}
+      }]
+    },
+    "assemblySlot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "majorVersion", "accepts", "cardinality", "selectionSource", "readRoles", "optionalReadRoles", "writeTargets", "selection", "implementations"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+        "majorVersion": {"type": "integer", "minimum": 1},
+        "accepts": {"enum": ["template", "feature", "visual", "cover"]},
+        "cardinality": {"enum": ["one", "zero-or-one", "many"]},
+        "selectionSource": {"enum": ["catalog", "beat-template", "segment-template", "episode-features", "program-visual", "program-cover", "program-cover-vertical", "fixed"]},
+        "readRoles": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+        "optionalReadRoles": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+        "writeTargets": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+        "selection": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["source", "packageIds"],
+          "properties": {
+            "source": {"enum": ["catalog", "beat-template", "segment-template", "episode-features", "program-visual", "program-cover", "program-cover-vertical", "fixed"]},
+            "packageIds": {
+              "type": "array",
+              "items": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+              "uniqueItems": true
+            }
+          }
+        },
+        "implementations": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/assemblyImplementation"}
+        }
+      }
+    },
+    "resolvedAssembly": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "node", "module", "slots"],
+      "properties": {
+        "schemaVersion": {"const": "1.0"},
+        "node": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "moduleId"],
+          "properties": {
+            "id": {"type": "string", "minLength": 1},
+            "moduleId": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"}
+          }
+        },
+        "module": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "manifest", "controllerEntry", "slotContractSha256"],
+          "properties": {
+            "id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+            "manifest": {"$ref": "#/$defs/assemblyResource"},
+            "controllerEntry": {"$ref": "#/$defs/assemblyResource"},
+            "slotContractSha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+          }
+        },
+        "slots": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/assemblySlot"}
+        }
+      }
+    }
+  }
+}

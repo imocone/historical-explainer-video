@@ -1,0 +1,375 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "episodeId",
+    "templateId",
+    "selectionReason",
+    "incomingTransitions",
+    "spans"
+  ],
+  "properties": {
+    "incomingTransitions": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^(?:B|V)[0-9]{3}$"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "type",
+          "durationMs",
+          "reason"
+        ],
+        "properties": {
+          "type": {
+            "enum": [
+              "dissolve",
+              "dip-to-black"
+            ]
+          },
+          "durationMs": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1800
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          }
+        }
+      }
+    },
+    "episodeId": {
+      "type": "string",
+      "pattern": "^ep[0-9]{2,}$"
+    },
+    "templateId": {
+      "const": "cinematic-video"
+    },
+    "selectionReason": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "spans": {
+      "type": "array",
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "beatIds",
+          "storyChange",
+          "whyVideo",
+          "sourceRefs",
+          "mustNotInvent",
+          "shots",
+          "parts",
+          "firstFramePrompt",
+          "asset"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^V[0-9]{3}$"
+          },
+          "beatIds": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^B[0-9]{3}$"
+            }
+          },
+          "storyChange": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "whyVideo": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "sourceRefs": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "pattern": "^(?:C[0-9]{3,}|(?:F|R|E|SA)[0-9]{3})$"
+            }
+          },
+          "mustNotInvent": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "uniqueItems": true
+          },
+          "shots": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "durationMs",
+                "purpose",
+                "framing",
+                "startState",
+                "motion",
+                "endState"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^S[0-9]{2}$"
+                },
+                "durationMs": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 15000,
+                  "description": "目标镜头节奏；实际视频切点可调整，生成组及整段正文窗口固定，关键事件仍对应原Cue。"
+                },
+                "purpose": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "\\S"
+                },
+                "framing": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "\\S"
+                },
+                "startState": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "\\S"
+                },
+                "motion": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "\\S"
+                },
+                "endState": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "\\S"
+                }
+              }
+            }
+          },
+          "parts": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "shotIds",
+                "videoPrompt"
+              ],
+              "properties": {
+                "connection": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "type"
+                  ],
+                  "properties": {
+                    "type": {
+                      "enum": [
+                        "continue",
+                        "cut"
+                      ]
+                    },
+                    "trimReason": {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "\\S",
+                      "description": "仅确实必须从前组剪后结尾续接时填写原因；省略则引用前组原生成节点。"
+                    }
+                  }
+                },
+                "shotIds": {
+                  "type": "array",
+                  "minItems": 1,
+                  "uniqueItems": true,
+                  "items": {
+                    "type": "string",
+                    "pattern": "^S[0-9]{2}$"
+                  }
+                },
+                "videoPrompt": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "\\S"
+                }
+              }
+            }
+          },
+          "firstFramePrompt": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "asset": {
+            "$ref": "#/$defs/authoredImage"
+          }
+        }
+      }
+    },
+    "_producer": {
+      "$ref": "#/$defs/producer"
+    }
+  },
+  "$defs": {
+    "sha": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "producer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "moduleId",
+        "nodeId",
+        "taskDigest",
+        "inputs",
+        "rules",
+        "contract",
+        "outputSha256"
+      ],
+      "properties": {
+        "moduleId": {
+          "type": "string"
+        },
+        "nodeId": {
+          "type": "string"
+        },
+        "taskDigest": {
+          "$ref": "#/$defs/sha"
+        },
+        "inputs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/sha"
+          },
+          "uniqueItems": true
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/sha"
+          },
+          "uniqueItems": true
+        },
+        "contract": {
+          "$ref": "#/$defs/sha"
+        },
+        "outputSha256": {
+          "$ref": "#/$defs/sha"
+        }
+      }
+    },
+    "authoredImage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider",
+        "file",
+        "sha256",
+        "mimeType",
+        "width",
+        "height",
+        "drawingDigest",
+        "visual",
+        "promptFile",
+        "promptSha256"
+      ],
+      "allOf": [{"if":{"properties":{"provider":{"const":"openai-images"}},"required":["provider"]},"then":{"required":["model"]}}],
+      "properties": {
+        "provider": { "enum": ["image-gen", "openai-images"] },
+        "model": { "type": "string", "minLength": 1 },
+        "file": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "mimeType": {
+          "enum": [
+            "image/png",
+            "image/jpeg",
+            "image/webp"
+          ]
+        },
+        "width": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "drawingDigest": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "visual": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "packageId",
+            "version",
+            "profileId",
+            "profileDigest",
+            "referenceId"
+          ],
+          "properties": {
+            "packageId": {
+              "type": "string",
+              "minLength": 1
+            },
+            "version": {
+              "type": "string",
+              "minLength": 1
+            },
+            "profileId": {
+              "type": "string",
+              "minLength": 1
+            },
+            "profileDigest": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "referenceId": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "promptFile": {
+          "type": "string",
+          "minLength": 1
+        },
+        "promptSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,808 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "templateId",
+    "objective",
+    "continuity",
+    "appearance",
+    "moments",
+    "scene",
+    "assetRequests"
+  ],
+  "properties": {
+    "templateId": {
+      "const": "vox-explainer"
+    },
+    "objective": {
+      "$ref": "#/$defs/text"
+    },
+    "continuity": {
+      "$ref": "#/$defs/continuity"
+    },
+    "appearance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "art",
+        "tone",
+        "palette",
+        "fonts"
+      ],
+      "properties": {
+        "source": {
+          "const": "vox-explainer"
+        },
+        "art": {
+          "const": "editorial-cutout"
+        },
+        "tone": {
+          "const": "neutral"
+        },
+        "palette": {
+          "type": "object",
+          "required": [
+            "background",
+            "ink",
+            "paper",
+            "accent",
+            "secondary"
+          ],
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^#[0-9a-fA-F]{6}$"
+          }
+        },
+        "fonts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "body",
+            "title"
+          ],
+          "properties": {
+            "body": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "family",
+                "file",
+                "publicPath",
+                "weight",
+                "style",
+                "format"
+              ],
+              "properties": {
+                "family": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "file": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "publicPath": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "weight": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "style": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "format": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            },
+            "title": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "family",
+                "file",
+                "publicPath",
+                "weight",
+                "style",
+                "format"
+              ],
+              "properties": {
+                "family": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "file": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "publicPath": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "weight": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "style": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "format": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "moments": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "purpose",
+          "sourceRefs"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^M[0-9]{3}$"
+          },
+          "purpose": {
+            "$ref": "#/$defs/text"
+          },
+          "sourceRefs": {
+            "$ref": "#/$defs/sourceRefs"
+          }
+        }
+      }
+    },
+    "scene": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "markup",
+        "animation"
+      ],
+      "properties": {
+        "markup": {
+          "type": "string",
+          "minLength": 1
+        },
+        "animation": {
+          "type": "string"
+        },
+        "events": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "target",
+              "offsetSeconds"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^E[0-9]{3}$"
+              },
+              "target": {
+                "type": "string",
+                "pattern": "^M[0-9]{3}$"
+              },
+              "offsetSeconds": {
+                "type": "number"
+              }
+            }
+          }
+        }
+      }
+    },
+    "assetRequests": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/request"
+      }
+    },
+    "_producer": {
+      "$ref": "#/$defs/producer"
+    }
+  },
+  "$defs": {
+    "text": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "continuity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "period",
+        "location",
+        "subjects",
+        "props"
+      ],
+      "properties": {
+        "period": {
+          "$ref": "#/$defs/text"
+        },
+        "location": {
+          "$ref": "#/$defs/text"
+        },
+        "subjects": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        },
+        "props": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        },
+        "carryToNext": {
+          "type": "object",
+          "description": "可选的后续复现提示，供阅读完整正文的作者参考，不代表下一正文段自动继承。",
+          "additionalProperties": false,
+          "required": [
+            "subjects",
+            "props"
+          ],
+          "properties": {
+            "subjects": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "$ref": "#/$defs/text"
+              }
+            },
+            "props": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "$ref": "#/$defs/text"
+              }
+            }
+          }
+        }
+      }
+    },
+    "sourceRefs": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/sourceRef"
+      }
+    },
+    "sourceRef": {
+      "type": "string",
+      "pattern": "^(?:C[0-9]{3,}|(?:F|R|E|SA)[0-9]{3})$"
+    },
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "requestId",
+        "purpose",
+        "sourceRefs",
+        "mustNotInvent",
+        "visualBrief",
+        "exactTexts"
+      ],
+      "properties": {
+        "requestId": {
+          "$ref": "#/$defs/requestId"
+        },
+        "referenceImageId": {
+          "$ref": "#/$defs/requestId",
+          "description": "本段已完成的对象原图AR编号；新姿态或视角沿此图保持身份。修图保留本请求asset，入口自动携带待修改原图。"
+        },
+        "transparentBackground": {
+          "type": "boolean",
+          "default": true,
+          "description": "只选择背景是否透明；true为透明，false为不透明，不决定构图或图件粒度。省略时为true。"
+        },
+        "purpose": {
+          "$ref": "#/$defs/text"
+        },
+        "sourceRefs": {
+          "$ref": "#/$defs/sourceRefs"
+        },
+        "mustNotInvent": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        },
+        "visualBrief": {
+          "$ref": "#/$defs/visualBrief"
+        },
+        "exactTexts": {
+          "type": "array",
+          "minItems": 0,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        },
+        "asset": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/authoredExplainerImage"
+            },
+            {
+              "$ref": "#/$defs/sourceExplainerImage"
+            }
+          ]
+        },
+        "sourceAssetId": {
+          "type": "string",
+          "pattern": "^SA[0-9]{3}$",
+          "description": "直接使用当前登记原始图片；省略时按原生图请求处理。原件不随appearance重绘。"
+        }
+      }
+    },
+    "requestId": {
+      "type": "string",
+      "pattern": "^AR[0-9]{3}$"
+    },
+    "visualBrief": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "composition"
+      ],
+      "properties": {
+        "styleReference": {
+          "type": "string",
+          "enum": ["general", "terrain"],
+          "default": "general",
+          "description": "按本张图所需形态选择画法说明，不按整段题材选择。局部地貌、剖面、山口遮挡及地形操作情境使用terrain，普通讲解同样可选；人物、器物与普通情境使用general。两者共用画风参考图，具体构图由本件蓝图决定。省略时使用general，不按文字关键词猜测。"
+        },
+        "firstVisualObject": {
+          "$ref": "#/$defs/text"
+        },
+        "subjects": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        },
+        "actionOrChange": {
+          "$ref": "#/$defs/text"
+        },
+        "relation": {
+          "$ref": "#/$defs/text"
+        },
+        "visibleResult": {
+          "$ref": "#/$defs/text"
+        },
+        "supportingEvidence": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/supportingEvidence"
+          }
+        },
+        "readingPath": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/text"
+          }
+        },
+        "composition": {
+          "$ref": "#/$defs/text"
+        }
+      },
+      "description": "描述这张图片实际需要的构图与表现；其它字段按需使用，不要求每张图片都包含动作、关系、结果或阅读顺序。"
+    },
+    "supportingEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "description",
+        "sourceRefs"
+      ],
+      "properties": {
+        "description": {
+          "$ref": "#/$defs/text"
+        },
+        "sourceRefs": {
+          "$ref": "#/$defs/sourceRefs"
+        }
+      }
+    },
+    "authoredExplainerImage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider",
+        "file",
+        "sha256",
+        "mimeType",
+        "width",
+        "height",
+        "explainerPlacement",
+        "drawingDigest",
+        "promptFile",
+        "promptSha256",
+        "appearance"
+      ],
+      "allOf": [{"if":{"properties":{"provider":{"const":"openai-images"}},"required":["provider"]},"then":{"required":["model"]}}],
+      "properties": {
+        "provider": { "enum": ["image-gen", "openai-images"] },
+        "model": { "type": "string", "minLength": 1 },
+        "file": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "mimeType": {
+          "const": "image/png"
+        },
+        "width": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "explainerPlacement": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "contentBounds"
+          ],
+          "properties": {
+            "contentBounds": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "x",
+                "y",
+                "width",
+                "height"
+              ],
+              "properties": {
+                "x": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "y": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "width": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "maximum": 1
+                },
+                "height": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "maximum": 1
+                }
+              }
+            },
+            "anchors": {
+              "type": "object",
+              "propertyNames": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+              },
+              "additionalProperties": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "x",
+                  "y"
+                ],
+                "properties": {
+                  "x": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "y": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              }
+            }
+          }
+        },
+        "drawingDigest": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "promptFile": {
+          "type": "string",
+          "minLength": 1
+        },
+        "promptSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "appearance": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "source",
+            "art",
+            "tone",
+            "digest"
+          ],
+          "properties": {
+            "source": {
+              "const": "vox-explainer"
+            },
+            "art": {
+              "const": "editorial-cutout"
+            },
+            "tone": {
+              "const": "neutral"
+            },
+            "digest": {
+              "$ref": "#/$defs/sha"
+            }
+          }
+        }
+      }
+    },
+    "sha": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "sourceExplainerImage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "file",
+        "sha256",
+        "width",
+        "height",
+        "explainerPlacement",
+        "provider",
+        "mimeType",
+        "source"
+      ],
+      "properties": {
+        "file": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "width": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "explainerPlacement": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "contentBounds"
+          ],
+          "properties": {
+            "contentBounds": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "x",
+                "y",
+                "width",
+                "height"
+              ],
+              "properties": {
+                "x": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "y": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "width": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "maximum": 1
+                },
+                "height": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "maximum": 1
+                }
+              }
+            },
+            "anchors": {
+              "type": "object",
+              "propertyNames": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9_-]*$"
+              },
+              "additionalProperties": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "x",
+                  "y"
+                ],
+                "properties": {
+                  "x": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "y": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              }
+            }
+          }
+        },
+        "provider": {
+          "const": "source-asset"
+        },
+        "mimeType": {
+          "enum": [
+            "image/png",
+            "image/jpeg"
+          ]
+        },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "mediaType",
+            "path",
+            "sha256",
+            "sourceCitation",
+            "creator",
+            "date",
+            "rightsStatus",
+            "usageNotes"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^SA[0-9]{3}$"
+            },
+            "mediaType": {
+              "enum": [
+                "document",
+                "photo",
+                "artifact",
+                "video",
+                "audio",
+                "other"
+              ]
+            },
+            "path": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "^sources/(?!\\.\\.(?:/|$))(?!.*?/\\.\\.(?:/|$))[^/].*$"
+            },
+            "sha256": {
+              "$ref": "#/$defs/sha"
+            },
+            "sourceCitation": {
+              "type": "string",
+              "minLength": 1
+            },
+            "creator": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "minLength": 1
+            },
+            "date": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "minLength": 1
+            },
+            "rightsStatus": {
+              "enum": [
+                "public-domain",
+                "licensed",
+                "permission-granted",
+                "restricted",
+                "unknown"
+              ]
+            },
+            "usageNotes": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
+    "producer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "moduleId",
+        "nodeId",
+        "taskDigest",
+        "inputs",
+        "rules",
+        "contract",
+        "outputSha256"
+      ],
+      "properties": {
+        "moduleId": {
+          "type": "string"
+        },
+        "nodeId": {
+          "type": "string"
+        },
+        "taskDigest": {
+          "$ref": "#/$defs/sha"
+        },
+        "inputs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/sha"
+          }
+        },
+        "rules": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/sha"
+          }
+        },
+        "contract": {
+          "$ref": "#/$defs/sha"
+        },
+        "outputSha256": {
+          "$ref": "#/$defs/sha"
+        }
+      }
+    }
+  }
+}

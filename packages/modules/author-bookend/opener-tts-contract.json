@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "2.0",
+  "provider": "minimax",
+  "model": "speech-2.8-hd",
+  "speechRate": 1.1,
+  "volume": 1.0,
+  "pitch": 0,
+  "emotion": "auto",
+  "languageBoost": "Chinese",
+  "sampleRate": 32000,
+  "channels": 1,
+  "rawFormat": "mp3",
+  "subtitleEnable": false,
+  "timingProvider": "video-captioner",
+  "timingPrimaryModel": "JIANYING",
+  "timingFallbackModel": "BIJIAN"
+}

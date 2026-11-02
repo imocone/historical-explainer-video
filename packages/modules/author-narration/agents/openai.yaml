@@ -1,0 +1,4 @@
+interface:
+  display_name: "口播创作"
+  short_description: "按P0类型采用通用或时政解说方法，收齐三路正文、开场与题图后整套择优与事实核对"
+  default_prompt: "使用 $author-narration 按现行 SKILL.md 读取P0类型并采用对应正文方法，执行当前已授权的综合解说P1工作单，在获准范围内完成交付，到P1停止。"

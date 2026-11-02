@@ -1,0 +1,54 @@
+{
+  "kind": "cover",
+  "id": "type-first-editorial",
+  "version": "1.0.0",
+  "catalog": {
+    "displayName": {
+      "en": "Type First Editorial",
+      "zh": "文字优先编辑封面"
+    },
+    "purpose": "各题材共用的文字优先封面：简洁、暗沉的满幅配图承托米白与暖金大字，横版16:9与竖版3:4各自构图。减少无关元素和细碎刻画，保留必要人物、动作与自然层次；画法和字体接节目Visual。",
+    "rejectWhen": "不用于无字纯场景图或沿用旧系列栏、A/B/C固定骨架；样图只示范图文层级，不提供本集人物、事件或场景。"
+  },
+  "implements": [
+    {
+      "moduleId": "author-narration",
+      "slotId": "cover-design",
+      "majorVersion": 1
+    },
+    {
+      "moduleId": "author-documentary-narration",
+      "slotId": "cover-design",
+      "majorVersion": 1
+    },
+    {
+      "moduleId": "produce-covers",
+      "slotId": "cover-design",
+      "majorVersion": 1
+    },
+    {
+      "moduleId": "author-narration",
+      "slotId": "vertical-cover-design",
+      "majorVersion": 1
+    },
+    {
+      "moduleId": "author-documentary-narration",
+      "slotId": "vertical-cover-design",
+      "majorVersion": 1
+    },
+    {
+      "moduleId": "produce-covers",
+      "slotId": "vertical-cover-design",
+      "majorVersion": 1
+    }
+  ],
+  "verticalCoverPackageId": "type-first-editorial",
+  "coverRules": [
+    "cover-rules.json"
+  ],
+  "examples": [
+    "examples/README.md",
+    "examples/type-first-youtube.png",
+    "examples/type-first-vertical.png"
+  ]
+}

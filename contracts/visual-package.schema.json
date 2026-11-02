@@ -1,0 +1,170 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "kind",
+    "id",
+    "version",
+    "catalog",
+    "implements",
+    "productionProfiles"
+  ],
+  "properties": {
+    "kind": {
+      "const": "visual"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "catalog": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["displayName", "purpose", "rejectWhen"],
+      "properties": {
+        "displayName": {"type": "string", "minLength": 1},
+        "purpose": {"type": "string", "minLength": 1},
+        "rejectWhen": {"type": "string", "minLength": 1}
+      }
+    },
+    "implements": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/implementation"},
+      "uniqueItems": true
+    },
+    "style": {
+      "$ref": "#/$defs/path"
+    },
+    "productionProfiles": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "fullframe-image": {"$ref": "#/$defs/profile"},
+        "bookend-image": {"$ref": "#/$defs/profile"},
+        "cover-image": {"$ref": "#/$defs/profile"}
+      }
+    },
+    "render": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tokens"],
+      "properties": {
+        "tokens": {"$ref": "#/$defs/path"}
+      }
+    },
+    "masterReference": {
+      "$ref": "#/$defs/reference"
+    },
+    "supplementaryReferences": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 4,
+      "items": {"$ref": "#/$defs/reference"}
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "implementation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["moduleId", "slotId", "majorVersion"],
+      "properties": {
+        "moduleId": {"$ref": "#/$defs/id"},
+        "slotId": {"$ref": "#/$defs/id"},
+        "majorVersion": {"type": "integer", "minimum": 1}
+      }
+    },
+    "path": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
+    },
+    "profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profileId"],
+      "properties": {
+        "profileId": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        },
+        "referenceStyleScopes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "palette",
+              "linework",
+              "fill-finish",
+              "surface-treatment",
+              "environment-rendering",
+              "character-proportion",
+              "typography-shape"
+            ]
+          }
+        }
+      }
+    },
+    "templateProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "profileId",
+        "style",
+        "references"
+      ],
+      "properties": {
+        "profileId": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        },
+        "referenceStyleScopes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "palette",
+              "linework",
+              "fill-finish",
+              "surface-treatment",
+              "environment-rendering",
+              "character-proportion",
+              "typography-shape"
+            ]
+          }
+        },
+        "style": {
+          "$ref": "#/$defs/path"
+        },
+        "references": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 5,
+          "items": {
+            "$ref": "#/$defs/reference"
+          }
+        }
+      }
+    },
+    "reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "path"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "path": {"$ref": "#/$defs/path"}
+      }
+    }
+  }
+}

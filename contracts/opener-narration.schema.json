@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "P1 opener narration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "openerNarration", "_producer"],
+  "properties": {
+    "schemaVersion": {"const": "3.0"},
+    "openerNarration": {"type": "string", "minLength": 1, "pattern": "\\S"},
+    "_producer": {"$ref": "#/$defs/producer"}
+  },
+  "$defs": {
+    "sha": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "producer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["moduleId", "nodeId", "taskDigest", "inputs", "rules", "contract", "outputSha256"],
+      "properties": {
+        "moduleId": {"enum": ["author-narration", "author-documentary-narration"]},
+        "nodeId": {"enum": ["author-narration", "author-documentary-narration"]},
+        "taskDigest": {"$ref": "#/$defs/sha"},
+        "inputs": {"type": "array", "items": {"$ref": "#/$defs/sha"}, "uniqueItems": true},
+        "rules": {"type": "array", "items": {"$ref": "#/$defs/sha"}, "uniqueItems": true},
+        "contract": {"$ref": "#/$defs/sha"},
+        "outputSha256": {"$ref": "#/$defs/sha"}
+      }
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "kind": "module",
+  "id": "plan-historical-documentary",
+  "runner": "ai",
+  "controllerEntry": "controller.json",
+  "slots": [],
+  "rules": ["SKILL.md"],
+  "runtimeResources": ["references/documentary-planning-method.md"],
+  "outputSchema": "result.schema.json",
+  "validator": "validate.mjs"
+}

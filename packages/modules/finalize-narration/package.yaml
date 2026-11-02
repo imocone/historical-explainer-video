@@ -1,0 +1,18 @@
+{
+  "kind": "module",
+  "id": "finalize-narration",
+  "runner": "program",
+  "controllerEntry": "controller.json",
+  "programEntry": "run.mjs",
+  "slots": [],
+  "rules": [
+    "../../program-utils.mjs",
+    "../../workspace-paths.mjs",
+    "../author-subtitles/subtitle-timing.mjs",
+    "../author-subtitles/validate.mjs",
+    "../render-video/runtime/media-process.mjs",
+    "audio-delivery-contract.json",
+    "subtitle-contract.json"
+  ],
+  "outputSchema": "../../../contracts/narration-package.schema.json"
+}

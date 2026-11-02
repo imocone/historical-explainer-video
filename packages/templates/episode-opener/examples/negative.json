@@ -1,0 +1,101 @@
+{
+  "name": "single-hook-opener-rejections",
+  "cases": [
+    {
+      "name": "抽象概念三连",
+      "violation": "片头只说门路收窄、旧积累占先、新入口有限；事实没有错，但听众听不见任何人、动作、物件或代价",
+      "owner": "episode-opener",
+      "expected": "P1从正文核心内容中提炼具体行动、处境、关系、过程、结果或代价，用一句普通话说清其中值得追问的一点；隐藏画面后仍能听懂为什么值得继续看"
+    },
+    {
+      "name": "刺激细节抢走正文中心",
+      "violation": "片头只说美国舰炮能打到江户城、日本连一艘军舰都没有；差距很强，也解释了幕府为何行动，却没有点中正文最终讲出的幕府为什么不再独自决定日本的国家方向",
+      "owner": "episode-opener",
+      "expected": "回到冻结正文的中心关系，把造成变化的条件与反常结果压成同一个问题或判断；支撑压力只有同时点中中心关系时才能进入片头"
+    },
+    {
+      "name": "疑问建立在陌生名词上",
+      "violation": "片头问佩里没有征服日本，幕府为何先失去独揽国事的权力；听众若不知道佩里、幕府和独揽国事分别是什么，就无法先看见反常，再产生好奇",
+      "owner": "episode-opener",
+      "expected": "删去不必要的姓名，并把必须保留的角色说明白，例如写成‘统治日本的幕府’；让听众先听懂具体处境或问题，再暂缓原因"
+    },
+    {
+      "name": "时代和对象悬空",
+      "violation": "flashbackLine只说“有人还没进考场，家里的田已经卖了”；观众可能先想到高考，也不知道这是进京科举",
+      "owner": "episode-opener",
+      "expected": "P1在同一句补足最小必要锚点，例如“想进京参加科举，有人却先卖掉了家里的田”；不得靠画面替口播说明时代和对象"
+    },
+    {
+      "name": "有细节但没有钩子",
+      "violation": "flashbackLine写成“有人卖了田产，春末才回到家，秋天又要上路”；每个细节都具体，但彼此只是并列，听众还不知道最反常、最值得追问的是什么",
+      "owner": "episode-opener",
+      "expected": "P1直接说出核心冲突；只听这一句也能听懂时代、目标、反常结果或代价"
+    },
+    {
+      "name": "三横后又加内容",
+      "violation": "作者增加titleCard、summaryLine或episodePromise，让三横结束后继续停留或说话",
+      "owner": "episode-opener",
+      "expected": "合同直接拒绝多余字段；整个片头只有flashbackLine一句口播，三横结束立即进入正片"
+    },
+    {
+      "name": "问题没有正文答案",
+      "violation": "flashbackLine提出的问题只是漂亮悬念，已批准正文没有给出可核验的回答",
+      "owner": "episode-opener",
+      "expected": "退回片头创作；问题必须来自正文真正解释的中心内容，不能用来源里有但正文未覆盖的答案"
+    },
+    {
+      "name": "空悬念代替具体钩子",
+      "violation": "flashbackLine只说“这件事背后的真相超出所有人想象”，没有主体、行动、处境、结果或观众能定位的问题",
+      "owner": "episode-opener",
+      "expected": "P1改成不靠情绪词也成立的具体行动、处境、关系、过程、结果或代价；可以陈述，也可以只问一个正文立即推进的问题"
+    },
+    {
+      "name": "主题后面加为什么",
+      "violation": "flashbackLine只问“幕府为什么会衰落”或“这件事为什么改变历史”；听众听到了题目，却没有听到具体行动、处境、关系或过程，也不知道哪一点值得追问",
+      "owner": "episode-opener",
+      "expected": "P1从正文核心内容中提炼冷听可懂的具体行动、处境、关系或过程，写清其中值得追问的一点；只有故事确有反差时才用两项事实，不强套反差因果，也不强制藏答案"
+    },
+    {
+      "name": "三张闪回图同义重复",
+      "violation": "O01 至 O03 只是换一种说法重复同一画面，没有共同表达 flashbackLine 的三个观察面",
+      "owner": "episode-opener",
+      "expected": "固定保留 O01/O02/O03 三张图，分别选择同一句中行动、处境、关系或过程的三个可见观察面，共同表达钩子；不能把一句拆成三句旁白"
+    },
+    {
+      "name": "作者填写三横带字段",
+      "violation": "成果增加 climax、strips、mainQuestion 或横带标签，形成第二份横带作者真源",
+      "owner": "episode-opener",
+      "expected": "合同拒绝这些字段；模板只按 O01/O02/O03 自动派生三横带"
+    },
+    {
+      "name": "闪回原图预制文字暗部",
+      "violation": "visualBrief 要求在文字侧烘焙渐变阴影、黑块、暗角或大面积低照度留白",
+      "owner": "episode-opener",
+      "expected": "P4 作者只生成完整、均匀曝光的 16:9 原图；文字可读性由 P4 随文字侧翻转的独立遮罩承担"
+    },
+    {
+      "name": "屏幕文字新增事实",
+      "violation": "screenLines 出现正文和来源都没有的年份、人物或结论",
+      "owner": "episode-opener",
+      "expected": "screenLines 必须保持正文与来源可追溯，不得新增事实"
+    },
+    {
+      "name": "屏幕短标签截断语义",
+      "violation": "三组screenLines中有一组只写“百姓却”或“已经”，虽然来自flashbackLine，却没有独立表达可见的人、物、动作或结果",
+      "owner": "episode-opener",
+      "expected": "重新切分同一句，只保留能独立看懂的短语；不得为了凑满三组而把转折词或未完成语义单独上屏"
+    },
+    {
+      "name": "钩子超出真实一口气容量",
+      "violation": "flashbackLine去除空白与标点后超过30个可读单位、写成两个完整句子，或塞入两个以上问题",
+      "owner": "episode-opener",
+      "expected": "P1在付费TTS前重写成最多30个可读单位的一句最强信息缺口；P4接纳仍以真实TTS时长不超过实际片头80%裁决，不得靠加速或拉长模板补救"
+    },
+    {
+      "name": "作者写入生产和动效参数",
+      "violation": "成果增加 audio、tts、frame、color、coordinate、camera、easing、transition 或 provider 字段",
+      "owner": "episode-opener",
+      "expected": "合同拒绝这些字段；下游实现不属于当前片头候选"
+    }
+  ]
+}

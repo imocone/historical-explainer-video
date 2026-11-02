@@ -1,0 +1,22 @@
+[
+  {
+    "file": "room.png",
+    "tool": "image_gen.imagegen",
+    "transparent_background": false,
+    "prompt": "Create a 16:9 widescreen cinematic photorealistic teaching still, no text, no captions, no graphic overlays, no frame. Fictional anonymous late nineteenth century European room, subdued warm brown and grey palette, believable natural window light from left. Wide complete room with connected wooden floor, table, chair legs, rear wall, a closed wooden door at right rear, and window at left. An anonymous long-faced middle-aged man in a brown grey coat sits slightly right of center at a wooden desk. The narrative is hesitation BEFORE accepting a letter: his right hand is suspended immediately above and short of a plain closed cream envelope lying flat on the tabletop, visibly separated by an unmistakable small gap. He looks down at the envelope. His other hand rests quietly. Show both hands, envelope, face and tabletop clearly without obstruction. Place this whole action cluster near the center, x about 0.45 to 0.65 and y about 0.35 to 0.67; keep the crucial hands and envelope well above the bottom quarter of the image so a moderate camera crop retains them. Full room occupies the whole composition; left side shows an empty chair and floor. Quiet modest period props subordinate to the hand-envelope gap. Emotion restrained, no melodramatic pose. Freeze one coherent physical moment. This is an original fictional teaching illustration, not a named historical person or event. Deliver landscape 16:9."
+  },
+  {
+    "file": "corridor.png",
+    "tool": "image_gen.imagegen",
+    "transparent_background": false,
+    "reference": "room.png",
+    "prompt": "Create a SECOND ORIGINAL 16:9 photorealistic cinematic teaching still. Use reference only for period architecture, warm restrained browns and natural lighting; show the corridor OUTSIDE that room, a different location, a DISTINCT messenger, no desk, no seated man. Complete continuous wooden corridor, floor boards and wall visibly connect left and right. A large visibly CLOSED solid wood door at x 0.25-0.46, y 0.15-0.78, with handle at left side. An anonymous square-faced messenger in modest late nineteenth century brown outdoor jacket waits near the RIGHT edge, entire figure occupying x 0.74 to 0.84 and y 0.21 to 0.78. Both EMPTY hands visible, no letter or parcel, posture quietly tired with shoulders a little dropped, head directed toward the closed door. No other people. This spatial layout is mandatory: messenger must be wholly to the right of normalized x 0.70, so a crop showing only left two thirds initially excludes him; CLOSED door is prominent in left portion. Corridor perspective, floor and wall remain unbroken across the gap, natural light from far right but no luminous doorway. Keep man and door equally plausible physical scale. Enough breathing room beyond his right elbow. No text, no signage, no overlays, no ghostlike figure, no dramatic effects. Freeze a coherent waiting moment. Fictional teaching scene, not a historical source. Landscape widescreen 16:9."
+  },
+  {
+    "file": "../../effects/assets/office.png",
+    "tool": "image_gen.imagegen",
+    "transparent_background": false,
+    "reference": "修正前的office.png",
+    "prompt": "Precisely repair anatomy in this image, retaining the same whole 16:9 composition, man, face, clothing, lighting, desk, letter, room, props and period style. This man currently has THREE hands. Keep ONLY TWO natural hands: his right hand supporting his chin, connected to its existing raised right forearm; his left hand gripping the lower left edge of the letter, connected naturally to its existing lower left forearm. REMOVE the extraneous third hand/wrist/cuff resting near the lower right desk edge at normalized x approximately 0.73, y approximately 0.71. Replace that tiny area with the plausible desk/chair/jacket background behind it. Do not remove or alter the essential chin hand or letter hand. Carefully ensure exactly two arms and two hands with correct bodily connections. No other changes, no new objects, no text. Preserve landscape 16:9."
+  }
+]

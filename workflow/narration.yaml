@@ -1,0 +1,16 @@
+{
+  "id": "narration",
+  "subjectKind": "episode",
+  "stages": {
+    "p1": "author-narration",
+    "p2": "synthesize-narration"
+  },
+  "nodes": [
+    {"id": "author-narration", "moduleId": "author-narration", "scope": "subject", "condition": "historical-explainer"},
+    {"id": "author-documentary-narration", "after": "author-narration", "moduleId": "author-documentary-narration", "scope": "subject", "condition": "historical-documentary"},
+    {"id": "produce-covers", "after": "author-documentary-narration", "moduleId": "produce-covers", "scope": "subject", "condition": "always"},
+    {"id": "synthesize-narration", "after": "produce-covers", "moduleId": "synthesize-narration", "scope": "subject", "condition": "always"},
+    {"id": "author-subtitles", "after": "synthesize-narration", "moduleId": "author-subtitles", "scope": "subject", "condition": "always"},
+    {"id": "finalize-narration", "after": "author-subtitles", "moduleId": "finalize-narration", "scope": "subject", "condition": "always"}
+  ]
+}
