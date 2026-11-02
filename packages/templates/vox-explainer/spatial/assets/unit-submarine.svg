@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 170 160">
+<!-- AbsoluteUnits / letstalkaboutdune, CC BY 4.0; hand-redrawn and adapted. See ../docs/resources.md. -->
+<g stroke-linecap="round" stroke-linejoin="round">
+ <path d="M12 125Q7 116 23 113L141 103Q154 102 162 109Q166 112 163 118Q161 124 148 128L29 140Q17 140 12 133Z" fill="#6E7F8D" stroke="#303A37" stroke-width="1.05"/>
+ <path d="M14 120Q21 115 31 115L142 105Q153 104 160 110L152 114L30 127Q20 128 14 124Z" fill="#9EAAB4" stroke="none" stroke-width="0"/>
+ <path d="M15 127Q21 132 30 132L149 120L162 113L159 122L148 128L29 140L17 136Z" fill="#4D5D6A" stroke="#303A37" stroke-width="0.6"/>
+ <path d="M29 134L148 122L158 118L151 125L29 138Z" fill="currentColor" stroke="#303A37" stroke-width="0.5"/>
+ <path d="M31 138L147 127" fill="none" stroke="#2D3A44" stroke-width="0.7"/>
+ <path d="M12 121L3 114L3 135L15 129Z" fill="#4D5861" stroke="#303A37" stroke-width="0.75"/><path d="M5 118L11 122L11 128L5 131Z" fill="#85939F" stroke="none" stroke-width="0"/>
+ <path d="M136 106L142 93L147 94L149 105Z" fill="#4D5861" stroke="#303A37" stroke-width="0.7"/><path d="M141 103L144 96L146 104Z" fill="#A2AFB9" stroke="none" stroke-width="0"/>
+ <path d="M25 117L137 106L145 110L32 122Z" fill="#7A8996" stroke="#303A37" stroke-width="0.65"/>
+ <path d="M32 119L135 109" fill="none" stroke="#B4C4D1" stroke-width="0.55"/><path d="M39 116L41 130M61 114L63 128M116 108L119 122M139 107L144 119" fill="none" stroke="#4D5D6A" stroke-width="0.55"/>
+ <path d="M75 110L76 93L81 89L90 88L95 108L88 113Z" fill="#606F7C" stroke="#303A37" stroke-width="0.85"/>
+ <path d="M77 93L89 91L91 107L78 109Z" fill="#8795A0" stroke="#303A37" stroke-width="0.5"/>
+ <path d="M77 96L90 94L91 99L77 101Z" fill="currentColor" stroke="#303A37" stroke-width="0.45"/>
+ <path d="M81 89V77Q81 74 85 74H91M88 89V82L95 81" fill="none" stroke="#4D5861" stroke-width="1.7"/><path d="M82 87V78L86 77" fill="none" stroke="#A2AFB9" stroke-width="0.55"/>
+ <path d="M53 114L61 113L65 115L56 117Z" fill="#A9BBCA" stroke="#303A37" stroke-width="0.55"/><path d="M114 108L124 107L128 110L117 111Z" fill="#A5B7C5" stroke="#303A37" stroke-width="0.55"/>
+ <path d="M56 114L59 115M118 108L122 109" fill="none" stroke="#4D5861" stroke-width="0.5"/>
+ <circle cx="34" cy="130" r="0.5" fill="#C4C5A7" stroke="none" stroke-width="0"/><circle cx="40" cy="129.39" r="0.5" fill="#C4C5A7" stroke="none" stroke-width="0"/><circle cx="46" cy="128.78" r="0.5" fill="#C4C5A7" stroke="none" stroke-width="0"/><circle cx="52" cy="128.17" r="0.5" fill="#C4C5A7" stroke="none" stroke-width="0"/><circle cx="58" cy="127.56" r="0.5" fill="#C4C5A7" stroke="none" stroke-width="0"/><circle cx="64" cy="126.95" r="0.5" fill="#C4C5A7" stroke="none" stroke-width="0"/><circle cx="70" cy="126.34" r="0.5" fill="#C4C5A7" stroke="none" stroke-width="0"/><circle cx="76" cy="125.73" r="0.5" fill="#C4C5A7" stroke="none" stroke-width="0"/><circle cx="82" cy="125.12" r="0.5" fill="#C4C5A7" stroke="none" stroke-width="0"/><circle cx="88" cy="124.51" r="0.5" fill="#C4C5A7" stroke="none" stroke-width="0"/><circle cx="94" cy="123.9" r="0.5" fill="#C4C5A7" stroke="none" stroke-width="0"/><circle cx="100" cy="123.29" r="0.5" fill="#C4C5A7" stroke="none" stroke-width="0"/><circle cx="106" cy="122.68" r="0.5" fill="#C4C5A7" stroke="none" stroke-width="0"/><circle cx="112" cy="122.07" r="0.5" fill="#C4C5A7" stroke="none" stroke-width="0"/><circle cx="118" cy="121.46000000000001" r="0.5" fill="#C4C5A7" stroke="none" stroke-width="0"/><circle cx="124" cy="120.85" r="0.5" fill="#C4C5A7" stroke="none" stroke-width="0"/><circle cx="130" cy="120.24" r="0.5" fill="#C4C5A7" stroke="none" stroke-width="0"/><circle cx="136" cy="119.63" r="0.5" fill="#C4C5A7" stroke="none" stroke-width="0"/><circle cx="142" cy="119.02" r="0.5" fill="#C4C5A7" stroke="none" stroke-width="0"/>
+ <path d="M22 150L61 148M81 145L130 139" fill="none" stroke="#BAC6CF" stroke-width="0.85"/>
+ </g>
+</svg>

@@ -1,0 +1,100 @@
+{
+  "kind": "visual",
+  "id": "song-celadon-guoman",
+  "version": "1.2.2",
+  "catalog": {
+    "displayName": "宋韵温柔繁华国漫",
+    "purpose": "适合中国历史的政治、战争、制度、社会生活、人物与文化主题，沿用宋韵成熟轻Q国漫、约5—5.5头身成年比例、同步概括的场景、细褐结构线、青瓷与木褐哑光色面及大块冷暖明暗。朝代服饰、建筑和器物由本集内容决定，不从宋代样图继承。",
+    "rejectWhen": "不适合以近现代工业、西式制度、暗黑战争奇观或照片写实为核心的节目。"
+  },
+  "implements": [
+    {
+      "moduleId": "produce-covers",
+      "slotId": "visual",
+      "majorVersion": 1
+    },
+    {
+      "moduleId": "render-video",
+      "slotId": "visual",
+      "majorVersion": 1
+    },
+    {
+      "moduleId": "author-video",
+      "slotId": "visual",
+      "majorVersion": 1
+    },
+    {
+      "moduleId": "produce-video-assets",
+      "slotId": "visual",
+      "majorVersion": 1
+    },
+    {
+      "moduleId": "author-beat",
+      "slotId": "visual",
+      "majorVersion": 1
+    },
+    {
+      "moduleId": "author-bookend",
+      "slotId": "visual",
+      "majorVersion": 1
+    }
+  ],
+  "style": "style.json",
+  "productionProfiles": {
+    "fullframe-image": {
+      "profileId": "song-celadon-fullframe-image-v11",
+      "referenceStyleScopes": [
+        "palette",
+        "linework",
+        "fill-finish",
+        "environment-rendering",
+        "character-proportion"
+      ]
+    },
+    "bookend-image": {
+      "profileId": "song-celadon-bookend-image-v11",
+      "referenceStyleScopes": [
+        "palette",
+        "linework",
+        "fill-finish",
+        "environment-rendering",
+        "character-proportion"
+      ]
+    },
+    "cover-image": {
+      "profileId": "song-celadon-cover-image-v11",
+      "referenceStyleScopes": [
+        "palette",
+        "linework",
+        "fill-finish",
+        "environment-rendering",
+        "character-proportion"
+      ]
+    }
+  },
+  "render": {
+    "tokens": "render/tokens.json"
+  },
+  "masterReference": {
+    "id": "song-gentle-prosperity-light-q-world-night-wide-v13",
+    "path": "references/assets/song-gentle-prosperity-light-q-world-night-wide-v13.png"
+  },
+  "supplementaryReferences": [
+    {
+      "id": "song-gentle-prosperity-light-q-watercity-night-master-v12",
+      "path": "references/assets/song-gentle-prosperity-light-q-watercity-night-master-v12.png"
+    },
+    {
+      "id": "song-gentle-prosperity-light-q-watercity-day-master-v12",
+      "path": "references/assets/song-gentle-prosperity-light-q-watercity-day-master-v12.png"
+    },
+    {
+      "id": "song-gentle-prosperity-light-q-street-character-day-wide-v13",
+      "path": "references/assets/song-gentle-prosperity-light-q-street-character-day-wide-v13.png"
+    },
+    {
+      "id": "song-gentle-prosperity-light-q-workshop-interior-day-wide-v13",
+      "path": "references/assets/song-gentle-prosperity-light-q-workshop-interior-day-wide-v13.png"
+    }
+  ]
+}

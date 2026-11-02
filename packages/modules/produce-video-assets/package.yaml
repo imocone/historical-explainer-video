@@ -1,0 +1,65 @@
+{
+  "kind": "module",
+  "id": "produce-video-assets",
+  "runner": "ai",
+  "controllerEntry": "controller.json",
+  "slots": [
+    {
+      "id": "video-template",
+      "majorVersion": 1,
+      "accepts": "template",
+      "cardinality": "one",
+      "selectionSource": "fixed",
+      "fixedPackageIds": [
+        "cinematic-video"
+      ],
+      "readRoles": [
+        "assetContractRules",
+        "assetContractEntry",
+        "authorRules"
+      ],
+      "writeTargets": [
+        "video-manifest"
+      ]
+    },
+    {
+      "id": "visual",
+      "majorVersion": 1,
+      "accepts": "visual",
+      "cardinality": "one",
+      "selectionSource": "program-visual",
+      "readRoles": [
+        "productionProfiles",
+        "render"
+      ],
+      "writeTargets": [
+        "video-manifest"
+      ]
+    }
+  ],
+  "rules": [
+    "SKILL.md",
+    "../render-video/runtime/compile.mjs",
+    "../render-video/runtime/hyperframes.mjs"
+  ],
+  "runtimeResources": [
+    "../../authored-media.mjs",
+    "../../authored-images.mjs",
+    "generate.mjs",
+    "canvas.mjs",
+    "references/canvas-cli.md",
+    "delivery.mjs",
+    "selection.mjs",
+    "preview.mjs",
+    "../render-video/runtime/media-process.mjs",
+    "../render-video/runtime/plan.mjs",
+    "../render-video/runtime/episode-props.mjs",
+    "../render-video/runtime/body-segments.mjs",
+    "../render-video/runtime/public-files.mjs",
+    "../../templates/cinematic-video/production-projection.mjs",
+    "../../runtime-config.mjs",
+    "../../image-generation.mjs"
+  ],
+  "outputSchema": "../../../contracts/video-manifest.schema.json",
+  "validator": "validate.mjs"
+}

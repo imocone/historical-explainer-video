@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="zh"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>全画幅：同题实片对照</title>
+<style>
+body{margin:32px auto;padding:0 24px;max-width:1440px;background:#15171b;color:#e9e9e9;font:17px/1.6 system-ui}h1{font-size:28px}h2{font-size:21px;margin-bottom:4px}p{color:#c1c5cd}.pair{display:grid;grid-template-columns:1fr 1fr;gap:18px}video{width:100%;background:#000}button{padding:8px 18px;margin:10px 8px 10px 0;cursor:pointer}section{border-top:1px solid #454951;padding-top:20px;margin:28px 0}label{display:block;margin:6px 0}@media(max-width:850px){.pair{grid-template-columns:1fr}}
+</style>
+<h1>全画幅：同题实片对照</h1>
+<p>原创虚构教学，1920×1080、60fps，使用正式相机与渲染器。除第4组语义对照外，同组底图和配音相同。同步重播时声音只播放左片；第4组分别播放，比较字幕任务怎样影响转场。</p>
+<section data-pair><h2>1．靠近时，动作还在吗？</h2><p>看双手、电报和脸。右片调整取景与速度，持续运动中保住动作关系。</p><div class="pair"><div><label>旧样例取景</label><video controls preload="metadata" src="winter-before.mp4"></video></div><div><label>修正后</label><video controls muted preload="metadata" src="winter-after.mp4"></video></div></div><button>同步重播</button></section>
+<section data-pair><h2>2．同样讲迟疑，靠近还是移看？</h2><p>看手与信的间隙有没有获得分量。运动名称不能证明哪种更好。</p><div class="pair"><div><label>推近</label><video controls preload="metadata" src="room-push.mp4"></video></div><div><label>沿桌面平移</label><video controls muted preload="metadata" src="room-pan.mp4"></video></div></div><button>同步重播</button><details><summary>再看拉远的取舍</summary><video controls preload="metadata" src="room-pull.mp4"></video></details></section>
+<section data-pair><h2>3．同一条路线，节奏有何不同？</h2><p>起框和实际末框一致。听到“还在廊下等着”时，看等待者是否清楚，末尾是否有观察时间。</p><div class="pair"><div><label>恒速持续移动</label><video controls preload="metadata" src="corridor-constant.mp4"></video></div><div><label>变速并持续移动</label><video controls muted preload="metadata" src="corridor-rhythm.mp4"></video></div></div><button>同步重播</button></section>
+<section><h2>4．同一对图，不同讲述目的</h2><div class="pair"><div><label>货物流转：叠化承接</label><video controls preload="metadata" src="ordinary-dissolve.mp4"></video></div><div><label>前段收束：闪黑再起</label><video controls preload="metadata" src="ordinary-dip-to-black.mp4"></video></div></div></section>
+<section data-pair><h2>5．等待仍悬着：怎样减少遮混？</h2><p>同图同声比较8秒附近的接手。缩短叠化仍须实看脸手与门墙，不能靠插黑制造结束。</p><div class="pair"><div><label>0.6秒叠化试制</label><video controls preload="metadata" src="joint-short.mp4"></video></div><div><label>1.6秒叠化对照</label><video controls muted preload="metadata" src="joint-dissolve.mp4"></video></div></div><button>同步重播</button></section>
+<section><h2>6．换个题目：车队与道路</h2><p>检验能否从人物道具迁移到队列关系。保住前后车辆和相连道路；静图没有演出车队持续行进。</p><video controls preload="metadata" src="march-transfer.mp4"></video></section>
+<section><h2>换个内容，形成观看路线</h2><p>沿器材把注意力交给接手者，沿阶梯读到灯室。灯芯片仅验证局部素材的定向推近，不示范生产源图；生产先保有完整场景，再由运镜组织观看。</p><div class="pair"><div><label>器材接手：横移</label><video controls preload="metadata" src="transfer-supply.mp4"></video></div><div><label>工人与灯室：上移</label><video controls preload="metadata" src="transfer-height.mp4"></video></div></div><details><summary>灯芯局部素材：定向推近</summary><video controls preload="metadata" src="transfer-wick.mp4"></video></details></section>
+<script>
+document.querySelectorAll('[data-pair]').forEach(section=>{const videos=[...section.querySelectorAll('.pair video')];section.querySelector('button').onclick=async()=>{document.querySelectorAll('video').forEach(v=>v.pause());videos.forEach((v,i)=>{v.currentTime=0;v.muted=i>0});await Promise.all(videos.map(v=>v.play()))};videos[0].onpause=()=>videos[1].pause();videos[0].onseeking=()=>{if(Math.abs(videos[1].currentTime-videos[0].currentTime)>.08)videos[1].currentTime=videos[0].currentTime}});
+</script></html>

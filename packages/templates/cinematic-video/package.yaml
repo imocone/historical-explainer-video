@@ -1,0 +1,77 @@
+{
+  "kind": "template",
+  "id": "cinematic-video",
+  "catalog": {
+    "displayName": {
+      "en": "Cinematic Video",
+      "zh": "剧情视频模板"
+    },
+    "purpose": "在P4通读全片，把视频留给整集最重要、最宏大、最关键的段落。先找本集重点，再在已接纳的连续完整全画幅Beat中确定现场与范围，按来源和实际时间组织视频表达，随后联合设计镜头、首帧和动态提示。最多3段；没有合适重点就交0段，不以普通动作补位，不强求大场面、戏剧转折或最终结局同时具备。",
+    "rejectWhen": "没有需要用视频集中表现的本集重点；仅因容易生成、有动作或有空余名额而选择；重点现场缺少来源、原窗口无法拍清或视频只增加装饰运动；范围截断关键过程、拼入无关Beat、跨讲解或非连续全画幅。没有可合段剧情不构成拒绝关键单Beat的理由。"
+  },
+  "implements": [
+    {
+      "moduleId": "author-video",
+      "slotId": "video-template",
+      "majorVersion": 1
+    },
+    {
+      "moduleId": "produce-video-assets",
+      "slotId": "video-template",
+      "majorVersion": 1
+    },
+    {
+      "moduleId": "render-video",
+      "slotId": "video-template",
+      "majorVersion": 1
+    }
+  ],
+  "authorRules": [
+    "AUTHOR.md",
+    "references/selection-method.md",
+    "references/shot-design-method.md",
+    "references/production-review-method.md",
+    "../../modules/render-video/references/narrative-transitions.md",
+    "../../authored-images.md"
+  ],
+  "acceptanceRules": [
+    "timing.mjs",
+    "../../cue-boundaries.mjs",
+    "../../video-spec.mjs",
+    "boundary-transitions.mjs",
+    "../../modules/render-video/runtime/body-segments.mjs",
+    "../../modules/render-video/runtime/narrative-transition.mjs",
+    "../../authored-images.mjs"
+  ],
+  "assetContractRules": [
+    "asset-contract.mjs",
+    "timing.mjs",
+    "../../modules/render-video/runtime/narrative-transition.mjs",
+    "production-projection.mjs"
+  ],
+  "assetContractEntry": "asset-contract.mjs",
+  "outputSchema": "../../../contracts/cinematic-video-plan.schema.json",
+  "validator": "validate.mjs",
+  "renderer": "render/index.jsx",
+  "renderPlanEntry": "render-plan.mjs",
+  "renderRules": [
+    "render-plan.mjs",
+    "render/index.jsx",
+    "timing.mjs",
+    "boundary-transitions.mjs",
+    "../../modules/render-video/runtime/body-segments.mjs",
+    "../../modules/render-video/runtime/narrative-transition.mjs",
+    "asset-contract.mjs",
+    "../../modules/render-video/runtime/scene-view.jsx",
+    "../../modules/render-video/runtime/motion-math.mjs"
+  ],
+  "runtimeResources": [
+    "../../modules/render-video/references/transition-execution-reference.md",
+    "../../authored-images.mjs"
+  ],
+  "examples": [
+    "examples/selection.json",
+    "examples/diagrams/guard-line.png",
+    "examples/diagrams/ship-contact.png"
+  ]
+}

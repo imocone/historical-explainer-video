@@ -1,0 +1,72 @@
+{
+  "plastic-click": {
+    "label": "塑料扣合",
+    "file": "packages/features/sound-effects/library/plastic-click.wav",
+    "sha256": "f1b6179fc34cf00ba7c93bf9432af6cb94a9c971d7a0d0f594c4a88b99cc833b",
+    "durationSeconds": 0.06,
+    "syncSeconds": 0
+  },
+  "table-clack": {
+    "label": "桌面轻碰",
+    "file": "packages/features/sound-effects/library/table-clack.wav",
+    "sha256": "0f55ef51c55dc92fe660cb124cd84669325f1dc17848fd24bbb4bd976b7acd71",
+    "durationSeconds": 0.09,
+    "syncSeconds": 0
+  },
+  "wood-tap": {
+    "label": "木质轻敲",
+    "file": "packages/features/sound-effects/library/wood-tap.wav",
+    "sha256": "6b185ab0d3ff365bfdbee5576a27bf22b344205f0686c7efa5e868e5a93bd94d",
+    "durationSeconds": 0.08,
+    "syncSeconds": 0
+  },
+  "metal-tap": {
+    "label": "小金属碰响",
+    "file": "packages/features/sound-effects/library/metal-tap.wav",
+    "sha256": "787ef9181e72dde8e3ddce9502782ba7213fad27deb378b3c458c5761387eac0",
+    "durationSeconds": 0.9,
+    "syncSeconds": 0
+  },
+  "paper": {
+    "label": "短纸张摩擦",
+    "file": "packages/features/sound-effects/library/paper.wav",
+    "sha256": "d63de35d1c6db78a24558f9c56614d20e5da964c553d68a8678c36a62498a83d",
+    "durationSeconds": 0.45,
+    "syncSeconds": 0.225
+  },
+  "whoosh": {
+    "label": "轻短扫动",
+    "file": "packages/features/sound-effects/library/whoosh.wav",
+    "sha256": "70fd6c971c98b16daf7345915d71dc8720075eb163fd3d82ce42a6f0a637287c",
+    "durationSeconds": 0.35,
+    "syncSeconds": 0.175
+  },
+  "creak": {
+    "label": "机构短摩擦",
+    "file": "packages/features/sound-effects/library/creak.wav",
+    "sha256": "9dbc09bbfb42252e2bb40e0048b154461d92fc0753756dcc4d15458d1b766ba6",
+    "durationSeconds": 0.22,
+    "syncSeconds": 0.11
+  },
+  "thump": {
+    "label": "低沉短重音",
+    "file": "packages/features/sound-effects/library/thump.wav",
+    "sha256": "8e44e84c3fece633d30444f239fa11c02b9911d124e25aaf4ea097211e8b8ee3",
+    "durationSeconds": 0.35,
+    "syncSeconds": 0
+  },
+  "ding": {
+    "label": "清亮落定",
+    "file": "packages/features/sound-effects/library/ding.wav",
+    "sha256": "ff837b88a032923874e77d0c49e59917b59f01ba79c33067234bc93b13119c27",
+    "durationSeconds": 1.6,
+    "syncSeconds": 0
+  },
+  "pop": {
+    "label": "轻弹出",
+    "file": "packages/features/sound-effects/library/pop.wav",
+    "sha256": "5f79bf3b150329988af69d9b3bf9a96df6d4da764de74669b56347a7b4ebe7f8",
+    "durationSeconds": 0.18,
+    "syncSeconds": 0
+  }
+}

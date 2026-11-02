@@ -1,0 +1,156 @@
+{
+  "kind": "module",
+  "id": "render-video",
+  "runner": "program",
+  "controllerEntry": "controller.json",
+  "programEntry": "run.mjs",
+  "slots": [
+    {
+      "id": "body-template",
+      "majorVersion": 1,
+      "accepts": "template",
+      "cardinality": "many",
+      "selectionSource": "beat-template",
+      "readRoles": [
+        "renderer",
+        "renderPlanEntry",
+        "renderRules"
+      ],
+      "optionalReadRoles": [
+        "cuePolicy"
+      ],
+      "writeTargets": [
+        "final-video",
+        "render-receipt"
+      ]
+    },
+    {
+      "id": "segment-template",
+      "majorVersion": 1,
+      "accepts": "template",
+      "cardinality": "many",
+      "selectionSource": "segment-template",
+      "readRoles": [
+        "renderer",
+        "renderPlanEntry",
+        "renderRules"
+      ],
+      "optionalReadRoles": [
+        "renderAssets"
+      ],
+      "writeTargets": [
+        "final-video",
+        "render-receipt"
+      ]
+    },
+    {
+      "id": "feature",
+      "majorVersion": 1,
+      "accepts": "feature",
+      "cardinality": "many",
+      "selectionSource": "episode-features",
+      "readRoles": [
+        "renderRules",
+        "renderEntry"
+      ],
+      "optionalReadRoles": [
+        "renderAssets"
+      ],
+      "writeTargets": [
+        "final-video",
+        "render-receipt"
+      ]
+    },
+    {
+      "id": "visual",
+      "majorVersion": 1,
+      "accepts": "visual",
+      "cardinality": "one",
+      "selectionSource": "program-visual",
+      "readRoles": [
+        "render"
+      ],
+      "writeTargets": [
+        "final-video",
+        "render-receipt"
+      ]
+    },
+    {
+      "id": "video-template",
+      "majorVersion": 1,
+      "accepts": "template",
+      "cardinality": "one",
+      "selectionSource": "fixed",
+      "fixedPackageIds": [
+        "cinematic-video"
+      ],
+      "readRoles": [
+        "renderer",
+        "renderPlanEntry",
+        "renderRules"
+      ],
+      "writeTargets": [
+        "final-video",
+        "render-receipt"
+      ]
+    }
+  ],
+  "rules": [
+    "../../../engine/static-assembly.mjs",
+    "../../authored-media.mjs",
+    "../../authored-images.mjs",
+    "../../program-utils.mjs",
+    "../../workspace-paths.mjs",
+    "../../visual-package.mjs",
+    "../../visual-fonts.mjs",
+    "../../video-spec.mjs",
+    "../../cue-boundaries.mjs",
+    "../../source-rights.mjs",
+    "../../explainer-template-selection.mjs",
+    "studio.mjs",
+    "runtime/projection.mjs",
+    "../author-beat/projection.mjs",
+    "runtime/body-segments.mjs",
+    "runtime/plan.mjs",
+    "runtime/ending.mjs",
+    "runtime/episode-props.mjs",
+    "runtime/public-files.mjs",
+    "runtime/preview-props.mjs",
+    "runtime/captions.jsx",
+    "runtime/caption-content.mjs",
+    "runtime/caption-style.mjs",
+    "runtime/transitions.mjs",
+    "../../templates/fullframe-narrative/camera/author-transition-handoff.mjs",
+    "runtime/render-contracts.mjs",
+    "runtime/narrative-transition.mjs",
+    "runtime/narrative-transition.jsx",
+    "runtime/browser-session.mjs",
+    "runtime/media-process.mjs",
+    "runtime/motion-math.mjs",
+    "runtime/scene-view.jsx",
+    "runtime/narrative-presentation.mjs",
+    "runtime/timeline.mjs",
+    "runtime/browser.jsx",
+    "runtime/scene-clock.mjs",
+    "runtime/audio-mix.mjs",
+    "runtime/compile.mjs",
+    "runtime/hyperframes.mjs",
+    "runtime/studio-server.mjs",
+    "runtime/studio-render.mjs",
+    "runtime/studio-composition.mjs",
+    "runtime/scene-preview.mjs",
+    "runtime/candidate-audio.mjs",
+    "runtime/publication-timing.mjs"
+  ],
+  "runtimeResources": [
+    "runtime/measure-captions.mjs",
+    "references/narrative-transitions.md",
+    "references/transition-execution-reference.md"
+  ],
+  "generatedResources": [
+    "runtime/template-renderers.mjs",
+    "runtime/template-render-plans.mjs",
+    "runtime/feature-render-entries.mjs"
+  ],
+  "outputSchema": "../../../contracts/render-receipt.schema.json"
+}

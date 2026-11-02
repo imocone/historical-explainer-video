@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Progressive episode storyboard author truth envelope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["understanding"],
+  "properties": {
+    "understanding": {"$ref": "#/$defs/acceptedSection"},
+    "albumPlan": {"$ref": "#/$defs/albumPlan"},
+    "features": {"$ref": "#/$defs/features"},
+    "authorQuotes": {"$ref": "#/$defs/acceptedSection"},
+    "beats": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/beatEnvelope"}},
+    "templateRuns": {"type": "array", "items": {"$ref": "#/$defs/templateRun"}},
+    "_producer": {"$ref": "#/$defs/producer"}
+  },
+  "allOf": [
+    {
+      "if": {
+        "anyOf": [
+          {"required": ["albumPlan"]},
+          {"required": ["features"]},
+          {"required": ["beats"]},
+          {"required": ["templateRuns"]},
+          {"required": ["_producer"]}
+        ]
+      },
+      "then": {"required": ["albumPlan", "features", "beats", "templateRuns", "_producer"]}
+    }
+  ],
+  "$defs": {
+    "text": {"type": "string", "minLength": 1},
+    "sha": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "cueRange": {
+      "type": "array",
+      "prefixItems": [{"type": "integer", "minimum": 1}, {"type": "integer", "minimum": 1}],
+      "items": false,
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "producer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["moduleId", "nodeId", "taskDigest", "inputs", "rules", "contract", "outputSha256"],
+      "properties": {
+        "moduleId": {"type": "string", "minLength": 1},
+        "nodeId": {"type": "string", "minLength": 1},
+        "taskDigest": {"$ref": "#/$defs/sha"},
+        "inputs": {"type": "array", "items": {"$ref": "#/$defs/sha"}, "uniqueItems": true},
+        "rules": {"type": "array", "items": {"$ref": "#/$defs/sha"}, "uniqueItems": true},
+        "contract": {"$ref": "#/$defs/sha"},
+        "outputSha256": {"$ref": "#/$defs/sha"}
+      }
+    },
+    "acceptedSection": {
+      "type": "object",
+      "required": ["_producer"],
+      "properties": {"_producer": {"$ref": "#/$defs/producer"}}
+    },
+    "recurringElement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "subject", "purpose", "progression", "beatRefs"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^RE[0-9]{3}$"},
+        "subject": {"$ref": "#/$defs/text"},
+        "purpose": {"$ref": "#/$defs/text"},
+        "progression": {"$ref": "#/$defs/text"},
+        "beatRefs": {
+          "type": "array",
+          "minItems": 2,
+          "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^B[0-9]{3}$"}
+        }
+      }
+    },
+    "albumPlan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["intent", "openingState", "progression", "endingState", "recurringElements"],
+      "properties": {
+        "intent": {"$ref": "#/$defs/text"},
+        "openingState": {"$ref": "#/$defs/text"},
+        "progression": {"$ref": "#/$defs/text"},
+        "endingState": {"$ref": "#/$defs/text"},
+        "recurringElements": {"type": "array", "items": {"$ref": "#/$defs/recurringElement"}}
+      }
+    },
+    "features": {
+      "type": "object",
+      "propertyNames": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+      "additionalProperties": {"type": ["object", "null"], "properties": {"enabled": {"type": "boolean"}}}
+    },
+    "templateRun": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "templateId", "beatIds", "treatment"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^TR[0-9]{3}$"},
+        "templateId": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+        "beatIds": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^B[0-9]{3}$"}
+        },
+        "treatment": {"$ref": "#/$defs/treatmentState"}
+      }
+    },
+    "treatmentState": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "required": ["templateId", "_producer"],
+          "properties": {
+            "templateId": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+            "_producer": {"$ref": "#/$defs/producer"}
+          }
+        }
+      ]
+    },
+    "directorBrief": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["roleInAlbum", "mustShow", "relationFromPrevious"],
+      "properties": {
+        "roleInAlbum": {"$ref": "#/$defs/text"},
+        "mustShow": {"$ref": "#/$defs/text"},
+        "relationFromPrevious": {"type": ["string", "null"], "minLength": 1}
+      }
+    },
+    "beatEnvelope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "cueRange", "viewerOutcome", "directorBrief", "templateId", "treatment"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^B[0-9]{3}$"},
+        "cueRange": {"$ref": "#/$defs/cueRange"},
+        "viewerOutcome": {"$ref": "#/$defs/text"},
+        "directorBrief": {"$ref": "#/$defs/directorBrief"},
+        "templateId": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+        "treatment": {"$ref": "#/$defs/treatmentState"}
+      }
+    }
+  }
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "片头作者"
+  short_description: "执行工作单固定的片头模板并提交候选成果"
+  default_prompt: "Use $author-bookend to execute the selected opener template from the current work order."

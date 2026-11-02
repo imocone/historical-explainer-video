@@ -1,0 +1,4 @@
+interface:
+  display_name: "author-beat"
+  short_description: "按已选正文模板完成章节创作与交付"
+  default_prompt: "使用 $author-beat 按现行Skill与已选模板的真实依赖顺序完成正文设计及本单必要交付，反向核对后提交唯一候选。"

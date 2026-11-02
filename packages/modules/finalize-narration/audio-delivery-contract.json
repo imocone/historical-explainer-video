@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "1.0",
+  "outputFormat": "mp3",
+  "sampleRate": 32000,
+  "channels": 1,
+  "maxDurationDriftSeconds": 0.05,
+  "maxLoudnessDriftLu": 0.5,
+  "maxTruePeakDbTp": -1.0,
+  "cleanupFilter": "highpass=f=65,equalizer=f=260:t=q:w=1.0:g=-0.8,deesser=i=0.10:m=0.25:f=0.50,volume=1dB,alimiter=limit=0.794:attack=5:release=50:level=0:latency=1"
+}

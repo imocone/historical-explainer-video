@@ -1,0 +1,4 @@
+interface:
+  display_name: "节目策划"
+  short_description: "确定通用或时政解说类型，按材料路线形成分集任务与取材依据"
+  default_prompt: "使用 $plan-program 按现行 SKILL.md 及其按需方法完成当前已授权的综合解说P0工作单（historical-explainer），先采用用户指定或判断解说类型，再按实际材料路线执行，完成后停止P0。"

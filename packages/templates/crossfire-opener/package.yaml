@@ -1,0 +1,86 @@
+{
+  "kind": "template",
+  "id": "crossfire-opener",
+  "catalog": {
+    "displayName": {
+      "en": "Crossfire Opener",
+      "zh": "交叉对冲片头"
+    },
+    "purpose": "8秒三画面燃边与短字入场，三条画幅交叉对冲、整幅展开接入实际正文首镜，使用现用片头配乐，保留原创动作音效",
+    "rejectWhen": "不是整集片头，或正式钩子不能在5.38秒内说完"
+  },
+  "implements": [
+    {
+      "moduleId": "author-narration",
+      "slotId": "opener-copy-template",
+      "majorVersion": 1
+    },
+    {
+      "moduleId": "author-documentary-narration",
+      "slotId": "opener-copy-template",
+      "majorVersion": 1
+    },
+    {
+      "moduleId": "author-bookend",
+      "slotId": "opener-template",
+      "majorVersion": 1
+    },
+    {
+      "moduleId": "render-video",
+      "slotId": "segment-template",
+      "majorVersion": 1
+    }
+  ],
+  "copyRules": [
+    "copy-method.md"
+  ],
+  "authorRules": [
+    "AUTHOR.md",
+    "../../authored-images.md"
+  ],
+  "acceptanceRules": [
+    "validate.mjs",
+    "copy-policy.mjs",
+    "render-policy.mjs",
+    "../../video-spec.mjs",
+    "../../source-rights.mjs",
+    "../../templates/episode-opener/validate.mjs",
+    "../../authored-images.mjs"
+  ],
+  "assetContractRules": [
+    "asset-contract.mjs"
+  ],
+  "assetContractEntry": "asset-contract.mjs",
+  "outputSchema": "../../../contracts/crossfire-opener-treatment.schema.json",
+  "validator": "validate.mjs",
+  "authorContextEntry": "context-runtime.mjs",
+  "renderer": "render/index.jsx",
+  "renderPlanEntry": "render-plan.mjs",
+  "renderRules": [
+    "render-policy.mjs",
+    "render-plan.mjs",
+    "render/index.jsx",
+    "render/draw.mjs",
+    "audio/sources.mjs",
+    "asset-contract.mjs",
+    "../../modules/render-video/runtime/scene-view.jsx"
+  ],
+  "renderAssets": [
+    "audio/background-bed.wav",
+    "audio/ember-cut.wav",
+    "audio/ember-lock.wav",
+    "audio/ember-release.wav"
+  ],
+  "runtimeResources": [
+    "audio/README.md",
+    "audio/ember-original-bgm.wav",
+    "audio/compose.py",
+    "../../authored-images.mjs",
+    "../../runtime-config.mjs"
+  ],
+  "examples": [
+    "examples/README.md",
+    "examples/golden.json",
+    "examples/negative.json"
+  ]
+}

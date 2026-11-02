@@ -1,0 +1,48 @@
+{
+  "primitive": "ai-segment",
+  "projection": "segment",
+  "reads": [
+    {
+      "role": "storyboard-understanding-section",
+      "kind": "artifact"
+    },
+    {
+      "role": "storyboard-visual-plan",
+      "kind": "artifact"
+    },
+    {
+      "role": "template-author-context",
+      "kind": "projection"
+    },
+    {
+      "role": "storyboard",
+      "kind": "projection"
+    },
+    {
+      "role": "opener-narration",
+      "kind": "artifact",
+      "whenScope": "opener"
+    },
+    {
+      "role": "narration-package",
+      "kind": "artifact"
+    },
+    {
+      "role": "source-assets",
+      "kind": "external-input"
+    }
+  ],
+  "writes": [
+    "episode-package-opener"
+  ],
+  "segmentTypeFromScope": true,
+  "templateSlotFromScope": true,
+  "returnTo": [
+    {
+      "primitive": "ai-understanding"
+    },
+    {
+      "primitive": "ai-visual-director"
+    }
+  ]
+}

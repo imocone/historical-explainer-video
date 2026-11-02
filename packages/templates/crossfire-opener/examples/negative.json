@@ -1,0 +1,28 @@
+{
+  "cases": [
+    {
+      "violation": "把样片的日俄战争、人物、年代或标签直接用于别集，或改写正式P1原句和标题",
+      "owner": "crossfire-opener"
+    },
+    {
+      "violation": "三幅只有文字和无关配图，未共同投影同一钩子；用重复画面凑数",
+      "owner": "crossfire-opener"
+    },
+    {
+      "violation": "预画燃边、暗部、文字或横带，导致程序二次叠加；中央裁切丢失面部和关键动作",
+      "owner": "crossfire-opener"
+    },
+    {
+      "violation": "前景增加没有来源支持的人物或道具、与背景尺度视角不符，或用不透明图代替透明PNG",
+      "owner": "crossfire-opener"
+    },
+    {
+      "violation": "把正文截图当固定片头素材，另做正文替身图，或改变正文镜头、字幕与旁白时间",
+      "owner": "crossfire-opener"
+    },
+    {
+      "violation": "用甩镜、错位切片、回弹或新装饰替换已定交叉收尾；口播超时后加速或拉长模板",
+      "owner": "crossfire-opener"
+    }
+  ]
+}

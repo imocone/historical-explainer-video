@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Understand episode candidate slice",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["understanding"],
+  "properties": {
+    "understanding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["episodeQuestion", "thesis", "narrativeArc", "semanticReading", "facts", "relations", "evidence", "uncertainties", "mustNotInvent"],
+      "properties": {
+        "episodeQuestion": {"$ref": "#/$defs/text"},
+        "thesis": {"$ref": "#/$defs/text"},
+        "narrativeArc": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["start", "turn", "end"],
+          "properties": {
+            "start": {"$ref": "#/$defs/text"},
+            "turn": {"$ref": "#/$defs/text"},
+            "end": {"$ref": "#/$defs/text"}
+          }
+        },
+        "semanticReading": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["underlyingMeaning", "audienceStartingPoint", "targetUnderstanding", "speakerStances", "contextConstraints", "rhetoricalReadings", "humanStakes"],
+          "properties": {
+            "underlyingMeaning": {"$ref": "#/$defs/text"},
+            "audienceStartingPoint": {"$ref": "#/$defs/text"},
+            "targetUnderstanding": {"$ref": "#/$defs/text"},
+            "speakerStances": {"type": "array", "items": {"$ref": "#/$defs/speakerStance"}},
+            "contextConstraints": {"type": "array", "items": {"$ref": "#/$defs/contextConstraint"}},
+            "rhetoricalReadings": {"type": "array", "items": {"$ref": "#/$defs/rhetoricalReading"}},
+            "humanStakes": {"type": "array", "items": {"$ref": "#/$defs/humanStake"}}
+          }
+        },
+        "facts": {"type": "array", "items": {"$ref": "#/$defs/fact"}},
+        "relations": {"type": "array", "items": {"$ref": "#/$defs/relation"}},
+        "evidence": {"type": "array", "items": {"$ref": "#/$defs/evidence"}},
+        "uncertainties": {"type": "array", "items": {"$ref": "#/$defs/text"}, "uniqueItems": true},
+        "mustNotInvent": {"type": "array", "items": {"$ref": "#/$defs/text"}, "uniqueItems": true}
+      }
+    }
+  },
+  "$defs": {
+    "text": {"type": "string", "minLength": 1},
+    "cueRefs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "integer", "minimum": 1}},
+    "evidenceRefs": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^E[0-9]{3}$"}},
+    "speakerStance": {
+      "type": "object", "additionalProperties": false,
+      "required": ["cueRefs", "voice", "stance", "claimBoundary"],
+      "properties": {"cueRefs": {"$ref": "#/$defs/cueRefs"}, "voice": {"enum": ["narrator", "quoted-source", "reported-actor"]}, "stance": {"$ref": "#/$defs/text"}, "claimBoundary": {"$ref": "#/$defs/text"}}
+    },
+    "contextConstraint": {
+      "type": "object", "additionalProperties": false,
+      "required": ["cueRefs", "kind", "constraint"],
+      "properties": {"cueRefs": {"$ref": "#/$defs/cueRefs"}, "kind": {"enum": ["historical", "institutional", "cultural", "source"]}, "constraint": {"$ref": "#/$defs/text"}}
+    },
+    "rhetoricalReading": {
+      "type": "object", "additionalProperties": false,
+      "required": ["cueRefs", "expression", "intendedMeaning", "evidenceRefs", "prohibitedLiteralization"],
+      "properties": {"cueRefs": {"$ref": "#/$defs/cueRefs"}, "expression": {"$ref": "#/$defs/text"}, "intendedMeaning": {"$ref": "#/$defs/text"}, "evidenceRefs": {"$ref": "#/$defs/evidenceRefs"}, "prohibitedLiteralization": {"$ref": "#/$defs/text", "description": "禁止由修辞误推出的历史事实，不笼统禁止清楚的视觉隐喻、象征或合理演绎。"}}
+    },
+    "humanStake": {
+      "type": "object", "additionalProperties": false,
+      "required": ["cueRefs", "bearer", "pressure", "visibleConsequence", "evidenceRefs"],
+      "properties": {"cueRefs": {"$ref": "#/$defs/cueRefs"}, "bearer": {"$ref": "#/$defs/text"}, "pressure": {"$ref": "#/$defs/text"}, "visibleConsequence": {"$ref": "#/$defs/text"}, "evidenceRefs": {"$ref": "#/$defs/evidenceRefs"}}
+    },
+    "fact": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "cueRefs", "claim", "evidenceRefs"],
+      "properties": {"id": {"type": "string", "pattern": "^F[0-9]{3}$"}, "cueRefs": {"$ref": "#/$defs/cueRefs"}, "claim": {"$ref": "#/$defs/text"}, "evidenceRefs": {"$ref": "#/$defs/evidenceRefs"}}
+    },
+    "relation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "cueRefs", "from", "relation", "to", "evidenceRefs"],
+      "properties": {"id": {"type": "string", "pattern": "^R[0-9]{3}$"}, "cueRefs": {"$ref": "#/$defs/cueRefs"}, "from": {"$ref": "#/$defs/text"}, "relation": {"$ref": "#/$defs/text"}, "to": {"$ref": "#/$defs/text"}, "evidenceRefs": {"$ref": "#/$defs/evidenceRefs"}}
+    },
+    "evidence": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "cueRefs", "source", "text", "sourceAssetRefs"],
+      "properties": {"id": {"type": "string", "pattern": "^E[0-9]{3}$"}, "cueRefs": {"$ref": "#/$defs/cueRefs"}, "source": {"const": "registered-source"}, "text": {"$ref": "#/$defs/text"}, "sourceAssetRefs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "pattern": "^SA[0-9]{3}$"}}}
+    }
+  }
+}

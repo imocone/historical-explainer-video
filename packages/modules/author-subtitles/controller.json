@@ -1,0 +1,1 @@
+{"primitive":"ai-subtitles","projection":"artifact","reads":[{"role":"script-package","kind":"artifact"},{"role":"tts-result","kind":"artifact"}],"writes":["subtitle-correction"],"returnTo":[]}

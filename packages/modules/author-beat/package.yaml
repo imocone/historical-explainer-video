@@ -1,0 +1,84 @@
+{
+  "kind": "module",
+  "id": "author-beat",
+  "runner": "ai",
+  "controllerEntry": "controller.json",
+  "slots": [
+    {
+      "id": "body-template",
+      "majorVersion": 1,
+      "accepts": "template",
+      "cardinality": "one",
+      "selectionSource": "beat-template",
+      "readRoles": [
+        "authorRules",
+        "outputSchema",
+        "validator",
+        "examples",
+        "cuePolicy"
+      ],
+      "optionalReadRoles": [
+        "acceptanceRules",
+        "authorContextEntry",
+        "assetContractRules",
+        "assetContractEntry"
+      ],
+      "writeTargets": [
+        "storyboard-treatment"
+      ]
+    },
+    {
+      "id": "beat-feature",
+      "majorVersion": 1,
+      "accepts": "feature",
+      "cardinality": "many",
+      "selectionSource": "episode-features",
+      "readRoles": [
+        "authorRules",
+        "outputSchema",
+        "validator"
+      ],
+      "optionalReadRoles": [
+        "acceptanceRules",
+        "authorContextEntry"
+      ],
+      "writeTargets": [
+        "storyboard-feature-result"
+      ]
+    },
+    {
+      "id": "visual",
+      "majorVersion": 1,
+      "accepts": "visual",
+      "cardinality": "one",
+      "selectionSource": "program-visual",
+      "readRoles": [
+        "render",
+        "productionProfiles"
+      ],
+      "writeTargets": [
+        "storyboard-treatment"
+      ]
+    }
+  ],
+  "rules": [
+    "SKILL.md"
+  ],
+  "runtimeResources": [
+    "references/submit-sequence.md",
+    "submit.mjs",
+    "../../p3-task-view.mjs",
+    "../../features/cue-sync/resolve.mjs",
+    "projection.mjs",
+    "cue-options.mjs",
+    "preflight.mjs",
+    "candidate-validation.mjs",
+    "../../cue-boundaries.mjs",
+    "../../authored-images.mjs",
+    "../render-video/runtime/media-process.mjs",
+    "batch-validation.mjs",
+    "../../image-generation.mjs",
+    "../../runtime-config.mjs"
+  ],
+  "validator": "validate.mjs"
+}

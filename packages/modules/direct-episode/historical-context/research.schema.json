@@ -1,0 +1,302 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "taskDigest",
+    "title",
+    "materials",
+    "contexts"
+  ],
+  "properties": {
+    "taskDigest": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "materials": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "key",
+              "sourceAssetId"
+            ],
+            "properties": {
+              "key": {
+                "type": "string",
+                "minLength": 1
+              },
+              "sourceAssetId": {
+                "type": "string",
+                "pattern": "^SA[0-9]{3}$"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "key",
+              "file",
+              "mediaType",
+              "sourceCitation",
+              "creator",
+              "date",
+              "rightsStatus",
+              "usageNotes"
+            ],
+            "properties": {
+              "key": {
+                "type": "string",
+                "minLength": 1
+              },
+              "file": {
+                "type": "string",
+                "minLength": 1
+              },
+              "mediaType": {
+                "enum": [
+                  "document",
+                  "photo",
+                  "artifact",
+                  "video",
+                  "audio",
+                  "other"
+                ]
+              },
+              "sourceCitation": {
+                "type": "string",
+                "minLength": 1
+              },
+              "creator": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "minLength": 1
+              },
+              "date": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "minLength": 1
+              },
+              "rightsStatus": {
+                "enum": [
+                  "public-domain",
+                  "licensed",
+                  "permission-granted",
+                  "restricted",
+                  "unknown"
+                ]
+              },
+              "usageNotes": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        ]
+      }
+    },
+    "contexts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "cueRange",
+          "period",
+          "place",
+          "occasion",
+          "people",
+          "environment",
+          "limits"
+        ],
+        "properties": {
+          "cueRange": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "period": {
+            "type": "string",
+            "minLength": 1
+          },
+          "place": {
+            "type": "string",
+            "minLength": 1
+          },
+          "occasion": {
+            "type": "string",
+            "minLength": 1
+          },
+          "people": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "subject",
+                "ageAndRole",
+                "likeness",
+                "clothing"
+              ],
+              "properties": {
+                "subject": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "ageAndRole": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "likeness": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "basis",
+                    "features",
+                    "evidence",
+                    "limits"
+                  ],
+                  "properties": {
+                    "basis": {
+                      "enum": [
+                        "portrait",
+                        "photo",
+                        "later-depiction",
+                        "text-description",
+                        "reconstruction",
+                        "group"
+                      ]
+                    },
+                    "features": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "evidence": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "uniqueItems": true
+                    },
+                    "limits": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                },
+                "clothing": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "features",
+                    "evidence",
+                    "limits"
+                  ],
+                  "properties": {
+                    "features": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "evidence": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "uniqueItems": true
+                    },
+                    "limits": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "environment": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "subject",
+                "features",
+                "evidence",
+                "limits"
+              ],
+              "properties": {
+                "subject": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "features": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "evidence": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "uniqueItems": true
+                },
+                "limits": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          },
+          "limits": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "notApplicableReason": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "contexts": {
+            "maxItems": 0
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "notApplicableReason"
+        ],
+        "properties": {
+          "materials": {
+            "maxItems": 0
+          }
+        }
+      }
+    }
+  ]
+}

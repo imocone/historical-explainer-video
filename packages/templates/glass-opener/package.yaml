@@ -1,0 +1,90 @@
+{
+  "kind": "template",
+  "id": "glass-opener",
+  "catalog": {
+    "displayName": {
+      "en": "Glass Opposed Opener",
+      "zh": "玻璃错层对冲片头"
+    },
+    "purpose": "逐段原声搭配上下错层玻璃对冲、分开运镜，最后蓄力弹入正文",
+    "rejectWhen": "不是整集片头，或内容不能以清楚自然的短口播引出正文"
+  },
+  "implements": [
+    {
+      "moduleId": "author-narration",
+      "slotId": "opener-copy-template",
+      "majorVersion": 1
+    },
+    {
+      "moduleId": "author-documentary-narration",
+      "slotId": "opener-copy-template",
+      "majorVersion": 1
+    },
+    {
+      "moduleId": "author-bookend",
+      "slotId": "opener-template",
+      "majorVersion": 1
+    },
+    {
+      "moduleId": "render-video",
+      "slotId": "segment-template",
+      "majorVersion": 1
+    }
+  ],
+  "copyRules": [
+    "../opposed-opener/copy-method.md"
+  ],
+  "authorRules": [
+    "AUTHOR.md",
+    "../../authored-images.md"
+  ],
+  "acceptanceRules": [
+    "validate.mjs",
+    "../opposed-opener/validate.mjs",
+    "../opposed-opener/copy-policy.mjs",
+    "../opposed-opener/render-policy.mjs",
+    "../../source-rights.mjs",
+    "../../authored-images.mjs"
+  ],
+  "assetContractRules": [
+    "asset-contract.mjs",
+    "../opposed-opener/asset-contract.mjs"
+  ],
+  "assetContractEntry": "asset-contract.mjs",
+  "outputSchema": "../../../contracts/glass-opener-treatment.schema.json",
+  "validator": "validate.mjs",
+  "renderer": "render/index.jsx",
+  "renderPlanEntry": "render-plan.mjs",
+  "renderRules": [
+    "render-plan.mjs",
+    "render-policy.mjs",
+    "render/index.jsx",
+    "render/three-glass.mjs",
+    "../opposed-opener/render-plan.mjs",
+    "../opposed-opener/render-policy.mjs",
+    "../opposed-opener/audio/sources.mjs",
+    "../episode-opener/audio/sources.mjs",
+    "../../modules/render-video/runtime/scene-view.jsx"
+  ],
+  "renderAssets": [
+    "assets/window-glass-normal.png",
+    "assets/window-glass-pbr.jpg",
+    "assets/glass-cracks.png",
+    "assets/glass-edge.png",
+    "../opposed-opener/audio/rush-one.wav",
+    "../opposed-opener/audio/rush-two.wav",
+    "../episode-opener/audio/strips-impact.wav",
+    "../episode-opener/audio/exit-reveal.wav",
+    "../episode-opener/audio/background-bed.wav"
+  ],
+  "runtimeResources": [
+    "assets/README.md",
+    "audio/README.md",
+    "../../authored-images.mjs",
+    "../../runtime-config.mjs"
+  ],
+  "examples": [
+    "examples/golden.json",
+    "examples/negative.json"
+  ]
+}

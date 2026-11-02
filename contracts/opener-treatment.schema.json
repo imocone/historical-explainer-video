@@ -1,0 +1,231 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Episode opener treatment",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["templateId", "flashbackLine", "flashbackShots"],
+  "properties": {
+    "templateId": {"const": "episode-opener"},
+    "narration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["textSha256", "durationMs", "audioSha256", "ttsFingerprint", "sentenceCues"],
+      "properties": {
+        "textSha256": {"$ref": "#/$defs/sha"},
+        "durationMs": {"type": "integer", "minimum": 1},
+        "audioSha256": {"$ref": "#/$defs/sha"},
+        "ttsFingerprint": {"$ref": "#/$defs/sha"},
+        "sentenceCues": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "items": {"$ref": "#/$defs/sentenceCue"}
+        }
+      }
+    },
+    "flashbackLine": {"type": "string", "minLength": 1, "pattern": "\\S"},
+    "flashbackShots": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {"$ref": "#/$defs/flashbackShot"}
+    },
+    "_producer": {"$ref": "#/$defs/producer"}
+  },
+  "$defs": {
+    "text": {"type": "string", "minLength": 1, "maxLength": 240, "pattern": "\\S"},
+    "flashbackScreenLine": {"type": "string", "minLength": 1, "maxLength": 10, "pattern": "\\S"},
+    "sha": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "sourceRef": {"type": "string", "pattern": "^(?:C[0-9]{3,}|(?:F|R|E|SA)[0-9]{3})$"},
+    "bodyBeatRef": {"type": "string", "pattern": "^B[0-9]{3}$"},
+    "flashbackScreenLines": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 2,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/flashbackScreenLine"}
+    },
+    "highlight": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 24,
+          "pattern": "\\S"
+        }
+      ]
+    },
+    "bodyRefs": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/bodyBeatRef"}
+    },
+    "sourceRefs": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/sourceRef"}
+    },
+    "mustNotInvent": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 160, "pattern": "\\S"}
+    },
+    "visualBrief": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["subject", "actionOrState", "environment", "visibleResult", "composition"],
+      "properties": {
+        "subject": {"$ref": "#/$defs/text"},
+        "actionOrState": {"$ref": "#/$defs/text"},
+        "environment": {"$ref": "#/$defs/text"},
+        "visibleResult": {"$ref": "#/$defs/text"},
+        "composition": {"$ref": "#/$defs/text"}
+      }
+    },
+    "flashbackShot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "screenLines",
+        "highlight",
+        "visualBrief",
+        "bodyRefs",
+        "sourceRefs",
+        "mustNotInvent",
+        "asset"
+      ],
+      "properties": {
+        "id": {"enum": ["O01", "O02", "O03"]},
+        "screenLines": {"$ref": "#/$defs/flashbackScreenLines"},
+        "highlight": {"$ref": "#/$defs/highlight"},
+        "visualBrief": {"$ref": "#/$defs/visualBrief"},
+        "bodyRefs": {"$ref": "#/$defs/bodyRefs"},
+        "sourceRefs": {"$ref": "#/$defs/sourceRefs"},
+        "mustNotInvent": {"$ref": "#/$defs/mustNotInvent"},
+        "asset": {
+          "$ref": "#/$defs/authoredImage"
+        }
+      }
+    },
+    "sentenceCue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target", "startMs", "endMs"],
+      "properties": {
+        "target": {"const": "flashbackLine"},
+        "startMs": {"type": "integer", "minimum": 0},
+        "endMs": {"type": "integer", "minimum": 1}
+      }
+    },
+    "producer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["moduleId", "nodeId", "taskDigest", "inputs", "rules", "contract", "outputSha256"],
+      "properties": {
+        "moduleId": {"type": "string", "minLength": 1},
+        "nodeId": {"type": "string", "minLength": 1},
+        "taskDigest": {"$ref": "#/$defs/sha"},
+        "inputs": {"type": "array", "items": {"$ref": "#/$defs/sha"}, "uniqueItems": true},
+        "rules": {"type": "array", "items": {"$ref": "#/$defs/sha"}, "uniqueItems": true},
+        "contract": {"$ref": "#/$defs/sha"},
+        "outputSha256": {"$ref": "#/$defs/sha"}
+      }
+    },
+    "authoredImage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider",
+        "file",
+        "sha256",
+        "mimeType",
+        "width",
+        "height",
+        "drawingDigest",
+        "visual",
+        "promptFile",
+        "promptSha256"
+      ],
+      "allOf": [{"if":{"properties":{"provider":{"const":"openai-images"}},"required":["provider"]},"then":{"required":["model"]}}],
+      "properties": {
+        "provider": { "enum": ["image-gen", "openai-images"] },
+        "model": { "type": "string", "minLength": 1 },
+        "file": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "mimeType": {
+          "enum": [
+            "image/png",
+            "image/jpeg",
+            "image/webp"
+          ]
+        },
+        "width": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "drawingDigest": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "visual": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "packageId",
+            "version",
+            "profileId",
+            "profileDigest",
+            "referenceId"
+          ],
+          "properties": {
+            "packageId": {
+              "type": "string",
+              "minLength": 1
+            },
+            "version": {
+              "type": "string",
+              "minLength": 1
+            },
+            "profileId": {
+              "type": "string",
+              "minLength": 1
+            },
+            "profileDigest": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "referenceId": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "promptFile": {
+          "type": "string",
+          "minLength": 1
+        },
+        "promptSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      }
+    }
+  }
+}

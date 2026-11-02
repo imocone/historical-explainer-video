@@ -1,0 +1,14 @@
+{
+  "kind": "module",
+  "id": "understand-episode",
+  "runner": "ai",
+  "controllerEntry": "controller.json",
+  "slots": [],
+  "rules": ["SKILL.md"],
+  "runtimeResources": [
+    "references/text-understanding-method.md",
+    "../../p3-task-view.mjs"
+  ],
+  "outputSchema": "result.schema.json",
+  "validator": "validate.mjs"
+}

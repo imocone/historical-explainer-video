@@ -1,0 +1,1 @@
+{"primitive":"program-narration-finalize","projection":"artifact","reads":[{"role":"script-package","kind":"artifact"},{"role":"tts-result","kind":"artifact"},{"role":"subtitle-correction","kind":"artifact"}],"writes":["narration-package"],"returnTo":[]}

@@ -1,0 +1,61 @@
+{
+  "id": "video",
+  "subjectKind": "episode",
+  "stages": {
+    "p3": "understand",
+    "p4": "opener"
+  },
+  "nodes": [
+    {
+      "id": "understand",
+      "moduleId": "understand-episode",
+      "scope": "subject",
+      "condition": "always"
+    },
+    {
+      "id": "director",
+      "after": "understand",
+      "moduleId": "direct-episode",
+      "scope": "subject",
+      "condition": "always"
+    },
+    {
+      "id": "author",
+      "after": "director",
+      "moduleId": "author-beat",
+      "scope": "each-author-unit",
+      "condition": "always"
+    },
+    {
+      "id": "opener",
+      "after": "author",
+      "moduleId": "author-bookend",
+      "scope": "opener",
+      "condition": "always"
+    },
+    {
+      "id": "video",
+      "after": "author",
+      "moduleId": "author-video",
+      "scope": "subject",
+      "condition": "video-enabled"
+    },
+    {
+      "id": "video-assets",
+      "after": [
+        "opener",
+        "video"
+      ],
+      "moduleId": "produce-video-assets",
+      "scope": "subject",
+      "condition": "video-enabled"
+    },
+    {
+      "id": "render",
+      "after": "video-assets",
+      "moduleId": "render-video",
+      "scope": "subject",
+      "condition": "always"
+    }
+  ]
+}

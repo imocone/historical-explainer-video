@@ -1,0 +1,11 @@
+{
+  "id": "program",
+  "subjectKind": "program",
+  "stages": {
+    "p0": "plan-program"
+  },
+  "nodes": [
+    {"id": "plan-program", "moduleId": "plan-program", "scope": "subject", "condition": "historical-explainer"},
+    {"id": "plan-historical-documentary", "after": "plan-program", "moduleId": "plan-historical-documentary", "scope": "subject", "condition": "historical-documentary"}
+  ]
+}

@@ -1,0 +1,88 @@
+{
+  "kind": "visual",
+  "id": "modern-editorial",
+  "version": "1.0.0",
+  "catalog": {
+    "displayName": "中性科普二维手绘场景插画",
+    "purpose": "适合科普、知识、科技、社会生活、近现代及当前事件。以自然成年人物、彩色线稿、分组明暗色面与绘画笔触表达可信空间和日常光影；人物、器物与环境共享手绘质感，题材、国家、人物身份、设备与时代形制由当前内容决定。",
+    "rejectWhen": "当节目明确需要宋韵成熟轻Q国漫或日本历史版画画法时，选择对应中国或日本视觉包。"
+  },
+  "implements": [
+    {
+      "moduleId": "produce-covers",
+      "slotId": "visual",
+      "majorVersion": 1
+    },
+    {
+      "moduleId": "render-video",
+      "slotId": "visual",
+      "majorVersion": 1
+    },
+    {
+      "moduleId": "author-video",
+      "slotId": "visual",
+      "majorVersion": 1
+    },
+    {
+      "moduleId": "produce-video-assets",
+      "slotId": "visual",
+      "majorVersion": 1
+    },
+    {
+      "moduleId": "author-beat",
+      "slotId": "visual",
+      "majorVersion": 1
+    },
+    {
+      "moduleId": "author-bookend",
+      "slotId": "visual",
+      "majorVersion": 1
+    }
+  ],
+  "style": "style.json",
+  "productionProfiles": {
+    "fullframe-image": {
+      "profileId": "modern-editorial-fullframe-image-v1",
+      "referenceStyleScopes": [
+        "palette",
+        "linework",
+        "fill-finish",
+        "environment-rendering",
+        "character-proportion"
+      ]
+    },
+    "bookend-image": {
+      "profileId": "modern-editorial-bookend-image-v1",
+      "referenceStyleScopes": [
+        "palette",
+        "linework",
+        "fill-finish",
+        "environment-rendering",
+        "character-proportion"
+      ]
+    },
+    "cover-image": {
+      "profileId": "modern-editorial-cover-image-v1",
+      "referenceStyleScopes": [
+        "palette",
+        "linework",
+        "fill-finish",
+        "environment-rendering",
+        "character-proportion"
+      ]
+    }
+  },
+  "render": {
+    "tokens": "render/tokens.json"
+  },
+  "masterReference": {
+    "id": "modern-editorial-botanical-day-v2",
+    "path": "references/assets/modern-editorial-botanical-day-v2.png"
+  },
+  "supplementaryReferences": [
+    {
+      "id": "modern-editorial-city-dusk-v2",
+      "path": "references/assets/modern-editorial-city-dusk-v2.png"
+    }
+  ]
+}

@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "episodeId", "seriesTitle", "language", "narration"],
+  "properties": {
+    "schemaVersion": {"const": "3.0"},
+    "episodeId": {"type": "string", "pattern": "^ep[0-9]{2,}$"},
+    "seriesTitle": {"type": "string", "minLength": 1},
+    "language": {"const": "zh-CN"},
+    "openerNarration": {"type": "string", "minLength": 1, "pattern": "\\S"},
+    "narration": {"type": "string", "minLength": 1},
+    "publication": {"type": "object"},
+    "_producer": {"$ref": "#/$defs/producer"}
+  },
+  "allOf": [{"if": {"required": ["_producer"]}, "then": {"not": {"anyOf": [{"required": ["openerNarration"]}, {"required": ["publication"]}]}}}],
+  "$defs": {
+    "sha": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "producer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "moduleId",
+        "nodeId",
+        "taskDigest",
+        "inputs",
+        "rules",
+        "contract",
+        "outputSha256",
+        "materialExecutionId"
+      ],
+      "properties": {
+        "moduleId": {
+          "const": "author-documentary-narration"
+        },
+        "nodeId": {
+          "const": "author-documentary-narration"
+        },
+        "taskDigest": {
+          "$ref": "#/$defs/sha"
+        },
+        "inputs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/sha"
+          },
+          "uniqueItems": true
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/sha"
+          },
+          "uniqueItems": true
+        },
+        "contract": {
+          "$ref": "#/$defs/sha"
+        },
+        "outputSha256": {
+          "$ref": "#/$defs/sha"
+        },
+        "materialExecutionId": {
+          "$ref": "#/$defs/sha"
+        }
+      }
+    }
+  }
+}

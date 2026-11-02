@@ -1,0 +1,259 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "events"
+  ],
+  "properties": {
+    "events": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/event"
+      }
+    },
+    "_producer": {
+      "type": "object"
+    },
+    "musicGestures": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/musicGesture"
+      }
+    }
+  },
+  "$defs": {
+    "event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "purpose"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^S[0-9]{3}$"
+        },
+        "purpose": {
+          "type": "string",
+          "minLength": 1
+        },
+        "soundId": {
+          "type": "string",
+          "enum": [
+            "plastic-click",
+            "table-clack",
+            "wood-tap",
+            "metal-tap",
+            "paper",
+            "whoosh",
+            "creak",
+            "thump",
+            "ding",
+            "pop"
+          ]
+        },
+        "anchor": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "target",
+            "action",
+            "offsetSeconds"
+          ],
+          "properties": {
+            "target": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+            },
+            "action": {
+              "type": "string",
+              "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+            },
+            "offsetSeconds": {
+              "type": "number"
+            }
+          }
+        },
+        "gain": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "pan": {
+          "type": "number",
+          "minimum": -1,
+          "maximum": 1
+        },
+        "eventId": {
+          "type": "string",
+          "pattern": "^E[0-9]{3}$"
+        },
+        "asset": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "file",
+            "sha256",
+            "durationSeconds",
+            "syncSeconds"
+          ],
+          "properties": {
+            "file": {
+              "type": "string",
+              "pattern": "^[^/].*\\.wav$"
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "durationSeconds": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "syncSeconds": {
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        }
+      },
+      "oneOf": [
+        {
+          "required": [
+            "anchor"
+          ],
+          "not": {
+            "required": [
+              "eventId"
+            ]
+          }
+        },
+        {
+          "required": [
+            "eventId"
+          ],
+          "not": {
+            "required": [
+              "anchor"
+            ]
+          }
+        }
+      ],
+      "allOf": [
+        {
+          "oneOf": [
+            {
+              "required": [
+                "soundId"
+              ],
+              "not": {
+                "required": [
+                  "asset"
+                ]
+              }
+            },
+            {
+              "required": [
+                "asset"
+              ],
+              "not": {
+                "required": [
+                  "soundId"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "musicGesture": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "purpose",
+        "points"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^G[0-9]{3}$"
+        },
+        "purpose": {
+          "type": "string",
+          "minLength": 1
+        },
+        "points": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "$ref": "#/$defs/musicPoint"
+          }
+        }
+      }
+    },
+    "musicPoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "gain"
+      ],
+      "properties": {
+        "gain": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "anchor": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "target",
+            "action",
+            "offsetSeconds"
+          ],
+          "properties": {
+            "target": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+            },
+            "action": {
+              "type": "string",
+              "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+            },
+            "offsetSeconds": {
+              "type": "number"
+            }
+          }
+        },
+        "eventId": {
+          "type": "string",
+          "pattern": "^E[0-9]{3}$"
+        }
+      },
+      "oneOf": [
+        {
+          "required": [
+            "anchor"
+          ],
+          "not": {
+            "required": [
+              "eventId"
+            ]
+          }
+        },
+        {
+          "required": [
+            "eventId"
+          ],
+          "not": {
+            "required": [
+              "anchor"
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

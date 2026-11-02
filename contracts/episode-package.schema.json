@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Accepted episode packaging",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["opener"],
+  "properties": {
+    "opener": {
+      "type": "object",
+      "required": ["templateId", "_producer"],
+      "properties": {
+        "templateId": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        },
+        "_producer": {
+          "$ref": "#/$defs/producer"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "producer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "moduleId",
+        "nodeId",
+        "taskDigest",
+        "inputs",
+        "rules",
+        "contract",
+        "outputSha256"
+      ],
+      "properties": {
+        "moduleId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "nodeId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "taskDigest": {
+          "$ref": "#/$defs/sha"
+        },
+        "inputs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/sha"
+          },
+          "uniqueItems": true
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/sha"
+          },
+          "uniqueItems": true
+        },
+        "contract": {
+          "$ref": "#/$defs/sha"
+        },
+        "outputSha256": {
+          "$ref": "#/$defs/sha"
+        }
+      }
+    },
+    "sha": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    }
+  }
+}

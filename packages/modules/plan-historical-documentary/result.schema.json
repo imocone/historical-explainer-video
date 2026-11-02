@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "programId", "programForm", "seriesTitle", "audience", "editorialDirection", "viewerBenefit", "narrativeTone", "documentaryContract", "seriesConcept", "artisticApproach", "seriesNarrativeStrategy", "storyWorld", "visualPackage", "coverPackage", "openerTemplate", "researchLibrary", "episodes"],
+  "properties": {
+    "schemaVersion": {"const": "8.1"},
+    "programId": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "programForm": {"const": "historical-documentary"},
+    "seriesTitle": {"type": "string", "minLength": 1},
+    "audience": {"type": "string", "minLength": 1},
+    "editorialDirection": {"type": "string", "minLength": 1},
+    "viewerBenefit": {"type": "string", "minLength": 1},
+    "narrativeTone": {"type": "string", "minLength": 1},
+    "documentaryContract": {"type": "string", "minLength": 1},
+    "seriesConcept": {"type": "string", "minLength": 1},
+    "artisticApproach": {"type": "string", "minLength": 1},
+    "seriesNarrativeStrategy": {"type": "string", "minLength": 1},
+    "storyWorld": {"$ref": "#/$defs/storyWorld"},
+    "maxDurationSeconds": {"type": "integer", "minimum": 1},
+    "openerTemplate": {"description": "Programme-wide opener template ID, independent of programme form. P0 chooses from the current opener catalog.", "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "visualPackage": {"type": "object", "additionalProperties": false, "required": ["visualPackageId", "version"], "properties": {"visualPackageId": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"}, "version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"}}},
+    "coverPackage": {"type": "object", "additionalProperties": false, "required": ["coverPackageId", "version"], "properties": {"coverPackageId": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"}, "version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"}}},
+    "researchLibrary": {"type": "object", "additionalProperties": false, "required": ["notebookId", "requiredSourceIds"], "properties": {"notebookId": {"type": "string", "minLength": 1}, "requiredSourceIds": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}}, "baseBookSourceId": {"type": "string", "minLength": 1}}},
+    "episodes": {"type": "array", "minItems": 1, "items": {"type": "object", "additionalProperties": false, "required": ["episodeId", "episodeTitle", "episodeConcept", "episodeThroughline", "episodeCreativeBrief", "episodeScope", "episodeBenefit", "storyOutline"], "properties": {"episodeId": {"type": "string", "pattern": "^ep[0-9]{2,}$"}, "episodeTitle": {"type": "string", "minLength": 1, "maxLength": 30}, "episodeConcept": {"type": "string", "minLength": 1}, "episodeThroughline": {"type": "string", "minLength": 1}, "episodeCreativeBrief": {"type": "string", "minLength": 1}, "episodeScope": {"type": "string", "minLength": 1}, "episodeBenefit": {"type": "string", "minLength": 1}, "storyOutline": {"$ref": "#/$defs/storyOutline"}}}},
+    "_producer": {"$ref": "#/$defs/producer"}
+  },
+  "$defs": {
+    "text": {"type": "string", "minLength": 1, "pattern": "\\S"},
+    "sha": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "storyWorld": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["worldFrame", "recurringElements", "continuityPrinciple", "episodeGrammar", "reconstructionBoundary"],
+      "properties": {
+        "worldFrame": {"$ref": "#/$defs/text"},
+        "recurringElements": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "kind", "function"],
+            "properties": {
+              "id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+              "kind": {"enum": ["role", "place", "object", "time"]},
+              "function": {"$ref": "#/$defs/text"}
+            }
+          }
+        },
+        "continuityPrinciple": {"$ref": "#/$defs/text"},
+        "episodeGrammar": {"type": "array", "minItems": 3, "maxItems": 8, "items": {"$ref": "#/$defs/text"}},
+        "reconstructionBoundary": {"$ref": "#/$defs/text"}
+      }
+    },
+    "storyOutline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["storyMode", "viewpoint", "centralProcess", "actionChain", "meaningReveals", "environment", "ending", "continuityLinks", "reconstruction"],
+      "properties": {
+        "storyMode": {"$ref": "#/$defs/text"},
+        "viewpoint": {"$ref": "#/$defs/text"},
+        "centralProcess": {"$ref": "#/$defs/text"},
+        "actionChain": {"type": "array", "minItems": 3, "maxItems": 12, "items": {"$ref": "#/$defs/text"}},
+        "meaningReveals": {"type": "array", "minItems": 1, "maxItems": 3, "items": {"$ref": "#/$defs/text"}},
+        "environment": {"$ref": "#/$defs/text"},
+        "ending": {"$ref": "#/$defs/text"},
+        "continuityLinks": {"type": "array", "maxItems": 4, "items": {"$ref": "#/$defs/text"}},
+        "reconstruction": {"$ref": "#/$defs/text"}
+      }
+    },
+    "producer": {"type": "object", "additionalProperties": false, "required": ["moduleId", "nodeId", "taskDigest", "inputs", "rules", "contract", "outputSha256"], "properties": {"moduleId": {"const": "plan-historical-documentary"}, "nodeId": {"const": "plan-historical-documentary"}, "taskDigest": {"$ref": "#/$defs/sha"}, "inputs": {"type": "array", "items": {"$ref": "#/$defs/sha"}, "uniqueItems": true}, "rules": {"type": "array", "items": {"$ref": "#/$defs/sha"}, "uniqueItems": true}, "contract": {"$ref": "#/$defs/sha"}, "outputSha256": {"$ref": "#/$defs/sha"}}}
+  }
+}

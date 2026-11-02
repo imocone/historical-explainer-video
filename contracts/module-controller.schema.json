@@ -1,0 +1,144 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Declarative module controller",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["primitive", "projection", "reads", "writes", "returnTo"],
+  "properties": {
+    "primitive": {
+      "enum": [
+        "ai-program-plan",
+        "ai-narration",
+        "program-narration-synthesize",
+        "ai-subtitles",
+        "program-narration-finalize",
+        "ai-understanding",
+        "ai-visual-director",
+        "ai-beat-treatment",
+        "ai-segment",
+        "ai-video-plan",
+        "ai-video-assets",
+        "program-render",
+        "program-covers",
+        "ai-publish"
+      ]
+    },
+    "projection": {
+      "enum": ["artifact", "understanding", "visual-plan", "treatment", "segment"]
+    },
+    "reads": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["role", "kind"],
+        "properties": {
+          "role": {
+            "enum": [
+              "narration-package",
+              "program-request",
+              "visual-package-catalog",
+              "cover-package-catalog",
+              "program-plan",
+              "episode-brief",
+              "program-episode-slice",
+              "script-package",
+              "opener-narration",
+              "tts-result",
+              "subtitle-correction",
+              "visual-package",
+              "source-assets",
+              "storyboard-understanding-section",
+              "storyboard-visual-plan",
+              "template-catalog",
+              "beat-semantic-context",
+              "template-author-context",
+              "storyboard",
+              "storyboard-template-selection",
+              "storyboard-features",
+              "feature-results",
+              "video-plan",
+              "video-manifest",
+              "render-receipt",
+              "release-request",
+              "publication",
+              "cover-receipt",
+              "final-video",
+              "publication-text",
+              "cover-images"
+            ]
+          },
+          "kind": {"enum": ["artifact", "external-input", "projection", "catalog"]},
+          "whenScope": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"}
+        }
+      },
+      "uniqueItems": true
+    },
+    "writes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+      "uniqueItems": true
+    },
+    "segmentTypeFromScope": {"type": "boolean"},
+    "templateSlotFromScope": {"type": "boolean"},
+    "returnTo": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["primitive"],
+        "properties": {
+          "primitive": {
+            "enum": [
+              "ai-narration",
+              "ai-understanding",
+              "ai-visual-director",
+              "ai-segment",
+              "ai-video-plan"
+            ]
+          },
+          "segmentType": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+          "whenScope": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"}
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "oneOf": [
+        {"properties": {"primitive": {"const": "ai-program-plan"}, "projection": {"const": "artifact"}, "writes": {"const": ["program-plan", "episode-brief"]}}},
+        {"properties": {"primitive": {"const": "ai-narration"}, "projection": {"const": "artifact"}, "writes": {"const": ["script-package", "opener-narration", "publication", "publication-text"]}}},
+        {"properties": {"primitive": {"const": "program-narration-synthesize"}, "projection": {"const": "artifact"}, "writes": {"const": ["tts-result"]}}},
+        {"properties": {"primitive": {"const": "ai-subtitles"}, "projection": {"const": "artifact"}, "writes": {"const": ["subtitle-correction"]}}},
+        {"properties": {"primitive": {"const": "program-narration-finalize"}, "projection": {"const": "artifact"}, "writes": {"const": ["narration-package"]}}},
+        {"properties": {"primitive": {"const": "ai-understanding"}, "projection": {"const": "understanding"}, "writes": {"const": ["storyboard-understanding-section"]}}},
+        {"properties": {"primitive": {"const": "ai-visual-director"}, "projection": {"const": "visual-plan"}, "writes": {"const": ["storyboard-visual-plan"]}}},
+        {"properties": {"primitive": {"const": "ai-beat-treatment"}, "projection": {"const": "treatment"}, "writes": {"const": ["storyboard-treatment", "storyboard-feature-result", "storyboard-author-quotes"]}}},
+        {"properties": {"primitive": {"const": "ai-segment"}, "projection": {"const": "segment"}, "writes": {"const": ["episode-package-opener"]}}},
+        {"properties": {"primitive": {"const": "ai-video-plan"}, "projection": {"const": "artifact"}, "writes": {"const": ["video-plan"]}}},
+        {"properties": {"primitive": {"const": "ai-video-assets"}, "projection": {"const": "artifact"}, "writes": {"const": ["video-manifest"]}}},
+        {"properties": {"primitive": {"const": "program-render"}, "projection": {"const": "artifact"}, "writes": {"const": ["final-video", "render-receipt"]}}},
+        {"properties": {"primitive": {"const": "program-covers"}, "projection": {"const": "artifact"}, "writes": {"const": ["cover-receipt", "cover-images"]}}},
+        {"properties": {"primitive": {"const": "ai-publish"}, "projection": {"const": "artifact"}, "writes": {"const": ["publish-receipt", "publication-text"]}}}
+      ]
+    },
+    {
+      "if": {"properties": {"primitive": {"const": "ai-segment"}}, "required": ["primitive"]},
+      "then": {
+        "required": ["segmentTypeFromScope", "templateSlotFromScope"],
+        "properties": {
+          "segmentTypeFromScope": {"const": true},
+          "templateSlotFromScope": {"const": true}
+        }
+      },
+      "else": {
+        "properties": {
+          "segmentTypeFromScope": false,
+          "templateSlotFromScope": false
+        }
+      }
+    }
+  ]
+}

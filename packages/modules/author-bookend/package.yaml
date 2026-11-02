@@ -1,0 +1,58 @@
+{
+  "kind": "module",
+  "id": "author-bookend",
+  "runner": "ai",
+  "controllerEntry": "controller.json",
+  "slots": [
+    {
+      "id": "opener-template",
+      "majorVersion": 1,
+      "accepts": "template",
+      "cardinality": "one",
+      "selectionSource": "segment-template",
+      "readRoles": [
+        "authorRules",
+        "outputSchema",
+        "validator",
+        "examples"
+      ],
+      "optionalReadRoles": [
+        "acceptanceRules",
+        "authorContextEntry",
+        "assetContractRules",
+        "assetContractEntry"
+      ],
+      "writeTargets": [
+        "episode-package-opener"
+      ]
+    },
+    {
+      "id": "visual",
+      "majorVersion": 1,
+      "accepts": "visual",
+      "cardinality": "one",
+      "selectionSource": "program-visual",
+      "readRoles": [
+        "productionProfiles"
+      ],
+      "writeTargets": [
+        "episode-package-opener"
+      ]
+    }
+  ],
+  "rules": [
+    "SKILL.md"
+  ],
+  "runtimeResources": [
+    "references/opener-acceptance.md",
+    "opener-tts-contract.json",
+    "opener-timing.mjs",
+    "../render-video/runtime/media-process.mjs",
+    "dependency-projection.mjs",
+    "../../authored-images.mjs",
+    "../../runtime-config.mjs",
+    "../synthesize-narration/minimax.mjs",
+    "../../image-generation.mjs"
+  ],
+  "validator": "validate.mjs"
+}

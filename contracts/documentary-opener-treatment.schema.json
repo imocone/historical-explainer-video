@@ -1,0 +1,345 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Documentary opener treatment",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "templateId",
+    "episodeTitle",
+    "memoryShots",
+    "hero"
+  ],
+  "properties": {
+    "templateId": {
+      "const": "documentary-opener"
+    },
+    "_producer": {
+      "$ref": "#/$defs/producer"
+    },
+    "episodeTitle": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 30
+    },
+    "memoryShots": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "items": {
+        "$ref": "#/$defs/bodyShot"
+      }
+    },
+    "hero": {
+      "$ref": "#/$defs/generatedHero"
+    }
+  },
+  "$defs": {
+    "text": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 240,
+      "pattern": "\\S"
+    },
+    "sha": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "bodyBeatRef": {
+      "type": "string",
+      "pattern": "^B[0-9]{3}$"
+    },
+    "producer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "moduleId",
+        "nodeId",
+        "taskDigest",
+        "inputs",
+        "rules",
+        "contract",
+        "outputSha256"
+      ],
+      "properties": {
+        "moduleId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "nodeId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "taskDigest": {
+          "$ref": "#/$defs/sha"
+        },
+        "inputs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/sha"
+          },
+          "uniqueItems": true
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/sha"
+          },
+          "uniqueItems": true
+        },
+        "contract": {
+          "$ref": "#/$defs/sha"
+        },
+        "outputSha256": {
+          "$ref": "#/$defs/sha"
+        }
+      }
+    },
+    "bodyShot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "bodyRefs",
+        "requestId",
+        "focus",
+        "selectionReason"
+      ],
+      "properties": {
+        "id": {
+          "enum": [
+            "D01",
+            "D02",
+            "D03",
+            "D04",
+            "D05",
+            "D06"
+          ]
+        },
+        "bodyRefs": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "items": {
+            "$ref": "#/$defs/bodyBeatRef"
+          }
+        },
+        "requestId": {
+          "type": "string",
+          "pattern": "^AR[0-9]{3}$"
+        },
+        "focus": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "x",
+            "y"
+          ],
+          "properties": {
+            "x": {
+              "type": "number",
+              "minimum": 0.1,
+              "maximum": 0.9
+            },
+            "y": {
+              "type": "number",
+              "minimum": 0.1,
+              "maximum": 0.9
+            }
+          }
+        },
+        "selectionReason": {
+          "$ref": "#/$defs/text"
+        },
+        "framing": {
+          "enum": [
+            "wide",
+            "panorama"
+          ]
+        }
+      }
+    },
+    "sourceRef": {
+      "type": "string",
+      "pattern": "^(?:C[0-9]{3,}|(?:F|R|E|SA)[0-9]{3})$"
+    },
+    "visualBrief": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "subject",
+        "actionOrState",
+        "environment",
+        "visibleResult",
+        "composition"
+      ],
+      "properties": {
+        "subject": {
+          "$ref": "#/$defs/text"
+        },
+        "actionOrState": {
+          "$ref": "#/$defs/text"
+        },
+        "environment": {
+          "$ref": "#/$defs/text"
+        },
+        "visibleResult": {
+          "$ref": "#/$defs/text"
+        },
+        "composition": {
+          "$ref": "#/$defs/text"
+        }
+      }
+    },
+    "generatedHero": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "bodyRefs",
+        "sourceRefs",
+        "mustNotInvent",
+        "visualBrief",
+        "focus",
+        "framing",
+        "selectionReason",
+        "asset"
+      ],
+      "properties": {
+        "id": {
+          "const": "D06"
+        },
+        "bodyRefs": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/bodyBeatRef"
+          }
+        },
+        "sourceRefs": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/sourceRef"
+          }
+        },
+        "mustNotInvent": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160,
+            "pattern": "\\S"
+          }
+        },
+        "visualBrief": {
+          "$ref": "#/$defs/visualBrief"
+        },
+        "focus": {
+          "$ref": "#/$defs/bodyShot/properties/focus"
+        },
+        "framing": {
+          "$ref": "#/$defs/bodyShot/properties/framing"
+        },
+        "selectionReason": {
+          "$ref": "#/$defs/text"
+        },
+        "asset": {
+          "$ref": "#/$defs/authoredImage"
+        }
+      }
+    },
+    "authoredImage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider",
+        "file",
+        "sha256",
+        "mimeType",
+        "width",
+        "height",
+        "drawingDigest",
+        "visual",
+        "promptFile",
+        "promptSha256"
+      ],
+      "allOf": [{"if":{"properties":{"provider":{"const":"openai-images"}},"required":["provider"]},"then":{"required":["model"]}}],
+      "properties": {
+        "provider": { "enum": ["image-gen", "openai-images"] },
+        "model": { "type": "string", "minLength": 1 },
+        "file": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "mimeType": {
+          "enum": [
+            "image/png",
+            "image/jpeg",
+            "image/webp"
+          ]
+        },
+        "width": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "height": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "drawingDigest": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "visual": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "packageId",
+            "version",
+            "profileId",
+            "profileDigest",
+            "referenceId"
+          ],
+          "properties": {
+            "packageId": {
+              "type": "string",
+              "minLength": 1
+            },
+            "version": {
+              "type": "string",
+              "minLength": 1
+            },
+            "profileId": {
+              "type": "string",
+              "minLength": 1
+            },
+            "profileDigest": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "referenceId": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "promptFile": {
+          "type": "string",
+          "minLength": 1
+        },
+        "promptSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      }
+    }
+  }
+}

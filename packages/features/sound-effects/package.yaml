@@ -1,0 +1,74 @@
+{
+  "kind": "feature",
+  "id": "sound-effects",
+  "implements": [
+    {
+      "moduleId": "author-beat",
+      "slotId": "beat-feature",
+      "majorVersion": 1
+    },
+    {
+      "moduleId": "render-video",
+      "slotId": "feature",
+      "majorVersion": 1
+    }
+  ],
+  "catalog": {
+    "displayName": {
+      "en": "Lemo Sound Effects",
+      "zh": "Lemo音效"
+    },
+    "purpose": "理解整章内容与已成画面，设计听觉推进、专用拟音及音乐收放意图，按原单位交付；关闭保留画面与单曲基础播放",
+    "disabledBehavior": "未启用时不贡献正文音效；已启用的作者可明确交付空事件留白",
+    "initialState": {
+      "units": {},
+      "enabled": true
+    }
+  },
+  "authorRules": [
+    "AUTHOR.md"
+  ],
+  "authorContextEntry": "author-context.mjs",
+  "runtimeResources": [
+    "SOURCES.md",
+    "build-library.py",
+    "lemo/sfx.py",
+    "lemo/LICENSE",
+    "generate.mjs",
+    "synthesize.py",
+    "lemo/ink_wash.py",
+    "lemo/watercolor.py",
+    "references/sound-design.md",
+    "references/synthesis.md",
+    "../background-music/DYNAMICS.md",
+    "../../runtime-config.mjs"
+  ],
+  "acceptanceRules": [
+    "timing.mjs",
+    "library/catalog.json",
+    "../../cue-boundaries.mjs",
+    "../../video-spec.mjs",
+    "../../program-utils.mjs",
+    "../background-music/dynamics.mjs"
+  ],
+  "outputSchema": "../../../contracts/sound-effects.schema.json",
+  "validator": "validate.mjs",
+  "renderEntry": "render-entry.mjs",
+  "renderRules": [
+    "render-entry.mjs",
+    "timing.mjs",
+    "library/catalog.json"
+  ],
+  "renderAssets": [
+    "library/plastic-click.wav",
+    "library/table-clack.wav",
+    "library/wood-tap.wav",
+    "library/metal-tap.wav",
+    "library/paper.wav",
+    "library/whoosh.wav",
+    "library/creak.wav",
+    "library/thump.wav",
+    "library/ding.wav",
+    "library/pop.wav"
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "fingerprint",
+    "ttsInputSha256",
+    "contractSha256",
+    "status",
+    "_producer"
+  ],
+  "properties": {
+    "schemaVersion": {"const": "1.0"},
+    "fingerprint": {"$ref": "#/$defs/sha"},
+    "ttsInputSha256": {"$ref": "#/$defs/sha"},
+    "contractSha256": {"$ref": "#/$defs/sha"},
+    "status": {
+      "enum": ["not-created", "submitting", "unknown", "succeeded"]
+    },
+    "rawAudioSha256": {"$ref": "#/$defs/sha"},
+    "_producer": {"$ref": "#/$defs/producer"}
+  },
+  "$defs": {
+    "sha": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "producer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["moduleId", "nodeId", "taskDigest", "inputs", "outputSha256"],
+      "properties": {
+        "moduleId": {"const": "synthesize-narration"},
+        "nodeId": {"const": "synthesize-narration"},
+        "taskDigest": {"$ref": "#/$defs/sha"},
+        "inputs": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/sha"},
+          "uniqueItems": true
+        },
+        "outputSha256": {"$ref": "#/$defs/sha"}
+      }
+    }
+  }
+}

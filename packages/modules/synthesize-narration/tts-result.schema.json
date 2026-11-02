@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "episodeId", "seriesTitle", "language", "fingerprint", "ttsInput", "contractSha256", "rawAudio", "_producer"],
+  "properties": {
+    "schemaVersion": {"const": "1.0"},
+    "episodeId": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "seriesTitle": {"type": "string", "minLength": 1},
+    "language": {"const": "zh-CN"},
+    "fingerprint": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "ttsInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text", "sha256"],
+      "properties": {
+        "text": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+      }
+    },
+    "contractSha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "rawAudio": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {"const": "raw-narration.flac"},
+        "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+      }
+    },
+    "remoteTaskId": {"type": ["string", "null"]},
+    "nativeTiming": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["source", "provider", "granularity", "cues"],
+          "properties": {
+            "source": {"const": "provider-native"},
+            "provider": {"type": "string", "minLength": 1},
+            "granularity": {"const": "word"},
+            "cues": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["text", "startMs", "endMs"],
+                "properties": {
+                  "text": {"type": "string", "minLength": 1},
+                  "startMs": {"type": "integer", "minimum": 0},
+                  "endMs": {"type": "integer", "minimum": 1}
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "reused": {"type": "boolean"},
+    "_producer": {"$ref": "#/$defs/producer"}
+  },
+  "$defs": {
+    "producer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["moduleId", "nodeId", "taskDigest", "inputs", "outputSha256"],
+      "properties": {
+        "moduleId": {"const": "synthesize-narration"},
+        "nodeId": {"const": "synthesize-narration"},
+        "taskDigest": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "inputs": {"type": "array", "items": {"type": "string", "pattern": "^[a-f0-9]{64}$"}, "uniqueItems": true},
+        "outputSha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+      }
+    }
+  }
+}

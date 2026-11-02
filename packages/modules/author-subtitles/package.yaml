@@ -1,0 +1,11 @@
+{
+  "kind": "module",
+  "id": "author-subtitles",
+  "runner": "ai",
+  "controllerEntry": "controller.json",
+  "slots": [],
+  "rules": ["SKILL.md"],
+  "runtimeResources": ["build-candidate.mjs", "subtitle-timing.mjs", "references/subtitle-authoring.md", "../render-video/runtime/measure-captions.mjs", "../render-video/runtime/caption-content.mjs", "../render-video/runtime/caption-style.mjs", "../../visual-package.mjs", "../../video-spec.mjs", "../../runtime-config.mjs"],
+  "outputSchema": "result.schema.json",
+  "validator": "validate.mjs"
+}

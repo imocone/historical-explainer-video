@@ -1,0 +1,81 @@
+{
+  "name": "交叉对冲的非生产字段示例",
+  "result": {
+    "templateId": "crossfire-opener",
+    "flashbackLine": "进京赶考，为何先卖家田？",
+    "flashbackShots": [
+      {
+        "id": "O01",
+        "screenLines": [
+          "进京赶考"
+        ],
+        "highlight": null,
+        "visualBrief": {
+          "subject": "准备赴京参与中央选官的匿名远方士人",
+          "actionOrState": "人物整理笔墨、粮袋与旧行囊，准备踏上前往京城的长路",
+          "environment": "连接远方州县与京城的古代道路，不绑定未经来源支持的具体地点",
+          "visibleResult": "观众第一眼看见人物正在为离乡进京参与中央选官作准备",
+          "composition": "完整、均匀曝光的 16:9 侧后方中景，人物、行囊与延伸道路形成清楚方向关系，不预制文字暗部"
+        },
+        "bodyRefs": [
+          "B001"
+        ],
+        "sourceRefs": [
+          "C001"
+        ],
+        "mustNotInvent": [
+          "不得补造人物姓名、对白、籍贯或具体考场地点"
+        ]
+      },
+      {
+        "id": "O02",
+        "screenLines": [
+          "先卖"
+        ],
+        "highlight": null,
+        "visualBrief": {
+          "subject": "为筹进京钱粮而出售田产的匿名士人家庭",
+          "actionOrState": "匿名参与者把无可读文字的田产凭据交给匿名买方，换取通用钱粮",
+          "environment": "普通家庭院落或田地边缘，交易物件符合古代生活常识",
+          "visibleResult": "观众第一眼看见进京以前，田产已经先被卖掉",
+          "composition": "完整、均匀曝光的 16:9 近中景，田产凭据、交接动作与钱粮是唯一视觉重心，不生成可读契文"
+        },
+        "bodyRefs": [
+          "B002"
+        ],
+        "sourceRefs": [
+          "R001"
+        ],
+        "mustNotInvent": [
+          "不得说所有寒门都卖过田，不得补造姓名、价格、契文或强迫交易"
+        ]
+      },
+      {
+        "id": "O03",
+        "screenLines": [
+          "家田"
+        ],
+        "highlight": null,
+        "visualBrief": {
+          "subject": "匿名士人家庭赖以生活的田地",
+          "actionOrState": "家人在田边清点粮袋与农具，土地作为家庭最重的资产清楚可见",
+          "environment": "普通农田与简朴住宅，不绑定未经来源支持的具体州县",
+          "visibleResult": "观众第一眼知道被卖掉的不是小物件，而是维持生活的田",
+          "composition": "完整、均匀曝光的 16:9 中远景，田地、家人与粮袋形成单一视觉关系，不预制文字暗部"
+        },
+        "bodyRefs": [
+          "B003"
+        ],
+        "sourceRefs": [
+          "C002",
+          "R001"
+        ],
+        "mustNotInvent": [
+          "不得补造田地面积、收成、地名或家庭成员身份"
+        ]
+      }
+    ],
+    "episodeTitle": "进京之前"
+  },
+  "usageBoundary": "只教字段和三幅观察面，实际生产只用当前工作单。"
+}

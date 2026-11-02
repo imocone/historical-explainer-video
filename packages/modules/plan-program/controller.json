@@ -1,0 +1,27 @@
+{
+  "primitive": "ai-program-plan",
+  "projection": "artifact",
+  "reads": [
+    {
+      "role": "program-request",
+      "kind": "external-input"
+    },
+    {
+      "role": "visual-package-catalog",
+      "kind": "catalog"
+    },
+    {
+      "role": "cover-package-catalog",
+      "kind": "catalog"
+    },
+    {
+      "role": "template-catalog",
+      "kind": "catalog"
+    }
+  ],
+  "writes": [
+    "program-plan",
+    "episode-brief"
+  ],
+  "returnTo": []
+}

@@ -1,0 +1,82 @@
+{
+  "kind": "module",
+  "id": "author-narration",
+  "runner": "ai",
+  "controllerEntry": "controller.json",
+  "slots": [
+    {
+      "id": "opener-copy-template",
+      "majorVersion": 1,
+      "accepts": "template",
+      "cardinality": "one",
+      "selectionSource": "segment-template",
+      "readRoles": [
+        "copyRules",
+        "validator"
+      ],
+      "writeTargets": []
+    },
+    {
+      "id": "cover-design",
+      "majorVersion": 1,
+      "accepts": "cover",
+      "cardinality": "one",
+      "selectionSource": "program-cover",
+      "readRoles": [
+        "coverRules",
+        "examples"
+      ],
+      "optionalReadRoles": [
+        "finalExample"
+      ],
+      "writeTargets": [
+        "publication"
+      ]
+    },
+    {
+      "id": "vertical-cover-design",
+      "majorVersion": 1,
+      "accepts": "cover",
+      "cardinality": "one",
+      "selectionSource": "program-cover-vertical",
+      "readRoles": [
+        "coverRules",
+        "examples"
+      ],
+      "optionalReadRoles": [
+        "finalExample"
+      ],
+      "writeTargets": [
+        "publication"
+      ]
+    }
+  ],
+  "rules": [
+    "SKILL.md"
+  ],
+  "runtimeResources": [
+    "scripts/author-handoff.mjs",
+    "references/author-handoff.md",
+    "references/video-led.md",
+    "scripts/find-evidence.mjs",
+    "references/explainer-evidence-and-query.md",
+    "references/author-task-editing.md",
+    "references/explainer-authoring-method.md",
+    "references/current-affairs-authoring-method.md",
+    "references/draft-selection.md",
+    "references/narration-audit.md",
+    "scripts/notebook_lock.py",
+    "scripts/task_scratch.py",
+    "scripts/run-cited-query.py",
+    "publication.mjs",
+    "publication-text.mjs",
+    "references/platform-packaging-method.md",
+    "references/cover-content-method.md",
+    "../../../contracts/publication.schema.json",
+    "references/publication-author.md",
+    "youtube-description.mjs",
+    "../../runtime-config.mjs"
+  ],
+  "outputSchema": "result.schema.json",
+  "validator": "validate.mjs"
+}

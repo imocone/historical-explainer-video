@@ -1,0 +1,274 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Formal package manifest",
+  "oneOf": [
+    {"$ref": "#/$defs/module"},
+    {"$ref": "#/$defs/template"},
+    {"$ref": "#/$defs/feature"},
+    {"$ref": "#/$defs/cover"}
+  ],
+  "$defs": {
+    "path": {"type": "string", "minLength": 1, "pattern": "^(?!/).+$"},
+    "id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "resourceRole": {
+      "enum": [
+        "catalog",
+        "authorRules",
+        "copyRules",
+        "acceptanceRules",
+        "authorContextEntry",
+        "assetContractRules",
+        "assetContractEntry",
+        "renderRules",
+        "renderAssets",
+        "renderEntry",
+        "renderPlanEntry",
+        "renderer",
+        "cuePolicy",
+        "outputSchema",
+        "validator",
+        "examples",
+        "productionProfiles",
+        "coverRules",
+        "finalExample",
+        "render"
+      ]
+    },
+    "catalog": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["displayName", "purpose"],
+      "properties": {
+        "displayName": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["en", "zh"],
+          "properties": {
+            "en": {"type": "string", "minLength": 1},
+            "zh": {"type": "string", "minLength": 1}
+          }
+        },
+        "purpose": {"type": "string", "minLength": 1},
+        "rejectWhen": {"type": "string", "minLength": 1},
+        "disabledBehavior": {"type": "string", "minLength": 1},
+        "initialState": {}
+      }
+    },
+    "slot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "majorVersion", "accepts", "cardinality", "selectionSource", "readRoles", "writeTargets"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "majorVersion": {"type": "integer", "minimum": 1},
+        "accepts": {"enum": ["template", "feature", "visual", "cover"]},
+        "cardinality": {"enum": ["one", "zero-or-one", "many"]},
+        "selectionSource": {"enum": ["catalog", "beat-template", "segment-template", "episode-features", "program-visual", "program-cover", "program-cover-vertical", "fixed"]},
+        "readRoles": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/resourceRole"},
+          "uniqueItems": true
+        },
+        "optionalReadRoles": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/resourceRole"},
+          "uniqueItems": true
+        },
+        "writeTargets": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/id"},
+          "uniqueItems": true
+        },
+        "fixedPackageIds": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/id"},
+          "uniqueItems": true
+        }
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"selectionSource": {"const": "fixed"}}, "required": ["selectionSource"]},
+          "then": {"required": ["fixedPackageIds"], "properties": {"fixedPackageIds": {}}},
+          "else": {"properties": {"fixedPackageIds": false}}
+        }
+      ]
+    },
+    "implementation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["moduleId", "slotId", "majorVersion"],
+      "properties": {
+        "moduleId": {"$ref": "#/$defs/id"},
+        "slotId": {"$ref": "#/$defs/id"},
+        "majorVersion": {"type": "integer", "minimum": 1},
+        "defaultSelected": {"const": true}
+      }
+    },
+    "implements": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/implementation"},
+      "uniqueItems": true
+    },
+    "module": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "id", "runner", "controllerEntry", "slots"],
+      "properties": {
+        "kind": {"const": "module"},
+        "id": {"$ref": "#/$defs/id"},
+        "runner": {"enum": ["ai", "program"]},
+        "controllerEntry": {"$ref": "#/$defs/path"},
+        "programEntry": {"$ref": "#/$defs/path"},
+        "slots": {"type": "array", "items": {"$ref": "#/$defs/slot"}, "uniqueItems": true},
+        "rules": {"type": "array", "items": {"$ref": "#/$defs/path"}, "minItems": 1, "uniqueItems": true},
+        "runtimeResources": {"type": "array", "items": {"$ref": "#/$defs/path"}, "uniqueItems": true},
+        "generatedResources": {"type": "array", "items": {"$ref": "#/$defs/path"}, "uniqueItems": true},
+        "outputSchema": {"$ref": "#/$defs/path"},
+        "validator": {"$ref": "#/$defs/path"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"runner": {"const": "ai"}}, "required": ["runner"]},
+          "then": {
+            "required": ["rules", "validator"],
+            "properties": {
+              "rules": {"contains": {"const": "SKILL.md"}},
+              "validator": {},
+              "programEntry": false
+            }
+          }
+        },
+        {
+          "if": {"properties": {"runner": {"const": "program"}}, "required": ["runner"]},
+          "then": {
+            "required": ["programEntry"],
+            "properties": {
+              "programEntry": {}
+            },
+            "not": {
+              "required": ["rules"],
+              "properties": {"rules": {"contains": {"const": "SKILL.md"}}}
+            }
+          }
+        }
+      ]
+    },
+    "template": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "id", "catalog", "implements", "authorRules", "outputSchema", "validator", "renderer", "renderPlanEntry", "renderRules", "examples"],
+      "properties": {
+        "kind": {"const": "template"},
+        "id": {"$ref": "#/$defs/id"},
+        "catalog": {
+          "allOf": [
+            {"$ref": "#/$defs/catalog"},
+            {"type": "object", "required": ["rejectWhen"], "properties": {"rejectWhen": {}}}
+          ]
+        },
+        "implements": {"$ref": "#/$defs/implements"},
+        "authorRules": {"type": "array", "items": {"$ref": "#/$defs/path"}, "minItems": 1, "uniqueItems": true},
+        "copyRules": {"type": "array", "items": {"$ref": "#/$defs/path"}, "minItems": 1, "uniqueItems": true},
+        "acceptanceRules": {"type": "array", "items": {"$ref": "#/$defs/path"}, "minItems": 1, "uniqueItems": true},
+        "authorContextEntry": {"$ref": "#/$defs/path"},
+        "assetContractRules": {"type": "array", "items": {"$ref": "#/$defs/path"}, "minItems": 1, "uniqueItems": true},
+        "assetContractEntry": {"$ref": "#/$defs/path"},
+        "cuePolicy": {"$ref": "#/$defs/path"},
+        "outputSchema": {"$ref": "#/$defs/path"},
+        "validator": {"$ref": "#/$defs/path"},
+        "renderer": {"$ref": "#/$defs/path"},
+        "renderPlanEntry": {"$ref": "#/$defs/path"},
+        "renderRules": {"type": "array", "items": {"$ref": "#/$defs/path"}, "minItems": 1, "uniqueItems": true},
+        "renderAssets": {"type": "array", "items": {"$ref": "#/$defs/path"}, "minItems": 1, "uniqueItems": true},
+        "runtimeResources": {"type": "array", "items": {"$ref": "#/$defs/path"}, "uniqueItems": true},
+        "examples": {"type": "array", "items": {"$ref": "#/$defs/path"}, "uniqueItems": true}
+      }
+    },
+    "feature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "id", "catalog", "implements", "renderRules", "renderEntry"],
+      "properties": {
+        "kind": {"const": "feature"},
+        "id": {"$ref": "#/$defs/id"},
+        "catalog": {
+          "allOf": [
+            {"$ref": "#/$defs/catalog"},
+            {"type": "object", "required": ["disabledBehavior"], "properties": {"disabledBehavior": {}}}
+          ]
+        },
+        "implements": {"$ref": "#/$defs/implements"},
+        "authorRules": {"type": "array", "items": {"$ref": "#/$defs/path"}, "minItems": 1, "uniqueItems": true},
+        "authorContextEntry": {"$ref": "#/$defs/path"},
+        "runtimeResources": {"type": "array", "items": {"$ref": "#/$defs/path"}, "uniqueItems": true},
+        "acceptanceRules": {"type": "array", "items": {"$ref": "#/$defs/path"}, "minItems": 1, "uniqueItems": true},
+        "assetContractRules": {"type": "array", "items": {"$ref": "#/$defs/path"}, "minItems": 1, "uniqueItems": true},
+        "assetContractEntry": {"$ref": "#/$defs/path"},
+        "renderRules": {"type": "array", "items": {"$ref": "#/$defs/path"}, "minItems": 1, "uniqueItems": true},
+        "renderAssets": {"type": "array", "items": {"$ref": "#/$defs/path"}, "minItems": 1, "uniqueItems": true},
+        "renderEntry": {"$ref": "#/$defs/path"},
+        "outputSchema": {"$ref": "#/$defs/path"},
+        "validator": {"$ref": "#/$defs/path"}
+      },
+      "allOf": [
+        {
+          "if": {
+            "anyOf": [
+              {"required": ["authorRules"]},
+              {"required": ["outputSchema"]},
+              {"required": ["validator"]}
+            ]
+          },
+          "then": {"required": ["authorRules", "outputSchema", "validator"]},
+          "else": {
+            "properties": {
+              "catalog": {"required": ["initialState"]}
+            }
+          }
+        },
+        {
+          "if": {"required": ["assetContractRules"], "properties": {"assetContractRules": {}}},
+          "then": {"required": ["assetContractEntry"], "properties": {"assetContractEntry": {}}}
+        }
+      ]
+    },
+    "cover": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "id", "version", "catalog", "implements", "coverRules"],
+      "properties": {
+        "kind": {"const": "cover"},
+        "id": {"$ref": "#/$defs/id"},
+        "version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+        "catalog": {
+          "allOf": [
+            {"$ref": "#/$defs/catalog"},
+            {"type": "object", "required": ["rejectWhen"], "properties": {"rejectWhen": {}}}
+          ]
+        },
+        "implements": {"$ref": "#/$defs/implements"},
+        "verticalCoverPackageId": {"$ref": "#/$defs/id"},
+        "coverRules": {"type": "array", "items": {"$ref": "#/$defs/path"}, "minItems": 1, "maxItems": 1, "uniqueItems": true},
+        "examples": {"type": "array", "items": {"$ref": "#/$defs/path"}, "minItems": 1, "uniqueItems": true},
+        "finalExample": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["source", "visibleText"],
+          "properties": {
+            "source": {"$ref": "#/$defs/path"},
+            "visibleText": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 3,
+              "items": {"type": "string", "minLength": 1},
+              "uniqueItems": true
+            }
+          }
+        }
+      }
+    }
+  }
+}
