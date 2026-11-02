@@ -24,8 +24,9 @@ jobs:
           node-version: '22'
           cache: npm
       - name: Install media inspection tools
-        run: brew install ffmpeg imagemagick
-      - run: npm ci --no-fund
+        run: brew install ffmpeg imagemagick uv
+      - name: Install through the project setup entry
+        run: npm run setup
       - name: Check declared packages and resources
         run: node engine/cli.mjs check
       - name: Check paths, configuration and image authorization
