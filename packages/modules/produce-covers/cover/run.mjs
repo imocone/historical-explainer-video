@@ -1,7 +1,7 @@
+import { assertProvidedCovers } from "../../../provided-covers.mjs";
 import { access, mkdir, readFile, readdir, stat } from "node:fs/promises";
 import path from "node:path";
 import { runMediaProcess, withMediaResources } from "../../render-video/runtime/media-process.mjs";
-import { imageBackend } from '../../../image-generation.mjs';
 
 import {
   assertProjectMutationTree,
@@ -19,7 +19,6 @@ import {
 import { getPublicationPaths } from "../../../publication-paths.mjs";
 const BUILTIN_PROVIDER = "imagegen";
 const imageProviders = new Set([BUILTIN_PROVIDER, 'openai-images']);
-const selectedImageProvider = () => imageBackend() === 'openai' ? 'openai-images' : BUILTIN_PROVIDER;
 const variants = Object.freeze({
   youtube: Object.freeze({
     width: 2048,
@@ -340,7 +339,8 @@ const readinessFor = async ({ work, variant, input }) => {
     }
     if (current.state.status === "tool-intent") return { unknown: {
       stateFile: current.paths.state, reason: "自带生图已开始但尚未交回；只恢复原工具结果" } };
-    if (current.state.status === "prepared") return { generate: true };
+    if (current.state.status === "prepared") return current.state.provider === BUILTIN_PROVIDER ? { generate: true }
+      : { blocked: {stateFile:current.paths.state,reason:'历史API封面只接收原结果；当前不提交图片API'} };
     return { blocked: { stateFile: current.paths.state, reason: "自带生图失败，须明确修订或替换原记录" } };
   }
   if (current.state) return { blocked: { stateFile: current.paths.state,
@@ -478,7 +478,19 @@ const inspectInputs = async ({ root, episodeId, targetId, task }) => {
   });
   const coverExampleAdoption = task.inputs?.coverExampleAdoption
     ?? task.context?.coverExampleAdoption ?? null;
-  if (!coverExampleAdoption) {
+  const coverImageAdoption = task.inputs?.coverImageAdoption
+    ?? task.context?.coverImageAdoption ?? null;
+  if (coverImageAdoption && coverExampleAdoption) throw new Error("不能同时采用指定成图和包样图");
+  if (coverImageAdoption) {
+    await assertProvidedCovers({ root, adoption: coverImageAdoption });
+    for (const variant of Object.keys(variants)) {
+      if (hashObject(publicationBusiness.covers?.[variant]?.visibleText ?? null)
+        !== hashObject(coverImageAdoption.variants[variant].visibleText)) {
+        throw new Error(`${variant}正式封面文字尚未与用户指定成图对齐`);
+      }
+    }
+  }
+  if (!coverExampleAdoption && !coverImageAdoption) {
     for (const variant of Object.keys(variants)) {
       generationInputs[variant] = await resolveGenerationInput({ work: paths.work, variant, input: generationInputs[variant] });
     }
@@ -515,7 +527,8 @@ const inspectInputs = async ({ root, episodeId, targetId, task }) => {
     coverPackages,
     generationInputs,
     coverRegeneration,
-    coverExampleAdoption
+    coverExampleAdoption,
+    coverImageAdoption
   };
 };
 
@@ -529,7 +542,8 @@ export async function inspect({ root, episodeId, targetId, task }) {
     coverPackages,
     generationInputs,
     coverRegeneration,
-    coverExampleAdoption
+    coverExampleAdoption,
+    coverImageAdoption
   } = input;
   const receipt = await exists(paths.receipt) ? await readData(paths.receipt) : null;
   const receiptMatches = acceptedReceiptMatches({
@@ -538,6 +552,21 @@ export async function inspect({ root, episodeId, targetId, task }) {
     targetId,
     visualPackage
   });
+  if (coverImageAdoption) {
+    let ready = receiptMatches && receipt.publicationSha256 === publicationSha256;
+    if (ready) for (const variant of Object.keys(variants)) {
+      const selected = coverImageAdoption.variants[variant];
+      const source = receipt.generation?.[variant];
+      ready = source?.provider === "user-provided" && source.source === selected.source
+        && source.sourceSha256 === selected.sha256
+        && source.inputFingerprint === generationInputs[variant].fingerprint
+        && source.stableFingerprint === generationInputs[variant].stableFingerprint
+        && Boolean(await validFinalImageRecord({ root, receipt, paths, variant }));
+      if (!ready) break;
+    }
+    return ready ? { valid: true, result: receipt }
+      : { valid: false, readyToRun: true, reason: "用户指定双图已固定，等待本地规格化及真实来源交付" };
+  }
   if (coverExampleAdoption) {
     let ready = receiptMatches && receipt.publicationSha256 === publicationSha256;
     if (ready) for (const variant of Object.keys(variants)) {
@@ -629,7 +658,7 @@ export async function replaceGeneration({ root, episodeId, targetId, task, varia
       await atomicWrite(replacement.prompt, `${input.prompt}\n`);
       await atomicWriteData(replacement.state, { schemaVersion: "2.0", variant,
         inputFingerprint: fingerprint, replaces: record, request: input.request,
-        status: "prepared", provider: state.provider,
+        status: "prepared", provider: BUILTIN_PROVIDER,
         referenceFiles: input.referenceFiles, generationSize: variants[variant].generationSize,
         promptSha256: sha256(input.prompt) });
     }
@@ -648,7 +677,8 @@ export async function run({ root, systemRoot = process.cwd(), episodeId, targetI
     coverPackages,
     generationInputs,
     coverRegeneration,
-    coverExampleAdoption
+    coverExampleAdoption,
+    coverImageAdoption
   } = input;
   if (publication.episodeId !== episodeId || publication.targetId !== targetId) {
     throw new Error("produce-covers 封面相位输入身份不一致");
@@ -688,22 +718,30 @@ export async function run({ root, systemRoot = process.cwd(), episodeId, targetI
         await atomicWriteData(paths.receipt, receipt);
         return receipt;
       };
-      if (coverExampleAdoption) {
+      if (coverExampleAdoption || coverImageAdoption) {
         const imageRecords = {};
         const generation = {};
         const normalizedCovers = {};
         for (const variant of Object.keys(variants)) {
-          const selected = coverExampleAdoption.variants[variant];
-          const example = coverPackages[variant].finalExample;
-          const directory = path.join(paths.work, "adopted-package-example", variant, generationInputs[variant].fingerprint);
+          const selected = (coverImageAdoption ?? coverExampleAdoption).variants[variant];
+          const source = coverImageAdoption ? path.resolve(root, selected.source)
+            : coverPackages[variant].finalExample.absolutePath;
+          const directory = path.join(paths.work, coverImageAdoption ? "adopted-user-image" : "adopted-package-example",
+            variant, generationInputs[variant].fingerprint);
           const normalized = path.join(directory, "cover.png");
           await mkdir(directory, { recursive: true });
-          const info = await renderFinalCover({ source: example.absolutePath, output: normalized, variant });
+          const info = await renderFinalCover({ source, output: normalized, variant });
           normalizedCovers[variant] = normalized;
           imageRecords[variant] = await imageRecordFor({
             root, output: paths[variant], source: normalized, variant, byteLength: info.size
           });
-          generation[variant] = {
+          generation[variant] = coverImageAdoption ? {
+            provider: "user-provided",
+            source: selected.source,
+            sourceSha256: selected.sha256,
+            inputFingerprint: generationInputs[variant].fingerprint,
+            stableFingerprint: generationInputs[variant].stableFingerprint
+          } : {
             provider: "package-example",
             packageId: selected.packageId,
             version: selected.version,
@@ -792,8 +830,8 @@ export async function run({ root, systemRoot = process.cwd(), episodeId, targetI
               throw new Error(`${variant}待编辑成图与当前回执不一致，保留现场`);
             }
             const files = statePathsFor({ work: paths.work, variant, fingerprint: item.fingerprint });
-            const {state: prepared} = await generationStateFor({work: paths.work, variant, fingerprint: item.fingerprint});
-            const provider = prepared?.provider ?? selectedImageProvider();
+            const {state: prepared} = await generationStateFor({work:paths.work,variant,fingerprint:item.fingerprint});
+            const provider = BUILTIN_PROVIDER;
             await mkdir(files.directory, { recursive: true });
             let toolPrompt = item.prompt;
             let toolReferences = item.referenceFiles;
@@ -817,9 +855,10 @@ export async function run({ root, systemRoot = process.cwd(), episodeId, targetI
             await atomicWrite(files.prompt, `${toolPrompt}\n`);
             await atomicWriteData(files.state, { schemaVersion: "2.0", variant,
               inputFingerprint: item.fingerprint, status: "prepared", provider,
+              ...(prepared?.replaces ? {replaces:prepared.replaces} : {}),
               generationSize: variants[variant].generationSize, promptSha256: sha256(toolPrompt),
               request: item.request, referenceFiles: toolReferences });
-            requests.push({ variant, record: item.fingerprint, prompt: toolPrompt, backend:provider === BUILTIN_PROVIDER ? 'builtin' : 'openai',
+            requests.push({ variant, record: item.fingerprint, prompt: toolPrompt,
               referencedImagePaths: toolReferences, generationSize: variants[variant].generationSize,
               statePath: files.state });
           }

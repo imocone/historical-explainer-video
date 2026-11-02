@@ -1,3 +1,4 @@
+import { assertProvidedCovers } from "../../packages/provided-covers.mjs";
 import { access, stat } from "node:fs/promises";
 import { readStageRestart, restartPending } from "./stage-restart.mjs";
 import { constants } from "node:fs";
@@ -77,7 +78,6 @@ const resolvePublicationCurrent = async ({
   const deliverablesReady = deliveryState.every(Boolean);
   if (!model.stageRestart && !publicationRevision && !coverRegeneration && deliverablesReady)
     return { kind: "complete", episodeId, targetId, message: "\u5F53\u524D\u9636\u6BB5\u4EA4\u4ED8\u9F50\u5907" };
-  const releaseRequest = null;
   try {
     const { scriptPackage } = await readP1Delivery({
       root,
@@ -166,6 +166,8 @@ const resolvePublicationCurrent = async ({
         ...finalExample ? { finalExample } : {}
       }];
     })), publicationBusiness = businessContent(publication2), coverVisual = coverVisualContext(visualPackage), coverAuthorDigest = publicationBusiness.coverReuse ? null : publication2?._producer?.taskDigest ?? null, coverExampleAdoption = publicationRevision?.coverExampleAdoption ?? null;
+    const coverImageAdoption = publicationRevision?.coverImageAdoption ?? null;
+    if (coverImageAdoption) await assertProvidedCovers({ root: workspaceRoot, adoption: coverImageAdoption });
     if (coverExampleAdoption)
       for (const [variant, selected] of Object.entries(coverExampleAdoption.variants ?? {})) {
         const current = coverPackages[variant];
@@ -185,21 +187,24 @@ const resolvePublicationCurrent = async ({
       ])),
       ...coverAuthorDigest ? { coverAuthorDigest } : {},
       ...coverRegeneration ? { coverRegeneration } : {},
-      ...coverExampleAdoption ? { coverExampleAdoption } : {}
+      ...coverExampleAdoption ? { coverExampleAdoption } : {},
+      ...coverImageAdoption ? { coverImageAdoption } : {}
     }, context = {
       publication: publicationBusiness,
       visualPackage: coverVisual,
       coverPackages,
       ...coverAuthorDigest ? { coverAuthorDigest } : {},
       ...coverRegeneration ? { coverRegeneration } : {},
-      ...coverExampleAdoption ? { coverExampleAdoption } : {}
+      ...coverExampleAdoption ? { coverExampleAdoption } : {},
+      ...coverImageAdoption ? { coverImageAdoption } : {}
     }, inputHashes = [
       hashObject(publicationBusiness),
       coverVisual.coverDigest,
       ...Object.values(coverPackages).map(({ coverDigest }) => coverDigest),
       ...coverAuthorDigest ? [coverAuthorDigest] : [],
       ...coverRegeneration ? [hashObject(coverRegeneration)] : [],
-      ...coverExampleAdoption ? [hashObject(coverExampleAdoption)] : []
+      ...coverExampleAdoption ? [hashObject(coverExampleAdoption)] : [],
+      ...coverImageAdoption ? [hashObject(coverImageAdoption)] : []
     ], manifest = prepared.record.manifest;
     if (!manifest.programEntry || !manifest.outputSchema || !(manifest.rules ?? []).length)
       throw new Error(`${prepared.record.manifestPath} \u7F3A\u5C11\u5C01\u9762\u7A0B\u5E8F\u5165\u53E3\u3001\u7ED3\u679C\u5408\u540C\u6216\u89C4\u5219`);
@@ -238,8 +243,7 @@ const resolvePublicationCurrent = async ({
     });
     return { task, inspection };
   };
-  let publication = null, coverReceipt = null, publishFingerprint = null;
-  const publishedPlatformStates = [];
+  let publication = null, coverReceipt = null;
   for (const node of model.orderedNodes.filter(
     (node2) => node2.moduleId === "produce-covers"
   )) {
@@ -291,18 +295,10 @@ const resolvePublicationCurrent = async ({
     }
     throw new Error(`Publication Workflow \u539F\u8BED\u6CA1\u6709\u8FD0\u884C\u65F6\u5904\u7406\u903B\u8F91: ${primitive}`);
   }
-  const platformStateLabel = {
-    published: "\u5DF2\u516C\u5F00",
-    reviewing: "\u5BA1\u6838\u4E2D",
-    "published-edit-reviewing": "\u5DF2\u516C\u5F00\uFF0C\u4FEE\u8BA2\u5BA1\u6838\u4E2D"
-  }, platformStateSummary = publishedPlatformStates.map(
-    ({ status }) => `${platform} ${platformStateLabel[status] ?? status}`
-  ).join("\uFF1B");
   return {
     kind: "complete",
     episodeId,
     targetId,
-    fingerprint: publishFingerprint,
     message: "\u5F53\u524D Workflow \u5168\u90E8\u5B8C\u6210",
     publication,
     coverReceipt

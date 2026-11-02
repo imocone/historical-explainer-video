@@ -45,7 +45,7 @@ node packages/modules/author-subtitles/build-candidate.mjs build <work-order.yam
 
 ## 交回唯一候选
 
-完成实际复核后，仅在当前候选result.evidence.operations记录本次执行者：AGY写agy:subtitle-review，Codex写codex:subtitle-review，Claude写claude:subtitle-review，只保留一个实际执行者。可用本地JSON读写原子更新这个数组，不改cue文字、时间或其它字段。重建后必须重新复核并重记，不能把程序生成或前一次审查当作本次审查。
+完成实际复核后，仅在当前候选result.evidence.operations记录本次执行者：AGY写agy:subtitle-review，Codex写codex:subtitle-review，只保留一个实际执行者。可用本地JSON读写原子更新这个数组，不改cue文字、时间或其它字段。重建后必须重新复核并重记，不能把程序生成或前一次审查当作本次审查。
 
 复核记录只证明上述文本、显示和同源时间核对已经完成，不包含AI试听或听感验收。回复说明实际采用的证据；不能仅因执行者不能听音频就挂起已可完成的核对，也不能声称已验证发音或听感。存在无法排除的具体漏读、数字误读或同步疑点时，不填写复核完成记录，交回具体位置和缺失证据；不编造一个通过结论。
 

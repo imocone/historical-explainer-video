@@ -54,12 +54,13 @@
   ],
   "rules": [
     "../../program-utils.mjs",
+    "../../provided-covers.mjs",
     "../../workspace-paths.mjs",
     "../../publication-paths.mjs",
     "../render-video/runtime/media-process.mjs",
     "cover/builtin.md",
     "cover/builtin.mjs",
-    "../../image-generation.mjs",
+    "../../image-provenance.mjs",
     "../../runtime-config.mjs"
   ],
   "outputSchema": "cover/cover-receipt.schema.json",

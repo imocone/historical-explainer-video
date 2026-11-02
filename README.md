@@ -4,11 +4,11 @@
 
 [![Checks](https://github.com/imocone/historical-explainer-video/actions/workflows/check.yml/badge.svg)](https://github.com/imocone/historical-explainer-video/actions/workflows/check.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-用 **Codex 或 Claude Code** 在本地制作历史解说和纪录片。你提供选题和资料，AI 与本地工具按阶段完成策划、口播、封面、配音、字幕、画面与片头，最后输出 MP4。可以逐阶段制作，也可以接着已有进度继续或局部修改。
+用 **Codex** 在本地制作历史解说和纪录片。你提供选题和资料，AI 与本地工具按阶段完成策划、口播、封面、配音、字幕、画面与片头，最后输出 MP4。可以逐阶段制作，也可以接着已有进度继续或局部修改。
 
 **当前支持 macOS。** 需要自行登录所用的 AI 和外部服务；生图、配音等可能产生费用。先完成安装，再按当前阶段配置账号即可。
 
-[安装](#1-安装) · [Codex / Claude](#2-选择-codex-或-claude-code) · [配置](#3-配置用到的服务) · [第一个节目](#4-做第一个节目) · [常见问题](#常见问题)
+[安装](#1-安装) · [Codex](#2-使用-codex) · [配置](#3-配置用到的服务) · [第一个节目](#4-做第一个节目) · [常见问题](#常见问题)
 
 ## 能做什么
 
@@ -42,39 +42,9 @@ npm run setup
 
 安装会自动创建 `.env`，再次运行会保留已有配置。无需自己创建 Python 环境或安装 Python 包；安装也不会替你登录账号或调用付费生成服务。
 
-## 2. 选择 Codex 或 Claude Code
+## 2. 使用 Codex
 
-两者使用同一份 `director/SKILL.md`，任选其一。**始终打开代码仓库 `historical-explainer-video`，节目成果另放目录。**
-
-### Codex
-
-安装并登录 [Codex](https://developers.openai.com/codex/)，把本仓库作为项目打开。当前 Codex 有原生生图工具时，保留 `.env` 中的 `IMAGE_PROVIDER=builtin`。
-
-### Claude Code
-
-没有安装时，可按 [Claude 官方说明](https://code.claude.com/docs/en/setup) 安装。项目的浏览器预览还需要 Google Chrome；已有的工具可以跳过：
-
-```bash
-brew install --cask claude-code google-chrome
-claude
-```
-
-在仓库目录运行 `claude`，按提示完成登录并信任本项目。项目已附带 `/director` 技能和 `video-browser` MCP 配置，无需复制技能或手写 MCP；首次提示启用项目 MCP 时确认启用，进入 Claude 后用 `/mcp` 查看 `video-browser` 是否连接。
-
-Claude 使用图片 API 生图。打开 `.env`：
-
-```bash
-open -a TextEdit .env
-```
-
-把下面两项改为自己的配置后保存：
-
-```dotenv
-IMAGE_PROVIDER=openai
-OPENAI_API_KEY=填你自己的OpenAI_API_Key
-```
-
-Key 从 [OpenAI API 控制台](https://platform.openai.com/api-keys) 获取；账号须有可用 API 额度和图片模型权限。[图片 API](https://developers.openai.com/api/docs/guides/image-generation) 单独计费，Claude / ChatGPT / Codex 订阅不抵扣这笔费用。到实际生图阶段还要明确允许本次图片付费调用。只做 P0 时可以先不配置生图。
+安装并登录 [Codex](https://developers.openai.com/codex/)，把本仓库作为项目打开。项目使用Codex原生生图和子代理，不需要图片API Key或客户端配置。**始终打开代码仓库 `historical-explainer-video`，节目成果另放目录。**
 
 ## 3. 配置用到的服务
 
@@ -82,10 +52,10 @@ Key 从 [OpenAI API 控制台](https://platform.openai.com/api-keys) 获取；�
 
 | 什么时候需要 | 准备什么 |
 |---|---|
-| P0 先策划 | 已登录的 Codex 或 Claude Code；公开资料策划可以先开始 |
+| P0 先策划 | 已登录的 Codex；公开资料策划可以先开始 |
 | 使用 NotebookLM 资料 | 安装已包含 `nlm`；先运行下方登录命令。纪录片路线需要 NotebookLM |
-| P1 正文、P2 默认字幕作者 | 安装并登录 [Antigravity CLI（AGY）](https://antigravity.google/docs/getting-started?tab=cli)，两个宿主都需要 |
-| P1 封面、P3 / P4 图片 | Codex 原生生图，或按上节配置 OpenAI 图片 API |
+| P1 正文、P2 默认字幕作者 | 安装并登录 [Antigravity CLI（AGY）](https://antigravity.google/docs/getting-started?tab=cli) |
+| P1 封面、P3 / P4 图片 | Codex 原生生图 |
 | P2 配音、有旁白的片头 | 在 `.env` 填 `MINIMAX_API_KEY`；`MINIMAX_VOICE_ID` 可保留公共默认音色，也可换成自己账号可用的音色 |
 | 按需定位具体断言的出处 | 在 `.env` 填 `TYPESAFE_API_KEY`；已有 `~/.config/typesafe/api-key` 仍可用 |
 | 备用字幕识别、有旁白片头取词级时间 | 安装支持必剪 / 剪映词级时间的 [VideoCaptioner](https://github.com/WEIFENG2333/VideoCaptioner)，在 `.env` 填 `VIDEO_CAPTIONER_ROOT` |
@@ -108,7 +78,7 @@ node packages/runtime-config.mjs nlm login
 curl -fsSL https://antigravity.google/cli/install.sh | bash
 ```
 
-重新打开终端，运行 `agy` 并完成交互登录。它仍负责原流程的正文与默认字幕创作；切换主代理不会替换作者。
+重新打开终端，运行 `agy` 并完成交互登录。它仍负责原流程的正文与默认字幕创作。
 
 需要 VideoCaptioner 时，可按其[源码安装说明](https://github.com/WEIFENG2333/VideoCaptioner#开发)在相邻目录安装：
 
@@ -142,7 +112,7 @@ cp scripts/request.example.yaml ../my-program/request.yaml
 
 用编辑器打开 `../my-program/request.yaml`，把 `idea` 改成自己的选题；其它字段第一次可保留。此文件虽以 `.yaml` 结尾，内容使用 JSON，注意保留双引号和逗号。
 
-在刚才打开本仓库的 Codex 或 Claude Code 中发送；首次访问节目目录时，按宿主提示允许该目录的读写：
+在刚才打开本仓库的 Codex 中发送；首次访问节目目录时，按宿主提示允许该目录的读写：
 
 ```text
 读取 director/SKILL.md，为 ../my-program 完成 P0。
@@ -154,7 +124,7 @@ P0 完成后会交付节目策划。确认要继续时，再说：
 为 ../my-program 的 ep01 完成 P1。
 ```
 
-进入使用图片 API 的阶段时，另明确说“允许本次图片 API 付费生成”。后续可以指定 P2、P3、P4，或明确连续范围，例如“从 P2 做到 P4”。只要求 P0，就会在 P0 完成后停止。
+后续可以指定 P2、P3、P4，或明确连续范围，例如“从 P2 做到 P4”。只要求 P0，就会在 P0 完成后停止。
 
 查看示例委托的策划进度：
 
@@ -166,7 +136,7 @@ node engine/cli.mjs status --workspace ../my-program --program first-video --sta
 
 ## 常用命令
 
-日常优先直接告诉 Codex / Claude 要做哪个阶段、改哪一处。需要自己操作时，再展开下面的命令参考。
+日常优先直接告诉 Codex 要做哪个阶段、改哪一处。需要自己操作时，再展开下面的命令参考。
 
 <details>
 <summary>进阶命令：进度、制作、返工与开关</summary>
@@ -283,6 +253,8 @@ node engine/cli.mjs next --workspace <节目目录> --episode <epNN> --target re
 node engine/cli.mjs next --workspace <节目目录> --episode <epNN> --target release-main --stage p1 --revise-publication --revise-cover
 # 用户明确选择当前横竖Cover包登记的本集成品样图时，先对齐封面文字，再由普通next本地接纳；不生图、不付费
 node engine/cli.mjs next --workspace <节目目录> --episode <epNN> --target release-main --stage p1 --adopt-cover-examples
+# 用户明确指定本地横竖成图：JSON含youtube/vertical各自的source绝对路径与visibleText数组
+node engine/cli.mjs next --workspace <节目目录> --episode <epNN> --target release-main --stage p1 --adopt-cover-images <指定双图JSON绝对路径>
 # 只修所选画幅的表现；用户明确的定点修订覆盖本次自带生图，后续普通next只恢复原对象
 node engine/cli.mjs next --workspace <节目目录> --episode <epNN> --target release-main --stage p1 --regenerate-cover --cover-variant vertical --revision-reason "修正顶部文字裁切，保留原文和人物"
 # 用户接受现图、撤销待办重生；保留双图和文案，不生成或付费
@@ -326,7 +298,7 @@ Studio内移动、裁剪场景或字幕，只影响临时项目的播放与导�
 
 ## 外部副作用
 
-导演按已有阶段授权连续完成制作。P1首次必要原生双封面沿原节点完成；选用图片API须有当前明确的图片付费许可。P2配音、P3画面、P4所选模板的片头TTS与剧情视频生成沿各自原入口执行；已有远端对象只恢复，失败或未知后的再次付费仍按原边界处理。P4最后本地压片不授权对外发布。
+导演按已有阶段授权连续完成制作。P1首次必要原生双封面沿原节点完成。P2配音、P3画面、P4所选模板的片头TTS与剧情视频生成沿各自原入口执行；已有远端对象只恢复，失败或未知后的再次付费仍按原边界处理。P4最后本地压片不授权对外发布。
 
 ```bash
 node engine/cli.mjs next --workspace <节目目录> --episode <epNN> --stage p2 --authorize-paid-tts
@@ -344,7 +316,6 @@ node engine/cli.mjs accept --workspace <节目目录> --episode <epNN> --stage p
 - 正式流程：`workflow/program.yaml`、`workflow/narration.yaml`、`workflow/video.yaml`
 - 控制程序：`engine/cli.mjs`、`engine/runtime.mjs`
 - 测试命令：`package.json`
-
 
 ## 节目片头选择
 
@@ -386,12 +357,6 @@ npm run setup
 ## 常见问题
 
 **`brew` 或 `node` 找不到？** 先按 [Homebrew](https://brew.sh/zh-cn/) 的安装与终端提示完成配置，重新打开终端，再运行安装命令。`node --version` 应为 22.12 或更新版本。
-
-**Claude 找不到 `/director`？** 确认从代码仓库目录启动，重启会话；也可以直接发送“读取 director/SKILL.md，为指定目录完成 P0”。
-
-**Claude 的 `video-browser` 没连接？** 先完成 `npm run setup`、安装 Google Chrome，再在 Claude 中用 `/mcp` 启用或重连项目服务器；按提示确认项目 MCP 信任。
-
-**图片 API 返回 401 / 403？** 检查自己的 Key、API 额度和模型访问权限。失败或结果未知时保留原调用记录，按导演的原任务恢复，不删记录反复提交。
 
 **为什么没有背景音乐或部分音效？** 个人音乐和不能公开分发的原声未附带；部分公开音效为静音占位。可以配置有权使用的素材。
 

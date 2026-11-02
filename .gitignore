@@ -18,10 +18,7 @@
 !/.env.example
 !/requirements.txt
 !/scripts/
-!/CLAUDE.md
-!/.mcp.json
 !/.agents/
-!/.claude/
 !/.codex/
 !/contracts/
 !/development/
@@ -34,15 +31,11 @@
 # Only the shared project configuration belongs in version control.
 /.codex/*
 
-# Expose one director source to both hosts; keep private host state local.
+# Expose the Codex director source; keep private host state local.
 /.agents/*
 !/.agents/skills/
 /.agents/skills/*
 !/.agents/skills/director
-/.claude/*
-!/.claude/skills/
-/.claude/skills/*
-!/.claude/skills/director
 
 # Personal music stays local; the public checkout has no default track.
 /local-media/

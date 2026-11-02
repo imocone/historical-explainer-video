@@ -10,6 +10,7 @@ import { controllerSpecFor } from "./implementations.mjs";
 import { assertTaskContinuity } from "./tasks.mjs";
 import { assertStageSettled } from "./stage-restart.mjs";
 import { resolveStageCurrent, statusKindForTask } from "./status.mjs";
+import { sourcesExtend } from "../../packages/p3-sources.mjs";
 
 // One active order; parked work is reused only if its actual inputs still match.
 const parkChangedWork = async ({ workspaceRoot, workPaths, saved, current }) => {
@@ -27,10 +28,54 @@ const parkChangedWork = async ({ workspaceRoot, workPaths, saved, current }) => 
   await rm(workPaths.candidate, { force: true });
 };
 
+// An expanded chapter can continue its unchanged members' unfinished draft.
+// This is not acceptance: the author must add the new members and obtain current locks.
+const expandedFullframeCandidate = ({ workOrder: saved, candidate }, current) => {
+  const before = saved.inputs?.authorBatch, after = current.inputs?.authorBatch;
+  if (saved.stageId !== "p3" || current.stageId !== "p3"
+    || saved.moduleId !== "author-beat" || current.moduleId !== "author-beat"
+    || saved.nodeId !== current.nodeId || saved.workflowId !== current.workflowId
+    || saved.runner !== "ai" || current.runner !== "ai"
+    || hashObject(saved.subject) !== hashObject(current.subject)
+    || saved.candidatePath !== current.candidatePath
+    || hashObject(saved.outputContract) !== hashObject(current.outputContract)
+    || hashObject(saved.resolvedAssembly.slots.map(({ id, selection }) => ({ id, selection })))
+      !== hashObject(current.resolvedAssembly.slots.map(({ id, selection }) => ({ id, selection })))
+    || hashObject(saved.inputs.enabledFeatureIds) !== hashObject(current.inputs.enabledFeatureIds)
+    || hashObject(saved.inputs.templateContext.visual) !== hashObject(current.inputs.templateContext.visual)
+    || hashObject(saved.inputs.stageRestartId ?? null) !== hashObject(current.inputs.stageRestartId ?? null)
+    || hashObject(saved.inputs.p3BodyRedesign ?? null) !== hashObject(current.inputs.p3BodyRedesign ?? null)
+    || !before || !after || before.id !== after.id
+    || before.programForm !== after.programForm || before.openerTemplate !== after.openerTemplate
+    || before.members.length >= after.members.length
+    || candidate?.taskDigest !== saved.taskDigest || candidate.returnTo
+    || !Array.isArray(candidate.result?.items)
+    || candidate.result.items.length !== before.members.length
+    || !sourcesExtend(saved.inputs.sourceAssets ?? [], current.inputs.sourceAssets ?? [])) return null;
+  const beatInput = beat => ({ ...beat, directorBrief: { ...beat.directorBrief,
+    // The component's parent research document may change while this exact hint stays the same.
+    mustShow: beat.directorBrief.mustShow.replace(/^【历史视觉依据 SA\d{3}】/gmu, "【历史视觉依据】") } });
+  for (const [index, member] of before.members.entries()) {
+    const next = after.members[index], item = candidate.result.items[index];
+    if (member.beatId !== next.beatId || item.beatId !== member.beatId
+      || member.inputs.authorUnit.templateId !== "fullframe-narrative"
+      || next.inputs.authorUnit.templateId !== "fullframe-narrative"
+      || item.treatment?.templateId !== "fullframe-narrative"
+      || hashObject(member.inputs.cues) !== hashObject(next.inputs.cues)
+      || hashObject(member.inputs.semanticContext) !== hashObject(next.inputs.semanticContext)
+      || hashObject(member.inputs.directionContext.albumPlan) !== hashObject(next.inputs.directionContext.albumPlan)
+      || hashObject(member.inputs.directionContext.relevantRecurringElements)
+        !== hashObject(next.inputs.directionContext.relevantRecurringElements)
+      || hashObject(beatInput(member.inputs.beat)) !== hashObject(beatInput(next.inputs.beat))) return null;
+  }
+  return { ...candidate, taskDigest: current.taskDigest };
+};
+
 const matchingHeldWork = async ({ workspaceRoot, workPaths, current }) => {
   const directory = path.join(workPaths.work, "held-work");
   await assertProjectPaths({ root: workspaceRoot, label: "恢复同一工作单", files: [directory] });
   const names = await readdir(directory).catch(error => error.code === "ENOENT" ? [] : Promise.reject(error));
+  let expanded = null;
   for (const name of names) {
     const file = path.join(directory, name);
     await assertProjectPaths({ root: workspaceRoot, label: "恢复同一工作单", files: [file] });
@@ -38,11 +83,18 @@ const matchingHeldWork = async ({ workspaceRoot, workPaths, current }) => {
       const held = await readData(file);
       const { taskDigest, ...base } = held.workOrder;
       if (hashObject(base) !== taskDigest) continue;
-      assertTaskContinuity(held.workOrder, current);
-      return { ...held, file };
+      try {
+        assertTaskContinuity(held.workOrder, current);
+        return { ...held, file };
+      } catch {
+        const candidate = expandedFullframeCandidate(held, current);
+        if (candidate && (!expanded || candidate.result.items.length > expanded.candidate.result.items.length))
+          expanded = { workOrder: current, candidate, file };
+      }
     } catch { continue; } // Unusable history must not prevent the current task.
   }
-  return null;
+  if (expanded) await assertStageSettled(workspaceRoot, workPaths.work);
+  return expanded;
 };
 
 const executeCurrentTask = async ({
@@ -52,7 +104,6 @@ const executeCurrentTask = async ({
   programId,
   targetId,
   stageId,
-  platform = null,
   segmentId = null,
   nodeId = null,
   claim = null,
@@ -81,7 +132,6 @@ const executeCurrentTask = async ({
         programId,
         targetId,
         stageId,
-        platform,
         segmentId,
         nodeId,
         model
@@ -213,26 +263,15 @@ const executeCurrentTask = async ({
       programId,
       targetId,
       stageId,
-      platform,
       segmentId,
       nodeId,
       model
     });
   }
   if (current.kind !== "task") return { ...current, executed };
-  if (current.mode === "publish" && !platform && current.parallelPlatforms?.length > 1) {
-    const workOrders = [];
-    for (const selected of current.parallelPlatforms) {
-      const options = { root, workspaceRoot, episodeId, targetId, stageId, platform: selected, model };
-      const task = await resolveStageCurrent({ ...options, materializePublicationRequest: true });
-      workOrders.push({ platform: selected, ...await executeCurrentTask({ ...options, current: task, preExecuted: [] }) });
-    }
-    return { kind: "publication-batch", subject: current.subject, workflowId: current.workflowId,
-      stageId, workOrders, executed };
-  }
   return withWorkflowWrite(workspaceRoot, async () => {
-  current = await resolveStageCurrent({ root, workspaceRoot, episodeId, programId, targetId, stageId, platform, segmentId, nodeId,
-    materializePublicationRequest: stageId === "p4", model });
+  current = await resolveStageCurrent({ root, workspaceRoot, episodeId, programId, targetId, stageId, segmentId, nodeId,
+    model });
   if (claim) {
     const available = (current.authorSegments ?? []).filter(segment => segment.state === "pending");
     const templateId = claim === "explainer" ? "vox-explainer" : "fullframe-narrative";

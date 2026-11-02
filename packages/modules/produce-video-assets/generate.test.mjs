@@ -12,6 +12,7 @@ import { parseSrt } from "../../../engine/p3-input.mjs";
 import { generate, generateBatch, recoverSourceOnce } from "./generate.mjs";
 import { assertVideoFile, probe, selectPartRequest, validateProductionReceipts } from "./delivery.mjs";
 import { videoPromptFor, videoRequestFor } from "../../templates/cinematic-video/asset-contract.mjs";
+import { validate as validateVideoPlan } from "../../templates/cinematic-video/validate.mjs";
 
 const systemRoot = fileURLToPath(new URL("../../../", import.meta.url));
 const write = async (file, value) => {
@@ -65,6 +66,20 @@ const fixture = async (t, width, height, changedImage = false, { split = false, 
   await write(work.workOrder, { ...task, taskDigest: hashObject(task) });
   return { workspace, workOrderPath: work.workOrder, spanId: "V001" };
 };
+
+test("删除前段保留原视频ID，重复编号和正文倒序仍拒绝", async t => {
+  const input = await fixture(t, 1672, 941, false, { spanCount: 2 });
+  const task = JSON.parse(await readFile(input.workOrderPath, "utf8"));
+  const plan = task.inputs.videoPlan.content;
+  const context = { storyboard: task.inputs.storyboard.content, cues: task.inputs.cues, preview: true };
+  const transition = { type: "dissolve", durationMs: 400, reason: "沿正文承接保留的视频" };
+  const retained = { ...plan, spans: [plan.spans[1]], incomingTransitions: { V002: transition } };
+  assert.deepEqual(validateVideoPlan({ result: retained, context }), []);
+  const duplicate = { ...plan, spans: [plan.spans[0], { ...plan.spans[1], id: "V001" }] };
+  assert.ok(validateVideoPlan({ result: duplicate, context }).some(error => error.includes("视频编号重复")));
+  const reversed = { ...plan, spans: [...plan.spans].reverse() };
+  assert.ok(validateVideoPlan({ result: reversed, context }).some(error => error.includes("顺序倒置")));
+});
 
 test("原尺寸16:9首图进入授权检查，不要求成片尺寸且不创建远端请求", async t => {
   for (const [width, height] of [[1672, 941], [1920, 1080], [1788, 1000]]) {

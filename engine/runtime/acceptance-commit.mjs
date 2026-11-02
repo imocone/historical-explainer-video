@@ -64,7 +64,7 @@ export const commitAcceptance = async ({ workspaceRoot, workPaths, writes, rawWr
  return workflowWriteHeld ? commit() : withWorkflowWrite(workspaceRoot, commit);
 };
 
-export const pendingAcceptance = async ({ workspaceRoot, episodeId, stageId, targetId = "release-main", platform = null }) => {
+export const pendingAcceptance = async ({ workspaceRoot, episodeId, stageId, targetId = "release-main" }) => {
   if (["p2", "p4"].includes(stageId)) {
     const pending = await pendingAcceptance({ workspaceRoot, episodeId, stageId: "p1" });
     if (pending) return pending;

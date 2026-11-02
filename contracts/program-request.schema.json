@@ -120,49 +120,6 @@
       }
     },
     "openerTemplate": {"description": "Optional initial opener choice. When absent P0 selects opposed-opener; downstream reads only program.yaml.", "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
-    "publicationProfile": {
-      "description": "Optional programme-wide publication accounts and policies. P4 projects this once per episode into the immutable release-main request snapshot; detailed release validation remains owned by release-bundle.schema.json.",
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["platforms"],
-      "properties": {
-        "platforms": {
-          "type": "object",
-          "additionalProperties": false,
-          "minProperties": 1,
-          "maxProperties": 3,
-          "properties": {
-            "youtube": {
-              "type": "object",
-              "additionalProperties": false,
-              "required": ["accountId", "accountAlias"],
-              "properties": {
-                "accountId": {"type": "string", "pattern": "^UC[A-Za-z0-9_-]{22}$"},
-                "accountAlias": {"type": "string", "minLength": 1}
-              }
-            },
-            "douyin": {
-              "type": "object",
-              "additionalProperties": false,
-              "required": ["accountId", "accountAlias"],
-              "properties": {
-                "accountId": {"type": "string", "minLength": 1},
-                "accountAlias": {"type": "string", "minLength": 1}
-              }
-            },
-            "xiaohongshu": {
-              "type": "object",
-              "additionalProperties": false,
-              "required": ["accountId", "accountAlias"],
-              "properties": {
-                "accountId": {"type": "string", "minLength": 1},
-                "accountAlias": {"type": "string", "minLength": 1}
-              }
-            }
-          }
-        }
-      }
-    },
     "researchLibrary": {
       "description": "Optional existing NotebookLM library. P0 compares its sources with the programme-wide material needs, acquires only genuine gaps within the authorized request, and reuses this single library instead of creating another one.",
       "type": "object",

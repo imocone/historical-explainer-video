@@ -58,7 +58,7 @@
     "../render-video/runtime/public-files.mjs",
     "../../templates/cinematic-video/production-projection.mjs",
     "../../runtime-config.mjs",
-    "../../image-generation.mjs"
+    "../../image-provenance.mjs"
   ],
   "outputSchema": "../../../contracts/video-manifest.schema.json",
   "validator": "validate.mjs"

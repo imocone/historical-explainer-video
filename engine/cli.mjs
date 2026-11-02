@@ -80,6 +80,11 @@ const parseArgs = (argv) => {
     else if (flag === "--cover-record" && command === "next") options.coverRecord = rest[++index] ?? "";
     else if (flag === "--cancel-cover-regeneration" && command === "next") options.cancelCoverRegeneration = true;
     else if (flag === "--adopt-cover-examples" && command === "next") options.adoptCoverExamples = true;
+    else if (flag === "--adopt-cover-images" && command === "next") {
+      const selection = rest[++index];
+      if (!selection || selection.startsWith("--")) throw new Error("--adopt-cover-images 缺少指定双图JSON路径");
+      options.adoptCoverImages = path.resolve(selection);
+    }
     else if (flag === "--cover-variant" && command === "next") {
       options.coverVariants ??= [];
       options.coverVariants.push(rest[++index]);
@@ -139,7 +144,6 @@ try {
       programId: options.programId,
       targetId: options.targetId,
       stageId: options.stageId,
-      platform: options.platform,
       segmentId: options.segmentId,
       nodeId: options.nodeId,
       acceptanceServices: {

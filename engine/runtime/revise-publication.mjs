@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import path from "node:path";
 import { getProgramPaths, getStageWorkPaths } from "../../packages/workspace-paths.mjs";
 import { getPublicationPaths } from "../../packages/publication-paths.mjs";
+import { prepareProvidedCovers } from "../../packages/provided-covers.mjs";
 import { atomicWriteData, fileSha256, hashObject, readData } from "../../packages/program-utils.mjs";
 import { assertProjectPaths, exists, importModule, relative } from "./files.mjs";
 import { validateSchema } from "./schema.mjs";
@@ -33,6 +34,7 @@ const preparePublicationRevision = async ({
   publicationFields = [],
   regenerateCover,
   adoptCoverExamples,
+  adoptCoverImages = null,
   coverVariants,
   model,
   current
@@ -116,7 +118,7 @@ const preparePublicationRevision = async ({
       throw error;
     }
   }
-  if (revisePublication || reviseCover || adoptCoverExamples) {
+  if (revisePublication || reviseCover || adoptCoverExamples || adoptCoverImages) {
     const workPaths = getStageWorkPaths(paths, "p1");
     const requestPath = workPaths.returnRequest(authorNodeId);
     const coverRegenerationPath = path.join(workPaths.work, "cover-regeneration.yaml");
@@ -124,8 +126,8 @@ const preparePublicationRevision = async ({
     const reviseAll = revisePublication && reviseCover;
     const revisionScope = reviseAll
       ? PUBLICATION_ALL_REVISION_SCOPE
-      : (reviseCover || adoptCoverExamples) ? COVER_CONTENT_REVISION_SCOPE : PUBLICATION_REVISION_SCOPE;
-    const revisionLabel = adoptCoverExamples ? "P1样图接纳" : reviseAll ? "P1完整发布内容返工" : reviseCover ? "P1封面内容返工" : "P1文案返工";
+      : (reviseCover || adoptCoverExamples || adoptCoverImages) ? COVER_CONTENT_REVISION_SCOPE : PUBLICATION_REVISION_SCOPE;
+    const revisionLabel = adoptCoverImages ? "P1指定成图接纳" : adoptCoverExamples ? "P1样图接纳" : reviseAll ? "P1完整发布内容返工" : reviseCover ? "P1封面内容返工" : "P1文案返工";
     let createdRevisionRequest = false;
     let replacedCoverRegeneration = null;
     await assertProjectPaths({
@@ -190,6 +192,13 @@ const preparePublicationRevision = async ({
       if (request.revisionScope !== revisionScope) {
         throw new Error(`P1已有另一范围的未收口返工请求: ${request.revisionScope}`);
       }
+      if (adoptCoverImages) {
+        const selected = await prepareProvidedCovers({ root: workspaceRoot,
+          work: path.join(workPaths.work, "covers"), manifestPath: adoptCoverImages });
+        if (hashObject(selected) !== hashObject(request.coverImageAdoption ?? null)) {
+          throw new Error("已有另一组指定成图采用请求；请按原工作单恢复");
+        }
+      }
       if ((revisionReason !== null && request.reason !== revisionReason)
         || (publicationFields.length && hashObject(request.publicationFields ?? []) !== hashObject(publicationFields))) {
         throw new Error("现有发布内容返工的意见或字段范围不能改变；请按原工作单恢复");
@@ -201,6 +210,8 @@ const preparePublicationRevision = async ({
       }
       const currentPublication = await sealedPublicationBusinessForRevision({ paths });
       let coverExampleAdoption = null;
+      const coverImageAdoption = adoptCoverImages ? await prepareProvidedCovers({ root: workspaceRoot,
+        work: path.join(workPaths.work, "covers"), manifestPath: adoptCoverImages }) : null;
       if (adoptCoverExamples) {
         const programPlan = await readData(getProgramPaths(workspaceRoot).programPlan);
         const selectedCover = model.packages.get(programPlan.coverPackage?.coverPackageId);
@@ -254,7 +265,9 @@ const preparePublicationRevision = async ({
         target: authorNodeId,
         revisionRequestId: randomUUID(),
         reusedNarrationMaterials,
-        reason: revisionReason ?? (adoptCoverExamples
+        reason: revisionReason ?? (adoptCoverImages
+          ? "用户明确指定横竖成图；保留正文、片头和平台文案，只将封面可见文字和场面说明忠实对齐所选原图，直接采用原图，不重新构思或生图"
+          : adoptCoverExamples
           ? "用户明确选择当前横竖Cover包的本集成品样图；平台文案和封面场面说明保持，只把封面可见文字对齐样图并直接接纳样图"
           : reviseAll
           ? "用户明确要求一次联合重写三平台文案与横竖封面内容，完成整套发布内容交付"
@@ -265,9 +278,10 @@ const preparePublicationRevision = async ({
         revisionScope,
         baselinePublicationSha256: currentPublication.digest,
         ...(coverExampleAdoption ? { coverExampleAdoption } : {}),
+        ...(coverImageAdoption ? { coverImageAdoption } : {}),
         ...(publicationFields.length ? { publicationFields: [...publicationFields], baselinePlatforms: currentPublication.business.platforms } : {}),
         ...(baselineCoverImages ? { baselineCoverImages } : {}),
-        ...(reviseAll ? {} : (reviseCover || adoptCoverExamples)
+        ...(reviseAll ? {} : (reviseCover || adoptCoverExamples || adoptCoverImages)
           ? { baselinePlatforms: currentPublication.business.platforms }
           : { baselineCovers: currentPublication.business.covers })
       });

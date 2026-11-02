@@ -22,6 +22,7 @@ import {withRenderQueueHeld} from "../packages/modules/render-video/runtime/medi
 import {inspectCurrentDirectorCandidate} from "../packages/modules/direct-episode/inspect-authorability.mjs";
 import {inspectFullframeDesign} from "../packages/templates/fullframe-narrative/inspect-design.mjs";
 import {lockFullframeCallouts} from "../packages/templates/fullframe-narrative/lock-callouts.mjs";
+import {fullframeBatchItems} from "../packages/templates/fullframe-narrative/author-batch.mjs";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const write = async (file, value) => {
@@ -650,4 +651,105 @@ test("未知图片调用留在原段，其它段可换单，整阶段重置仍�
   await assert.rejects(resetStage(options), /先恢复原远端任务/);
   assert.equal((await readData(record)).state, "calling");
   assert.deepEqual(await readFile(first.workOrder), firstOrder);
+});
+
+const expandingFullframeDraft = async t => {
+  const {options, paths} = await setup(t,
+    ["fullframe-narrative", "fullframe-narrative", "fullframe-narrative", "vox-explainer"]);
+  await write(paths.sourceAssets, {schemaVersion: "1.0", assets: [{
+    id: "SA001", mediaType: "document", path: "sources/original.txt", sha256: sha256("原始依据"),
+    sourceCitation: "原始依据", creator: null, date: null, rightsStatus: "permission-granted", usageNotes: "原输入"
+  }]});
+  await write(path.join(paths.input, "sources/original.txt"), "原始依据");
+  const story = await readData(paths.storyboard);
+  story.templateRuns = [
+    {id: "TR001", templateId: "fullframe-narrative", beatIds: ["B001", "B002"]},
+    {id: "TR003", templateId: "fullframe-narrative", beatIds: ["B003"]},
+    {id: "TR004", templateId: "vox-explainer", beatIds: ["B004"]}
+  ];
+  story.beats[0].directorBrief.mustShow += "\n【历史视觉依据 SA001】本镜原有的读取提示。";
+  await write(paths.storyboard, story);
+  await runNext({...options, segmentId: "TR001"});
+  const work = getStageWorkPaths(paths, "p3", "TR001"), order = await readData(work.workOrder);
+  const image = path.join(paths.p3, "assets", "B001", "retained.png");
+  const bytes = Buffer.from("existing image bytes: do not regenerate");
+  await mkdir(path.dirname(image), {recursive: true});
+  await writeFile(image, bytes);
+  const candidate = {taskDigest: order.taskDigest, result: {items: ["B001", "B002"].map(beatId => ({
+    beatId, treatment: {templateId: "fullframe-narrative", assetRequests: [{requestId: "AR001",
+      sceneDescription: "本章已形成的画面草稿", ...(beatId === "B001" ? {asset: {
+        provider: "image-gen", file: path.relative(options.workspaceRoot, image), sha256: sha256(bytes)
+      }} : {})}]}
+  }))}};
+  assert.equal(fullframeBatchItems({workOrder: order, candidate}).length, 2);
+  await write(work.candidate, candidate);
+  story.templateRuns[0].beatIds.push("B003");
+  story.templateRuns.splice(1, 1);
+  // Same component hint, now carried by a larger research document.
+  story.beats[0].directorBrief.mustShow = story.beats[0].directorBrief.mustShow.replace("SA001】", "SA008】");
+  await write(paths.storyboard, story);
+  return {options, paths, work, order, candidate, image, bytes, story};
+};
+
+test("同章扩章原入口续接草稿和实图，新增成员仍须作者完整交付", async t => {
+  const {options, paths, work, order, candidate, image, bytes} = await expandingFullframeDraft(t);
+  const next = await runNext({...options, segmentId: "TR001"});
+  assert.notEqual(next.taskDigest, order.taskDigest);
+  const current = await readData(work.workOrder), continued = await readData(work.candidate);
+  assert.deepEqual(current.inputs.authorBatch.members.map(member => member.beatId), ["B001", "B002", "B003"]);
+  assert.equal(continued.taskDigest, current.taskDigest);
+  assert.deepEqual(continued.result, candidate.result);
+  assert.deepEqual(await readFile(image), bytes);
+  assert.throws(() => fullframeBatchItems({workOrder: current, candidate: continued}), /完整交付/);
+  const before = await readFile(work.candidate);
+  await runNext({...options, segmentId: "TR001"});
+  assert.deepEqual(await readFile(work.candidate), before);
+  assert.ok((await readData(paths.storyboard)).beats.every(beat => !beat.treatment));
+  await assert.rejects(readFile(path.join(work.work, "held-work", `${order.taskDigest}.json`)), {code: "ENOENT"});
+});
+
+test("扩章续接不恢复已改变观看职责的草稿或其它阶段停放工作", async t => {
+  await t.test("原成员观看职责已变化", async t => {
+    const {options, paths, work, order, candidate, story} = await expandingFullframeDraft(t);
+    story.beats[0].directorBrief.mustShow = "必须看见另一个实际对象";
+    await write(paths.storyboard, story);
+    await runNext({...options, segmentId: "TR001"});
+    await assert.rejects(readFile(work.candidate), {code: "ENOENT"});
+    assert.deepEqual((await readData(path.join(work.work, "held-work", `${order.taskDigest}.json`))).candidate, candidate);
+  });
+  await t.test("其它阶段停放工作", async t => {
+    const {options, work, order, candidate} = await expandingFullframeDraft(t);
+    const {taskDigest: _digest, ...base} = order;
+    base.stageId = "p4";
+    const different = {...base, taskDigest: hashObject(base)};
+    await write(path.join(work.work, "held-work", `${different.taskDigest}.json`), {
+      workOrder: different, candidate: {...candidate, taskDigest: different.taskDigest}
+    });
+    await rm(work.workOrder);
+    await rm(work.candidate);
+    await runNext({...options, segmentId: "TR001"});
+    await assert.rejects(readFile(work.candidate), {code: "ENOENT"});
+  });
+  await t.test("原来源已变化", async t => {
+    const {options, paths, work, order, candidate} = await expandingFullframeDraft(t);
+    const sources = await readData(paths.sourceAssets);
+    sources.assets[0].usageNotes = "原依据用途已变化";
+    await write(paths.sourceAssets, sources);
+    await runNext({...options, segmentId: "TR001"});
+    await assert.rejects(readFile(work.candidate), {code: "ENOENT"});
+    assert.deepEqual((await readData(path.join(work.work, "held-work", `${order.taskDigest}.json`))).candidate, candidate);
+  });
+});
+
+test("扩章续接遇到原未知图片调用仍停在原对象", async t => {
+  const {options, work, order, candidate} = await expandingFullframeDraft(t);
+  await write(path.join(work.work, "held-work", `${order.taskDigest}.json`), {workOrder: order, candidate});
+  await rm(work.workOrder);
+  await rm(work.candidate);
+  const record = path.join(options.workspaceRoot, order.scratchPath, "images", "B001", "AR001", "tool-call.json");
+  await write(record, {state: "calling", task: "original-image-call"});
+  await assert.rejects(runNext({...options, segmentId: "TR001"}), /先恢复原远端任务/);
+  assert.equal((await readData(record)).state, "calling");
+  assert.deepEqual((await readData(path.join(work.work, "held-work", `${order.taskDigest}.json`))).candidate, candidate);
+  await assert.rejects(readFile(work.candidate), {code: "ENOENT"});
 });

@@ -2,7 +2,7 @@ import path from 'node:path';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 import {mkdir, readFile, copyFile} from 'node:fs/promises';
 import {pythonCommand, runtimeEnvironment} from './runtime-config.mjs';
-import {imageBackend, isGeneratedImage, imageGenerationMetadata} from './image-generation.mjs';
+import {isGeneratedImage, imageGenerationMetadata} from './image-provenance.mjs';
 import {assertProjectPath, atomicWriteData, hashObject, readData, sha256} from './program-utils.mjs';
 import {loadProgramVisualPackage, productionProfileForKind, visualReferenceInstruction} from './visual-package.mjs';
 import {authorTaskSegmentId, getEpisodePaths, getStageWorkPaths} from './workspace-paths.mjs';
@@ -175,7 +175,12 @@ async function main() {
       if (selection && selection !== key) continue;
       const segmentType = task.moduleId === 'author-bookend' ? 'opener' : task.moduleId === 'author-video' ? 'video' : 'body';
       const profile = productionProfileForKind(visual,'fullframe-image',segmentType);
-      if (!selection && target.asset?.drawingDigest === pictureIdentity(descriptor.request)
+      const directory = path.join(scratch, 'images', unit.id, descriptor.request.requestId);
+      const recordFile = path.join(directory,'tool-call.json');
+      await assertProjectPath({root:path.dirname(path.resolve(candidateFile)),file:recordFile,label:'图片工具恢复记录'});
+      let record = null;
+      try { record = await readData(recordFile); } catch (error) { if (error.code !== 'ENOENT') throw error; }
+      if (!selection && record?.state !== 'calling' && target.asset?.drawingDigest === pictureIdentity(descriptor.request)
         && target.asset.visual.packageId === profile.packageId) continue;
       const previousTreatment = unitTask.inputs.previousTreatment;
       const carries = ['subjects','props'].some(kind =>
@@ -218,13 +223,8 @@ async function main() {
         revision:revisionReason ? {reason:revisionReason,file:path.resolve(workspaceRoot,target.asset.file)} : null,
         continuity:descriptor.continuity,
         previousImage:previous ? path.resolve(workspaceRoot,previous.file) : null});
-      const directory = path.join(scratch, 'images', unit.id, descriptor.request.requestId);
-      const recordFile = path.join(directory,'tool-call.json');
-      await assertProjectPath({root:path.dirname(path.resolve(candidateFile)),file:recordFile,label:'图片工具恢复记录'});
-      let record = null;
-      try { record = await readData(recordFile); } catch (error) { if (error.code !== 'ENOENT') throw error; }
       if (command === 'prepare') {
-        jobs.push({key,asset:target.asset ?? null,record,backend:record ? record.backend ?? 'builtin' : imageBackend(),
+        jobs.push({key,asset:target.asset ?? null,record,
           ...(task.inputs.authorBatch && index === 0 && !previous
             && needsPrevious
             ? {dependsOn:unitTask.inputs.previousAuthorUnit.id} : {}),
@@ -232,6 +232,8 @@ async function main() {
         continue;
       }
       if (command === 'begin') {
+        if (record?.backend === 'openai' && record.state !== 'completed')
+          throw new Error(`${key} 历史API调用只恢复原结果，不切换工具重投`);
         if (record?.state === 'calling' && !retryAuthorized) throw new Error(`${key} 工具结果未知，先恢复原调用，禁止再次提交`);
         if ((target.asset || record?.state === 'completed') && !revisionReason && !retryAuthorized)
           throw new Error(`${key} 已有完成图片，先导入原结果；重生需要明确修正意见与当前许可`);
@@ -241,11 +243,10 @@ async function main() {
         }
         await mkdir(directory,{recursive:true});
         if (record) await atomicWriteData(path.join(directory,`tool-call-${hashObject(record).slice(0,16)}.json`),record);
-        const backend = imageBackend();
-        await atomicWriteData(recordFile,{state:'calling',backend,drawingDigest:pictureIdentity(descriptor.request),job,
+        await atomicWriteData(recordFile,{state:'calling',drawingDigest:pictureIdentity(descriptor.request),job,
           profile:{packageId:profile.packageId,version:profile.version,profileId:profile.profileId,
             profileDigest:profile.profileDigest,referenceId:profile.referenceId}});
-        jobs.push({key,job,backend,callPath:recordFile}); continue;
+        jobs.push({key,job,callPath:recordFile}); continue;
       }
       if (!selection || !sourceFile || !record || record.drawingDigest !== pictureIdentity(descriptor.request))
         throw new Error('导入须匹配原图片调用与当前图纸');

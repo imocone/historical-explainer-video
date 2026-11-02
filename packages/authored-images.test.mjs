@@ -130,3 +130,34 @@ test('fullframe imports and explainer image inspection do not wait for another C
     await rm(workspaceRoot, {recursive: true, force: true});
   }
 });
+
+test('原生片头连续修图可恢复原调用并导入，不隐藏未完成修图', async t => {
+  const {atomicWriteData,hashObject,readData}=await import('./program-utils.mjs');
+  const {getEpisodePaths,getStageWorkPaths}=await import('./workspace-paths.mjs');
+  const systemRoot=new URL('../',import.meta.url).pathname;
+  const workspaceRoot=await mkdtemp(path.join(os.tmpdir(),'native-opener-revision-'));
+  t.after(()=>rm(workspaceRoot,{recursive:true,force:true}));
+  const work=getStageWorkPaths(getEpisodePaths(workspaceRoot,'ep01'),'p4',null,'opener');
+  const visual=await readData(path.join(systemRoot,'visuals/meiji-state-machine/visual-package.json'));
+  await atomicWriteData(path.join(workspaceRoot,'program.yaml'),{visualPackage:{visualPackageId:visual.id,version:visual.version}});
+  const base={stageId:'p4',moduleId:'author-bookend',subject:{id:'ep01'},candidatePath:path.relative(workspaceRoot,work.candidate),
+    scratchPath:path.relative(workspaceRoot,path.join(work.work,'attempt-native')),inputs:{},
+    resolvedAssembly:{slots:[{id:'opener-template',implementations:[{packageId:'episode-opener'}]}]}};
+  const task={...base,taskDigest:hashObject(base)};
+  await atomicWriteData(work.workOrder,task);
+  await atomicWriteData(work.candidate,{taskDigest:task.taskDigest,result:(await readData(path.join(systemRoot,'packages/templates/episode-opener/examples/golden.json'))).result});
+  const image=path.join(workspaceRoot,'native-output.png');await writeFile(image,png);
+  const exec=promisify(execFile);
+  const cli=async(...args)=>JSON.parse((await exec(process.execPath,[path.join(systemRoot,'packages/authored-images.mjs'),...args],{maxBuffer:1024*1024})).stdout);
+  await cli('begin',work.workOrder,work.candidate,'opener/AR001');
+  await cli('import',work.workOrder,work.candidate,'opener/AR001',image);
+  for(const reason of ['只修手部','再修衣领']){
+    const [started]=await cli('begin',work.workOrder,work.candidate,'opener/AR001','--revision-reason',reason);
+    const pending=await cli('prepare',work.workOrder,work.candidate);
+    const original=pending.find(item=>item.key==='opener/AR001');
+    assert.equal(original.record.state,'calling');assert.equal(original.record.job.prompt,started.job.prompt);
+    assert.ok(original.record.job.prompt.includes(reason));
+    await cli('import',work.workOrder,work.candidate,'opener/AR001',image);
+    assert.equal((await readData(work.candidate)).result.flashbackShots[0].asset.provider,'image-gen');
+  }
+});

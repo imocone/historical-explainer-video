@@ -71,8 +71,8 @@
         "vertical"
       ],
       "properties": {
-        "youtube": {"oneOf": [{"$ref": "#/$defs/generation"}, {"$ref": "#/$defs/packageExample"}, {"$ref": "#/$defs/builtinGeneration"}]},
-        "vertical": {"oneOf": [{"$ref": "#/$defs/generation"}, {"$ref": "#/$defs/packageExample"}, {"$ref": "#/$defs/builtinGeneration"}]}
+        "youtube": {"oneOf": [{"$ref": "#/$defs/generation"}, {"$ref": "#/$defs/packageExample"}, {"$ref": "#/$defs/builtinGeneration"}, {"$ref": "#/$defs/userProvided"}]},
+        "vertical": {"oneOf": [{"$ref": "#/$defs/generation"}, {"$ref": "#/$defs/packageExample"}, {"$ref": "#/$defs/builtinGeneration"}, {"$ref": "#/$defs/userProvided"}]}
       }
     },
     "files": {
@@ -214,6 +214,19 @@
         "provider": {"const": "package-example"},
         "packageId": {"$ref": "#/$defs/id"},
         "version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+        "source": {"$ref": "#/$defs/path"},
+        "sourceSha256": {"$ref": "#/$defs/sha"},
+        "inputFingerprint": {"$ref": "#/$defs/sha"},
+        "stableFingerprint": {"$ref": "#/$defs/sha"}
+      }
+    },
+    "userProvided": {
+      "description": "用户明确指定的本地成图；不冒充生成工具或包内样图。",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider", "source", "sourceSha256", "inputFingerprint", "stableFingerprint"],
+      "properties": {
+        "provider": {"const": "user-provided"},
         "source": {"$ref": "#/$defs/path"},
         "sourceSha256": {"$ref": "#/$defs/sha"},
         "inputFingerprint": {"$ref": "#/$defs/sha"},

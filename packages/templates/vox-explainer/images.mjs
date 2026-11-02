@@ -1,8 +1,8 @@
 import path from 'node:path';
 import {pathToFileURL} from 'node:url';
-import {mkdir, readFile, copyFile} from 'node:fs/promises';
+import {mkdir, readFile, copyFile, readdir} from 'node:fs/promises';
 import {pythonCommand, runtimeEnvironment} from '../../runtime-config.mjs';
-import {imageBackend, isGeneratedImage, imageGenerationMetadata} from '../../image-generation.mjs';
+import {isGeneratedImage, imageGenerationMetadata} from '../../image-provenance.mjs';
 import {assertProjectPath, atomicWriteData, hashObject, readData, sha256, stableStringify} from '../../program-utils.mjs';
 import {readP3Sources} from '../../p3-sources.mjs';
 import {imageProfileFor,imageAppearanceDigest,imageRolePalette} from './image-style.mjs';
@@ -200,6 +200,40 @@ export async function imageJobs({treatment, profile, semanticContext, cues, ...w
   return jobs;
 }
 
+// Old API results can be imported, but cannot silently become new native calls.
+export async function prepareImageCalls({jobs, workspaceRoot, scratchPath}) {
+  const scratch = path.resolve(workspaceRoot, scratchPath);
+  await assertProjectPath({root:workspaceRoot,file:scratch,label:'讲解图片工作目录'});
+  const prepared = [];
+  for (const item of jobs) {
+    const base = path.join(scratch, 'api', item.requestId), digest = hashObject(item.job);
+    await assertProjectPath({root:scratch,file:base,label:'讲解图片调用目录'});
+    const entries = await readdir(base, {withFileTypes:true}).catch(error => {
+      if (error.code === 'ENOENT') return [];
+      throw error;
+    });
+    const generations = [];
+    for (const directory of [base, ...entries.filter(entry => entry.isDirectory() || entry.isSymbolicLink())
+      .map(entry => path.join(base,entry.name))]) {
+      const receiptPath = path.join(directory,'generation.json');
+      await assertProjectPath({root:scratch,file:receiptPath,label:'讲解图片原API记录'});
+      let saved;
+      try { saved = await readData(receiptPath); } catch (error) { if (error.code === 'ENOENT') continue; throw error; }
+      generations.push({directory,receiptPath,saved});
+    }
+    const unresolved = generations.filter(({saved}) => saved.state !== 'completed');
+    if (unresolved.length)
+      throw new Error(`${item.requestId} 原图片API失败或结果未知；保留原调用，不改请求、目录或服务重投`);
+    const original = generations.find(({saved}) => saved.jobDigest === digest);
+    if (original) {
+      prepared.push({...item,recovery:{sourceFile:path.join(original.directory,'image.png'),receiptPath:original.receiptPath}});
+      continue;
+    }
+    prepared.push(item);
+  }
+  return prepared;
+}
+
 export async function inspectImage(file, {transparentBackground = true} = {}) {
   const script = `import json,sys
 from PIL import Image
@@ -333,7 +367,7 @@ async function main() {
     const {semanticContext, cues} = task.inputs;
     const jobs = await imageJobs({treatment,profile,semanticContext,cues,sourceAssets,
       workspaceRoot,episodeId:task.subject.id,unitId:task.inputs.authorUnit.id});
-    console.log(JSON.stringify(jobs.map(item => ({...item,backend:imageBackend()})),null,2));
+    console.log(JSON.stringify(await prepareImageCalls({jobs,workspaceRoot,scratchPath:task.scratchPath}),null,2));
     return;
   }
   const request = treatment.assetRequests.find(item => item.requestId === requestId);

@@ -72,10 +72,8 @@ const resolveVideoCurrent = async ({
   workspaceRoot = root,
   episodeId,
   targetId = "release-main",
-  platform = null,
   segmentId = null,
   nodeId = null,
-  materializePublicationRequest = false,
   model = null,
   resourceCache = model?.resourceCache ?? new Map(),
   consumerOnly = false,
@@ -84,7 +82,7 @@ const resolveVideoCurrent = async ({
   previewPart = null
 }) => {
   const isolatedPreview = Boolean(previewSegmentIds || previewPart);
-  if (targetId !== "release-main") throw new Error("唯一发布目标必须是 release-main");
+  if (targetId !== "release-main") throw new Error("唯一交付目标必须是 release-main");
   if (!model?.stageId) {
     let current = null;
     for (const stageId of ["p3", "p4"]) {
@@ -94,7 +92,6 @@ const resolveVideoCurrent = async ({
         episodeId,
         targetId,
         consumerOnly,
-        materializePublicationRequest,
         model: await loadStageModel(root, { stageId, resourceCache,
           resourceScope:"stage" })
       });
@@ -121,8 +118,8 @@ const resolveVideoCurrent = async ({
   const workPaths = getStageWorkPaths(paths, model.stageId);
   const stagePathGroups = {
     p3: [getStageWorkPaths(paths, "p3").work, paths.storyboard],
-    p4: [getStageWorkPaths(paths, "p4").work, paths.episodePackage, paths.videoPlan, paths.videoManifest],
-    p4: [paths.renderReceipt, paths.finalVideo]
+    p4: [getStageWorkPaths(paths, "p4").work, paths.episodePackage, paths.videoPlan, paths.videoManifest,
+      paths.renderReceipt, paths.finalVideo]
   };
   const stageOrder = ["p3", "p4"];
   const lastStageIndex = stageOrder.indexOf(model.stageId ?? "p4");
@@ -649,7 +646,7 @@ const resolveVideoCurrent = async ({
     }
     if (descriptor.primitive === "program-render") {
       if(!isolatedPreview){
-        if(videoEnabled&&(!videoPlan || !videoManifest)) return {kind:"blocked-upstream",upstreamStageId:"p4",nodeId:!videoPlan?"video":"video-assets",reason:"先完成本阶段视频设计与素材交付，再压片"};
+        if(videoEnabled&&(!videoPlan || !videoManifest)) return {kind:"blocked-upstream",upstreamStageId:"p4",nodeId:!videoPlan?"video":"video-assets",reason:videoManifestFailure??"先完成本阶段视频设计与素材交付，再压片"};
 
     const handoff = await resolveRenderAssetHandoff({workspaceRoot, storyboard, cues:inspected.cues,
       videoPlan, bodyDurationMs:inspected.narrationPackage.durationMs});

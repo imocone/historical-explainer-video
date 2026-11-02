@@ -14,8 +14,10 @@ export const validate = ({ result, context }) => {
   };
   visit(context.storyboard?.understanding);
   let previousEnd = -1;
-  for (const [index, span] of result.spans.entries()) {
-    if (span.id !== `V${String(index + 1).padStart(3, "0")}`) errors.push("视频编号须按正文顺序从V001连续排列");
+  const spanIds = new Set();
+  for (const span of result.spans) {
+    if (spanIds.has(span.id)) errors.push(`${span.id} 视频编号重复`);
+    spanIds.add(span.id);
     try {
       const window = videoWindow({ span, storyboard: context.storyboard, cues: context.cues });
       if (window.firstIndex <= previousEnd) errors.push(`${span.id} 与前段重叠或顺序倒置`);

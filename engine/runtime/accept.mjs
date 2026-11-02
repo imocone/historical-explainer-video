@@ -74,13 +74,12 @@ async function acceptCandidate({
   programId,
   targetId,
   stageId,
-  platform = null,
   segmentId = null,
   nodeId = null,
   acceptanceServices = {}
 }) {
   requireStageId(stageId, "accept");
-  const recovered = await recoverAcceptance({ workspaceRoot, episodeId, stageId, targetId, platform, segmentId, nodeId });
+  const recovered = await recoverAcceptance({ workspaceRoot, episodeId, stageId, targetId, segmentId, nodeId });
   if (recovered) return recovered;
 
   const model = await loadStageModel(root, { stageId, resourceScope: "stage" });
@@ -91,7 +90,6 @@ async function acceptCandidate({
     programId,
     targetId,
     stageId,
-    platform,
     segmentId,
     nodeId,
     model
@@ -100,8 +98,6 @@ async function acceptCandidate({
     current.paths ??
     (() => {
       if (current.subject?.kind === "program") return getProgramPaths(workspaceRoot);
-      if (current.subject?.kind === "release-bundle")
-        return getPublicationPaths(workspaceRoot, episodeId, targetId);
       if (current.subject?.kind === "episode") return getEpisodePaths(workspaceRoot, episodeId);
       throw new Error("当前生产对象没有可解析的工作目录");
     })();
@@ -665,13 +661,16 @@ async function acceptCandidate({
       await validateSchema(schemaPath, publicationAccepted, publicationPaths.publicationDocument);
       const previous = await exists(publicationPaths.publicationDocument)
         ? businessContent(await readData(publicationPaths.publicationDocument)) : null;
-      if ((materialChanged && !rewriteNarration) || stableStringify(previous) !== stableStringify(publication)) {
+      if ((materialChanged && !rewriteNarration) || stableStringify(previous) !== stableStringify(publication)
+        || current.context?.returnRequest?.coverImageAdoption) {
         await queueWrite(publicationPaths.publicationDocument, publicationAccepted);
         rawWrites.set(publicationPaths.publicationText, publicationTextFor(publication));
         await queueWrite(getStageWorkPaths(publicationPaths, "p1").returnRequest("produce-covers"), {
           target: "produce-covers", reason: "发布内容已接纳，完成对应封面交付", cueRefs: [], phase: "cover",
           ...(current.context?.returnRequest?.coverExampleAdoption
-            ? { coverExampleAdoption: current.context.returnRequest.coverExampleAdoption } : {})
+            ? { coverExampleAdoption: current.context.returnRequest.coverExampleAdoption } : {}),
+          ...(current.context?.returnRequest?.coverImageAdoption
+            ? { coverImageAdoption: current.context.returnRequest.coverImageAdoption } : {})
         });
       }
     }
@@ -884,7 +883,7 @@ async function acceptCandidate({
         || hashObject(await readData(workPaths.candidate)) !== candidateHash) {
         throw new Error("接纳期间工作单或候选已变化，保留现场");
       }
-      const latest = await resolveStageCurrent({ root, workspaceRoot, episodeId, programId, targetId, stageId, platform, segmentId, nodeId, model });
+      const latest = await resolveStageCurrent({ root, workspaceRoot, episodeId, programId, targetId, stageId, segmentId, nodeId, model });
       if (latest.kind !== "task") throw new Error("接纳期间当前任务已变化，保留候选");
       assertTaskContinuity(saved, latest.workOrder);
       if (current.mode === "video-plan") {

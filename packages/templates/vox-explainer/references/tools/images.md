@@ -1,6 +1,6 @@
 # 图片
 
-普通讲解选择图片制作主体、器物、环境、分件或状态图时，按[素材与动作](../creative/production.md#素材与动作一起设计)确定构图与所需变化，沿本节生成、修正或导入；没有图片需要时，`assetRequests: []`仍是完整合法的交付。[地图推演](../spatial.md)的地图沿[数据地图窗口](../../spatial/docs/map-window.md#数据地图窗口)制作；确需生图的兵棋、局部地貌及旁图情境使用本图片入口。展示登记原件使用`import-source`，保留原貌与来源。作者把本件作用和可控部分落实到蓝图与scene；`prepare`只返回生图参数，图片由自带imagegen生成后导入。
+普通讲解选择图片制作主体、器物、环境、分件或状态图时，按[素材与动作](../creative/production.md#素材与动作一起设计)确定构图与所需变化，沿本节生成、修正或导入；没有图片需要时，`assetRequests: []`仍是完整合法的交付。[地图推演](../spatial.md)的地图沿[数据地图窗口](../../spatial/docs/map-window.md#数据地图窗口)制作；确需生图的兵棋、局部地貌及旁图情境使用本图片入口。展示登记原件使用`import-source`，保留原貌与来源。作者把本件作用和可控部分落实到蓝图与scene；`prepare`只返回当前生图参数，交给Codex原生imagegen生成后导入。
 
 每个请求提供`requestId / purpose / sourceRefs / mustNotInvent / visualBrief / exactTexts`。`visualBrief.composition`写清本件主体或部件、姿态、视角、必要环境及后续动画用法；按[素材与动作](../creative/production.md#素材与动作一起设计)确定粒度，保全独立动作所需的轮廓、接合、活动空间和移动后露出的形体，并交清同物关系。地图图件沿[空间方法](../spatial.md)设计。`transparentBackground`只决定背景是否透明：true为透明，false为不透明，不改变构图范围。准确数字和普通标签由程序排印。
 
@@ -12,7 +12,7 @@
 node packages/templates/vox-explainer/images.mjs prepare <工作单> <候选>
 ```
 
-prepare只返回原图已就绪的请求；先完成返回的图片并导入，再运行同一命令取得依赖它的新姿态请求。引用不能越出本段、指向自身或形成循环。逐一查看返回参数中的画风参考和对象原图，按返回backend选择原生imagegen或下文API工具路径，再导入其原PNG与实际调用JSON；漏传原图不能导入：
+prepare只返回原图已就绪的请求；先完成返回的图片并导入，再运行同一命令取得依赖它的新姿态请求。引用不能越出本段、指向自身或形成循环。逐一查看返回参数中的画风参考和对象原图，将完整job原样交给Codex原生imagegen，保存实际调用JSON，再导入原PNG与该JSON；漏传原图不能导入：
 
 ```bash
 node packages/templates/vox-explainer/images.mjs import <工作单> <候选> <AR编号> <原图PNG> <调用JSON> [锚点JSON]
@@ -20,7 +20,7 @@ node packages/templates/vox-explainer/images.mjs import <工作单> <候选> <AR
 
 程序保留真实提示、文件、来源、可见范围和可选原图归一化锚点。HTML、SVG及CSS均用`asset:AR001`引用同一图片。例如`<img src="asset:AR001">`或`<image href="asset:AR001" .../>`。布局按实图尺寸和透明范围安排，作用点要用实际锚点；移动布局不重生未改图片。不同姿态、反面或内部结构准备相应图件，让形体变化符合实际结构。
 
-prepare返回`backend:openai`时，把该件完整job原样保存到本单scratch的调用JSON。当前已有明确图片付费许可时，用`node packages/image-generation.mjs <调用JSON> <本单scratch/api/AR编号> --size 1536x1536 --authorize-paid-images`生成；引用原图、透明背景和画法保持。将返回的原PNG交给同一import，原`<调用JSON>`位置改传返回的`receiptPath`；程序读取其中原job并保存真实API来源与模型。已有完成记录直接恢复；失败／未知不换目录或服务重投。原生工具仍沿上文办理。
+历史API已有完成结果时，prepare返回`recovery`，直接以其中sourceFile和receiptPath沿同一import恢复原图，保留实际来源；失败或未知时停止并保留记录，不切原生重投。当前新图片及修图均沿上文原生工具入口；修图保留当前asset，并在visualBrief交清具体意见，入口自动携带原图。
 
 使用登记原件时在请求选择`sourceAssetId`，并将其列入sourceRefs，然后运行`images.mjs import-source <工作单> <候选> <AR编号> [锚点JSON]`。原件保留原始PNG/JPEG与出处，显示时取景、注释，不重绘其内容或冒充生成来源。
 

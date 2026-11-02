@@ -4,11 +4,11 @@ import path from 'node:path';
 import os from 'node:os';
 import {mkdtemp, mkdir, readFile, writeFile, rm} from 'node:fs/promises';
 import {createAppearance} from './appearance.mjs';
-import {drawingDigest, imageJob, imageJobs, loadImageProfile, importAuthoredImage, importSourceImage} from './images.mjs';
+import {drawingDigest, imageJob, imageJobs, prepareImageCalls, loadImageProfile, importAuthoredImage, importSourceImage, verifyAuthoredImage} from './images.mjs';
 import {validate, validateAcceptance} from './validate.mjs';
 import {authoredAssetsForTreatment} from './render-plan.mjs';
 import {getEpisodePaths} from '../../workspace-paths.mjs';
-import {sha256} from '../../program-utils.mjs';
+import {sha256, readData, atomicWriteData} from '../../program-utils.mjs';
 import {projectRhetoricalBoundaries} from '../../modules/author-beat/projection.mjs';
 import {projectRenderStoryboard} from '../../modules/render-video/runtime/projection.mjs';
 
@@ -438,4 +438,36 @@ test('已上屏图件的原图引用链可只作参考，交付仍保留全部�
   assert.ok(validate({result: f.treatment, context}).includes('画面使用未声明图片: AR999'));
   f.treatment.scene.markup = '<img src="asset:AR003">';
   assert.deepEqual(validate({result: f.treatment, context}), ['图片没有进入画面: AR004']);
+});
+
+test('原生讲解图片准备不创建服务选择或调用目录，修图仍携带原图', async t => {
+  const f=await fixture(t);
+  f.parent.visualBrief.composition='人物改穿红衣';
+  const jobs=await f.prepare(),scratchPath='ep99/制作/p3/_work/attempt-images';
+  const returned=await prepareImageCalls({jobs,workspaceRoot:f.workspace.workspaceRoot,scratchPath});
+  assert.deepEqual(returned,jobs);
+  assert.ok(returned[0].job.referenced_image_paths.includes(f.absolute(f.parent.asset)));
+  await assert.rejects(readFile(path.join(f.workspace.workspaceRoot,scratchPath,'api/AR001/call.json')),{code:'ENOENT'});
+});
+
+test('历史API讲解结果可沿原导入使用；未知记录不转为原生重投', async t => {
+  const f=await fixture(t);f.treatment.assetRequests=[f.parent];
+  f.parent.visualBrief.composition='人物改穿红衣';
+  const jobs=await f.prepare(),scratchPath='ep99/制作/p3/_work/attempt-images';
+  const directory=path.join(f.workspace.workspaceRoot,scratchPath,'api/AR001');
+  const receiptPath=path.join(directory,'generation.json'),sourceFile=path.join(directory,'image.png');
+  const {hashObject}=await import('../../program-utils.mjs');
+  const saved={provider:'openai-images',model:'retained-model',state:'completed',job:jobs[0].job,
+    jobDigest:hashObject(jobs[0].job),outputSha256:sha256(f.changedBytes)};
+  await atomicWriteData(receiptPath,saved);await writeFile(sourceFile,f.changedBytes);
+  const [resumed]=await prepareImageCalls({jobs,workspaceRoot:f.workspace.workspaceRoot,scratchPath});
+  assert.deepEqual(resumed.recovery,{sourceFile,receiptPath});
+  f.parent.asset=await importAuthoredImage({...f.workspace,request:f.parent,treatment:f.treatment,
+    profile:f.profile,semanticContext:f.semanticContext,cues:f.cues,sourceAssets:[],job:jobs[0].job,
+    sourceFile,generationReceipt:receiptPath});
+  assert.equal(f.parent.asset.provider,'openai-images');assert.equal(f.parent.asset.model,'retained-model');
+  assert.deepEqual(await f.prepare(),[]);
+  await atomicWriteData(receiptPath,{...saved,state:'unknown'});
+  await assert.rejects(prepareImageCalls({jobs,workspaceRoot:f.workspace.workspaceRoot,scratchPath}),/保留原调用/);
+  assert.equal((await readData(receiptPath)).state,'unknown');
 });

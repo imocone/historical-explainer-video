@@ -28,6 +28,7 @@ const validateNextOptions = async ({
   coverRecord = null,
   cancelCoverRegeneration,
   adoptCoverExamples,
+  adoptCoverImages = null,
   coverVariants,
   authorizePaidTts,
 }) => {
@@ -37,14 +38,14 @@ const validateNextOptions = async ({
     throw new Error("--claim 只用于P3领取 fullframe 或 explainer，不同时指定段或发起修订");
   if (replaceCoverTask && (stageId !== "p1" || !/^[a-f0-9]{64}$/u.test(coverRecord ?? "")
     || coverVariants?.length !== 1 || !COVER_VARIANTS.has(coverVariants[0])
-    || regenerateCover || reviseCover || revisePublication || reviseVideo || adoptCoverExamples
+    || regenerateCover || reviseCover || revisePublication || reviseVideo || adoptCoverExamples || adoptCoverImages
     || cancelCoverRegeneration || revisionReason !== null)) {
     throw new Error("封面替换只用于P1，须点名一个--cover-variant和--cover-record，不同时返工");
   }
   if (coverRecord !== null && !replaceCoverTask) throw new Error("--cover-record只用于替换自带生图原记录");
   if (cancelCoverRegeneration && (stageId !== "p1" || reviseVideo || revisePublication || reviseCover
     || regenerateCover || authorizePaidTts
-    || adoptCoverExamples || cancelDirectorRevision || revisionReason !== null || publicationFields.length || coverVariants?.length)) {
+    || adoptCoverExamples || adoptCoverImages || cancelDirectorRevision || revisionReason !== null || publicationFields.length || coverVariants?.length)) {
     throw new Error("--cancel-cover-regeneration 只用于单独撤销P1封面重生，不同时修订或授权生产");
   }
   if (reviseSubtitles && stageId !== "p2") {
@@ -128,6 +129,10 @@ const validateNextOptions = async ({
   if (adoptCoverExamples && stageId !== "p1") {
     throw new Error("--adopt-cover-examples 只能用于 next --stage p1");
   }
+  if (adoptCoverImages !== null && (stageId !== "p1" || typeof adoptCoverImages !== "string"
+    || !adoptCoverImages.trim() || reviseOpener || reviseNarration || rerunNarration)) {
+    throw new Error("--adopt-cover-images 只用于P1指定双图接纳，须提供JSON路径且不同时重作正文或片头");
+  }
   if (!Array.isArray(coverVariants)) {
     throw new Error("--cover-variant 参数集合无效");
   }
@@ -145,11 +150,11 @@ const validateNextOptions = async ({
   if (!regenerateCover && !replaceCoverTask && coverVariants.length > 0) {
     throw new Error("--cover-variant 只用于封面定点重生或自带生图原记录替换");
   }
-  if ([reviseVideo, revisePublication || reviseCover, regenerateCover, adoptCoverExamples].filter(Boolean).length > 1) {
+  if ([reviseVideo, revisePublication || reviseCover, regenerateCover, adoptCoverExamples, adoptCoverImages].filter(Boolean).length > 1) {
     throw new Error("视频设计、发布内容返工、封面成图重生与样图接纳不能同时发起");
   }
   if (revisionReason !== null && (typeof revisionReason !== "string" || !revisionReason.trim()
-    || !(revisePublication || reviseCover || regenerateCover || adoptCoverExamples || reviseDirector || redesignBody || reviseQuotes))) {
+    || !(revisePublication || reviseCover || regenerateCover || adoptCoverExamples || adoptCoverImages || reviseDirector || redesignBody || reviseQuotes))) {
     throw new Error("--revision-reason 必须是本次导演修订、正文重作、发布内容返工或封面重生的非空意见");
   }
   if (!Array.isArray(publicationFields)
@@ -162,6 +167,9 @@ const validateNextOptions = async ({
   }
   if (adoptCoverExamples && (publicationFields.length || coverVariants.length)) {
     throw new Error("--adopt-cover-examples 直接使用当前横竖Cover登记样图，不再指定文案字段或画幅");
+  }
+  if (adoptCoverImages && (publicationFields.length || coverVariants.length)) {
+    throw new Error("--adopt-cover-images 从同一JSON指定完整横竖双图，不再指定文案字段或画幅");
   }
   return { redesignBeatIds };
 };
