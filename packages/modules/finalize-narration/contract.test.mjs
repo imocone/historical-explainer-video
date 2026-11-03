@@ -10,7 +10,7 @@ import { atomicWriteData, fileSha256, readData, sha256 } from "../../program-uti
 import { getEpisodePaths, getStageWorkPaths } from "../../workspace-paths.mjs";
 import { withMediaResources } from "../render-video/runtime/media-process.mjs";
 import { inspect, run } from "./run.mjs";
-import { projectSpeechCues } from '../author-subtitles/subtitle-timing.mjs';
+import { normalizeWordTimeline, projectSpeechCues } from '../author-subtitles/subtitle-timing.mjs';
 
 const directory = fileURLToPath(new URL("./", import.meta.url));
 const deliveries = ["narration.txt", "narration.mp3", "narration.srt", "subtitle-quality.yaml", "narration-package.yaml"];
@@ -182,6 +182,43 @@ test('识别差异只映射实际可用的整块时间，不在一个词内均�
       {text:'全部资产',startMs:800,endMs:1200}]});
   assert.deepEqual(projected[0].phrases[1],{text:'现钞',startMs:200,endMs:400});
   assert.equal(projected[0].phrases.length,4);
+});
+
+test('同条字幕内保留词级实测重叠，跨条字幕重叠仍在编码前拒绝', async (t) => {
+  for (const split of [false, true]) {
+    await t.test(split ? '跨字幕重叠' : '词级重叠', async (t) => {
+      const f = await fixture(t);
+      const narration = split ? '甲。乙。' : '甲乙。';
+      const words = [{text:'甲',startMs:0,endMs:520},{text:'乙',startMs:500,endMs:1000}];
+      f.task.inputs.scriptPackage.narration = narration;
+      f.task.inputs.ttsResult.ttsInput.text = narration;
+      f.task.inputs.ttsResult.nativeTiming.cues = words;
+      const correction = f.task.inputs.subtitleCorrection;
+      correction.narrationSha256 = sha256(narration);
+      correction.cues = split
+        ? [{text:'甲。',startMs:0,endMs:520},{text:'乙。',startMs:500,endMs:1000}]
+        : [{text:narration,startMs:0,endMs:1000}];
+      if (split) {
+        await assert.rejects(run(f), /时间段无效或与前一条重叠/u);
+        assert.equal(f.state.encodes, 0);
+      } else {
+        await run(f);
+        const quality = await readData(path.join(f.paths.p2,'subtitle-quality.yaml'));
+        assert.deepEqual(quality.speechTiming.cues[0].phrases,
+          [{text:'甲',startMs:0,endMs:520},{text:'乙。',startMs:500,endMs:1000}]);
+        assert.deepEqual(f.task.inputs.ttsResult.nativeTiming.cues, words);
+        assert.equal((await inspect(f)).valid, true);
+      }
+    });
+  }
+});
+
+test('词级实测重叠不放行倒退或正文零时长', () => {
+  for (const words of [
+    [{text:'甲',startMs:100,endMs:500},{text:'乙',startMs:90,endMs:600}],
+    [{text:'甲',startMs:0,endMs:500},{text:'乙',startMs:200,endMs:400}],
+    [{text:'甲',startMs:0,endMs:0}]
+  ]) assert.throws(() => normalizeWordTimeline(words), /无效/u);
 });
 
 test("缺失或改变的raw绑定在编码前停止，保留全部旧交付", async (t) => {

@@ -230,7 +230,8 @@ export const placeCalloutOverlays = ({ overlays, segments, policy }) => {
         startFrame: overlay.startFrame,
         endFrame,
         layout: callout.layout,
-        viewingPoints: viewingPointsDuring({ segments, startFrame: overlay.startFrame, endFrame, policy }),
+        viewingPoints: callout.kind === "historical-quote" ? []
+          : viewingPointsDuring({ segments, startFrame: overlay.startFrame, endFrame, policy }),
         placementKey: `${overlay.id}:${index}`,
         preferredCorner: callouts.length === 2 && index === 0 ? { side: "left", vertical: "top" } : null,
         pairedWith: callouts.length === 2 && index === 1 ? firstEntry : null,

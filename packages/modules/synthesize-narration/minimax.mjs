@@ -166,6 +166,16 @@ export const miniMaxPayload = ({ text, contract }) => {
     output_format: "hex",
     aigc_watermark: false
   };
+  // Explicit name readings prevent rare characters and compound surnames
+  // from being guessed or omitted by the speech model. Keep the written text.
+  const nameReadings = [
+    ["秦熺", "(qin2)(xi1)"],
+    ["万俟卨", "(mo4)(qi2)(xie4)"]
+  ];
+  const tone = nameReadings
+    .filter(([name]) => text.includes(name))
+    .map(([name, reading]) => `${name}/${reading}`);
+  if (tone.length) payload.pronunciation_dict = { tone };
   if (contract.subtitleGranularity) {
     payload.subtitle_enable = true;
     payload.subtitle_type = contract.subtitleGranularity;

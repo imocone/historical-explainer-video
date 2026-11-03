@@ -107,6 +107,41 @@ test("片头与video同时持单，正式输入完整，交接片头不重签vid
   assert.deepEqual((await readData(paths.videoManifest)).clips, []);
 });
 
+test("只返工已接纳片头保留正文和旧片头，不启用剧情视频，原单可恢复", async t => {
+  const { options, paths, opener } = await setup(t);
+  await write(paths.videoSettings, {enabled:false});
+  const accepted = {opener:acceptedOpener(opener)};
+  await write(paths.episodePackage, accepted);
+  const body = await readFile(paths.storyboard, 'utf8');
+  const result = await runNext({...options,reviseOpener:true,revisionReason:'保留原文与人物，只调整片头构图'});
+  assert.equal(result.kind, 'work-order');
+  const work = getStageWorkPaths(paths, 'p4', null, 'opener');
+  const order = await readData(work.workOrder);
+  assert.equal(order.nodeId, 'opener');
+  assert.equal(order.inputs.returnRequest.reason,
+    '保留原文与人物，只调整片头构图');
+  assert.equal((await runNext({...options,nodeId:'opener'})).taskDigest, result.taskDigest);
+  assert.deepEqual(await readData(paths.videoSettings), {enabled:false});
+  assert.deepEqual(await readData(paths.episodePackage), accepted);
+  assert.equal(await readFile(paths.storyboard, 'utf8'), body);
+  await assert.rejects(runNext({...options,reviseOpener:true}), /revision-reason/);
+  await assert.rejects(runNext({...options,reviseOpener:true,revisionReason:'调整构图',openerText:'改文案'}), /只能在 P1/);
+});
+
+test("P4整阶段重置保留未收口发布对象，原发布收口后才可重置", async t => {
+  const { options, paths } = await setup(t);
+  const release = path.join(paths.production, 'p5/release-main');
+  const intent = path.join(release, '_work/intents/youtube/browser.yaml');
+  await write(intent, {state:'submitted',remoteWorkId:'original-id'});
+  await write(paths.finalVideo, 'original video');
+  await assert.rejects(resetStage(options), /尚未收口的独立发布任务/);
+  assert.equal(await readFile(paths.finalVideo, 'utf8'), 'original video');
+  assert.deepEqual(await readData(intent), {state:'submitted',remoteWorkId:'original-id'});
+  await write(path.join(release,'receipts/youtube.yaml'), {remoteWorkId:'original-id'});
+  assert.equal((await resetStage(options)).kind,'stage-reset');
+  assert.equal(await readFile(paths.finalVideo, 'utf8'), 'original video');
+});
+
 test("P4换单先检查工作目录外的原视频，原单恢复不被阻断", async t => {
   const { options, paths } = await setup(t);
   await runNext({ ...options, nodeId: "video" });

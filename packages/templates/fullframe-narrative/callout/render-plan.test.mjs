@@ -69,3 +69,29 @@ test("真正无四角组合时仍失败，不交付部分排位或删除框", ()
   assert.throws(() => placeCalloutOverlays({ overlays: input, segments: segments(), policy }), /四角.*冲突/);
   assert.deepEqual(input, before);
 });
+
+test("历史引文按稳定位置覆盖观看区域，人物和术语仍避让观看几何", () => {
+  const covered = segments();
+  const motion = {
+    ...covered[0].renderData.fullframe[0].motion,
+    semanticEndViewport: { x: 1 / 6, y: 0, width: 2 / 3, height: 2 / 3 },
+    safeEndViewport: { x: 1 / 6, y: 0, width: 2 / 3, height: 2 / 3 }
+  };
+  covered[0].renderData.fullframe[0].motion = {
+    ...motion,
+    ...deriveMotionCameras({ motion, fps: 60, motionPolicy: FULLFRAME_RENDER_POLICY.motion })
+  };
+  const inputFor = kind => {
+    const input = [overlay("quote", 0, 100, [{ kind, width: 1232, height: 268 }])];
+    input[0].renderData.calloutOverlayGroup.callouts[0].kind = kind;
+    return input;
+  };
+  const quote = inputFor("historical-quote");
+  placeCalloutOverlays({ overlays: quote, segments: covered, policy });
+  const original = inputFor("historical-quote");
+  placeCalloutOverlays({ overlays: original, segments: segments(), policy });
+  assert.deepEqual(rectangles(quote), rectangles(original), "相机观看区域不改变引文的稳定选位");
+  for (const kind of ["person-intro", "term-gloss"]) {
+    assert.throws(() => placeCalloutOverlays({ overlays: inputFor(kind), segments: covered, policy }), /四角.*冲突/);
+  }
+});

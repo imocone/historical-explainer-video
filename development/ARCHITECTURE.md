@@ -434,7 +434,7 @@ Cover登记的finalExample仍可在用户明确选择后沿P1原作者内容修�
 
 #### 开源制作终点与本机发布
 
-开源Video Workflow以P4的render节点交付final.mp4结束，没有P5、publish-platform节点或publish命令。P1文案与双封面仍是本集的独立内容交付，可交给仓库外的个人video-publish Skill。该Skill只发布既有成片，不负责压片；原账号、单次提交、未知结果恢复和回执边界由私有工具拥有，不在公开制作系统重复实现。System Control仅在P1返工前只读该工具的原发布状态，以保留已提交、未知和已发布交付；没有该状态不妨碍正常制作，不要求安装个人Skill。
+开源Video Workflow以P4的render节点交付final.mp4结束，没有P5、publish-platform节点或publish命令。P1文案与双封面仍是本集的独立内容交付，可交给仓库外的个人video-publish Skill。该Skill只发布既有成片，不负责压片；原账号、单次提交、未知结果恢复和回执边界由私有工具拥有，不在公开制作系统重复实现。System Control在P1返工及P4整阶段重置前只读该工具的原发布状态，以保留已提交、未知和已发布交付；没有该状态不妨碍正常制作，不要求安装个人Skill。
 
 ## 六、装配与资源选择
 

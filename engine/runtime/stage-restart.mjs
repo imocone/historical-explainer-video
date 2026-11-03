@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { readFile, readdir } from "node:fs/promises";
 import { assertProjectPath, hashObject, readData, sha256 } from "../../packages/program-utils.mjs";
 import { getEpisodePaths, getStageWorkPaths, listAuthorWorkPaths, p4WorkPaths } from "../../packages/workspace-paths.mjs";
+import { getPublicationPaths } from "../../packages/publication-paths.mjs";
 
 import { commitAcceptance, withWorkflowWrite } from "./acceptance-commit.mjs";
 import { exists } from "./files.mjs";
@@ -112,7 +113,17 @@ export async function resetStage(options) {
   return commitAcceptance({ workspaceRoot, workPaths, writes, rawWrites, cleanup, result, workflowWriteHeld: true,
     verify: async () => {
       await assertStageSettled(workspaceRoot, path.join(paths.production, stageId));
-
+      if (stageId === "p4") {
+        const publication = getPublicationPaths(workspaceRoot, episodeId, "release-main");
+        for (const platform of ["youtube", "xiaohongshu", "douyin"]) {
+          const intent = path.join(publication.release, "_work", "intents", platform, "browser.yaml");
+          const receipt = path.join(publication.receipts, `${platform}.yaml`);
+          for (const file of [intent, receipt])
+            await assertProjectPath({ root: workspaceRoot, file, label: "重置前原发布状态" });
+          if (await exists(intent) && !await exists(receipt))
+            throw new Error("已有尚未收口的独立发布任务，先核对原作品再重置本地成片");
+        }
+      }
       for (const work of subjects) {
         for (const name of ["acceptance-commit.yaml", "program-execution.yaml"])
           if (await exists(path.join(work.work, name))) throw new Error("当前阶段仍有执行或接纳待恢复，保留现场");
