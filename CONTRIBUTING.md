@@ -19,6 +19,8 @@
 node engine/cli.mjs check
 # 路径、配置和授权边界等本地安全测试
 npm run test:safety
+# 修改压片资源选择或收尾清理时
+node --test packages/modules/render-video/runtime/hyperframes.test.mjs packages/modules/render-video/runtime/cleanup.test.mjs
 ```
 
 只运行与本次改动相关的检查；纯文档修改核对文本和链接即可。测试使用临时目录和模拟服务，验证普通修改不调用真实付费生成或平台发布。

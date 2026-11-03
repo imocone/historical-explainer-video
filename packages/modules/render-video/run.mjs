@@ -135,6 +135,7 @@ async function renderVideo({ root, systemRoot = root, episodeId, task, restoreTi
     await rename(temporaryOutput, final);
 
     const business = {
+      mediaRetention: "documents-and-release",
       episodeId,
       visualPackage: renderPlan.visualPackage,
       renderDigest: renderPlan.renderDigest,
@@ -162,10 +163,8 @@ async function renderVideo({ root, systemRoot = root, episodeId, task, restoreTi
       }
     };
     await atomicWriteData(task.outputPath, { ...business, _producer: programProducer({ task, business }) });
-    // The engine still owns its execution lock, journal and return request here.
-    await rm(propsDirectory, { recursive: true, force: true });
-    await rm(renderPlanPath, { force: true });
-    await rm(publicDirectory, { recursive: true, force: true });
+    // Engine closeout runs media cleanup after recording this completed delivery.
+    // It retains its own execution journal and lock until that cleanup succeeds.
   } finally {
     await rm(temporaryOutput, { force: true });
   }
