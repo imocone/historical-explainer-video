@@ -6,9 +6,42 @@
 
 Create historical explainers and documentaries locally with **Codex**. Bring a topic and your sources. The agent and local tools work through planning, scripts, covers, narration, subtitles, visuals and an opener, then deliver an MP4. Work one stage at a time, resume existing progress, or revise a specific part.
 
-**macOS is currently supported.** Sign in to the AI tools and external services you use. Image generation, narration and other services may incur charges. Install the local tools first, then configure accounts as each stage needs them.
+[Watch videos](#watch-the-finished-videos) · [Inside an episode](#inside-an-episode) · [Install](#1-install) · [First project](#4-create-your-first-program) · [FAQ](#faq)
 
-[Install](#1-install) · [Codex](#2-use-codex) · [Sign in and voiceover](#3-sign-in-and-voiceover) · [First project](#4-create-your-first-program) · [FAQ](#faq)
+## Watch the finished videos
+
+Published videos made with this project. Select a cover to watch on YouTube.
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <a href="https://www.youtube.com/watch?v=xhhdzvd3pbI"><img src=".github/assets/showcase/yuan-shu.jpg" alt="Yuan Shu: why did his allies ignore him?" width="100%"></a>
+      <a href="https://www.youtube.com/watch?v=xhhdzvd3pbI"><strong>▶ Yuan Shu: why did his allies ignore him?</strong></a>
+    </td>
+    <td width="50%" valign="top">
+      <a href="https://www.youtube.com/watch?v=JVIIlA-AvBw"><img src=".github/assets/showcase/song-gaozong.jpg" alt="Why did Emperor Gaozong depend on Qin Hui?" width="100%"></a>
+      <a href="https://www.youtube.com/watch?v=JVIIlA-AvBw"><strong>▶ Why did Emperor Gaozong depend on Qin Hui?</strong></a>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <a href="https://www.youtube.com/watch?v=LHVS_zGPVvI"><img src=".github/assets/showcase/northern-wei.jpg" alt="Northern Wei reform: who gained a future?" width="100%"></a>
+      <a href="https://www.youtube.com/watch?v=LHVS_zGPVvI"><strong>▶ Northern Wei reform: who gained a future?</strong></a>
+    </td>
+    <td width="50%" valign="top">
+      <a href="https://www.youtube.com/watch?v=Qvwd7P1AvsQ"><img src=".github/assets/showcase/liu-song.jpg" alt="Xiao Daocheng: from saving Liu Song to founding Qi" width="100%"></a>
+      <a href="https://www.youtube.com/watch?v=Qvwd7P1AvsQ"><strong>▶ Xiao Daocheng: from saving Liu Song to founding Qi</strong></a>
+    </td>
+  </tr>
+</table>
+
+## Inside an episode
+
+Frames from *Yuan Shu*: the opener, a narrative scene and a code-driven explainer. Select a frame to jump to that moment.
+
+| Opener | Visual storytelling | Code-driven explainer |
+|:---:|:---:|:---:|
+| [![Opener](.github/assets/showcase/opener.jpg)](https://www.youtube.com/watch?v=xhhdzvd3pbI&t=2s) | [![Visual storytelling](.github/assets/showcase/narrative.jpg)](https://www.youtube.com/watch?v=xhhdzvd3pbI&t=18s) | [![Code-driven explainer](.github/assets/showcase/explainer.jpg)](https://www.youtube.com/watch?v=xhhdzvd3pbI&t=88s) |
 
 ## What it produces
 
@@ -28,6 +61,8 @@ Create historical explainers and documentaries locally with **Codex**. Bring a t
 **Generated video clips are off by default and require an explicit request.** P4 normally creates the opener and renders the final video last. The open-source workflow ends at P4; publish to platforms yourself.
 
 ## 1. Install
+
+**macOS is currently supported.** Sign in to the AI tools and external services you use. Image generation, narration and other services may incur charges. Install the local tools first, then configure accounts as each stage needs them.
 
 Install [Homebrew](https://brew.sh/) first. Then run these commands in Terminal, in order:
 
