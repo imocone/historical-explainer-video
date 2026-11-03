@@ -30,4 +30,4 @@ jobs:
       - name: Check declared packages and resources
         run: node engine/cli.mjs check
       - name: Check paths, configuration and image authorization
-        run: node --test engine/path-safety.test.mjs engine/runtime/video-settings.test.mjs packages/runtime-config.test.mjs packages/image-generation.test.mjs packages/modules/synthesize-narration/minimax.test.mjs packages/modules/author-narration/scripts/find-evidence.test.mjs
+        run: node --test engine/path-safety.test.mjs engine/runtime/video-settings.test.mjs packages/runtime-config.test.mjs packages/image-provenance.test.mjs packages/authored-images.test.mjs packages/modules/synthesize-narration/minimax.test.mjs packages/modules/author-narration/scripts/find-evidence.test.mjs

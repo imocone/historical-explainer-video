@@ -10,6 +10,8 @@ import {audioTracksForWindow, scenePreviewProps} from '../../modules/render-vide
 import {mixCompositionAudio} from '../../modules/render-video/runtime/audio-mix.mjs';
 import {assertAudioTracks} from '../../modules/render-video/runtime/render-contracts.mjs';
 import {resolveSceneEvents} from '../../templates/vox-explainer/scene.mjs';
+import {fullframeBoundaryFieldsFor} from '../../templates/fullframe-narrative/camera/author-transition-handoff.mjs';
+import {musicEnvelopesForSegments} from '../background-music/dynamics.mjs';
 
 const fps = 60;
 const result = (target, action, offsetSeconds = 1) => ({events: [{id:'S001', purpose:'关键动作落定',
@@ -43,6 +45,31 @@ test('两种模板共用真实事件时钟，动作时间变化传入画面和�
   const retained=structuredClone(vox.renderData);
   assert.deepEqual(contribute({phase:'audio-tracks',featureData:{units:{TR002:{events:[]}}},segments:[vox],fps}).audioTracks,[]);
   assert.deepEqual(vox.renderData,retained,'移除声音不删除或改写画面事件');
+});
+
+test('局部预览的转场占位不解析声音，实际场景和已接纳声音时钟仍解析事件', () => {
+  const actual = segment('TR002', 'vox-explainer');
+  const placeholder = {id:'TR003', templateId:'vox-explainer', segmentType:'body',
+    startMs:8000, endMs:14000, durationInFrames:360, assetRefs:[],
+    ...fullframeBoundaryFieldsFor('vox-explainer')};
+  const sound = {...result('M001', 'advance-explainer'), musicGestures:[{id:'G001',
+    points:[{eventId:'E001', gain:.3}, {eventId:'E002', gain:1}]}]};
+  actual.renderData.eventTimings.push({id:'E002', frame:120});
+  const data = {units:{TR002:sound, TR003:sound}};
+  const args = {phase:'audio-tracks', featureData:data, segments:[actual, placeholder], fps};
+  const tracks = contribute(args).audioTracks;
+  assert.equal(tracks.length, 1);
+  assert.equal(tracks[0].sourceSegmentId, 'TR002');
+  const musicArgs = {soundDesign:data, segments:args.segments, fps, trackStartMs:0};
+  const envelopes = musicEnvelopesForSegments(musicArgs);
+  assert.equal(envelopes.length, 1);
+  const reference = {...actual, renderData:{eventTimings:actual.renderData.eventTimings}};
+  assert.deepEqual(contribute({...args, segments:[reference]}).audioTracks, tracks,
+    '已接纳的声音参考只含时钟也可正常播放');
+  assert.deepEqual(musicEnvelopesForSegments({...musicArgs, segments:[reference]}), envelopes);
+  const broken = {...actual, renderData:{...actual.renderData, eventTimings:[]}};
+  assert.throws(() => contribute({...args, segments:[broken]}), /找不到画面事件 E001/u);
+  assert.throws(() => contribute({...args, featureData:{units:{}}, segments:[actual]}), /缺少已启用音效交付/u);
 });
 
 test('Lemo声音的有效落点、截取和声像实际通过PCM混音，预演与成片截窗一致', async t => {

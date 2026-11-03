@@ -8,7 +8,7 @@ Create historical explainers and documentaries locally with **Codex**. Bring a t
 
 **macOS is currently supported.** Sign in to the AI tools and external services you use. Image generation, narration and other services may incur charges. Install the local tools first, then configure accounts as each stage needs them.
 
-[Install](#1-install) · [Codex](#2-use-codex) · [Configure](#3-configure-the-services-you-need) · [First project](#4-create-your-first-program) · [FAQ](#faq)
+[Install](#1-install) · [Codex](#2-use-codex) · [Sign in and voiceover](#3-sign-in-and-voiceover) · [First project](#4-create-your-first-program) · [FAQ](#faq)
 
 ## What it produces
 
@@ -38,58 +38,48 @@ cd historical-explainer-video
 npm run setup
 ```
 
-Use **Node.js 22.12 or newer**. Setup downloads Node dependencies, a Python environment and the rendering browser, so internet access is required. The final message `安装完成` means the local dependencies are ready.
+Use **Node.js 22.12 or newer**. Setup downloads Node dependencies, a Python environment and the rendering browser, so internet access is required. The final message `本地工具已就绪` means the local dependencies are ready.
 
-Setup creates `.env` automatically and preserves it on subsequent runs. You do not need to create a Python environment or install Python packages yourself. Setup does not sign in to accounts or call paid generation services.
+Setup creates `.env` automatically and preserves it on subsequent runs. It also installs VideoCaptioner; no separate Python environment, package installation or word-timing tool setup is needed. Setup does not sign in to accounts or call paid generation services.
 
 ## 2. Use Codex
 
 Install and sign in to [Codex](https://developers.openai.com/codex/), then open this repository as your project. Production uses Codex native image generation and subagents; no image API key or client configuration is needed. **Open the code repository, `historical-explainer-video`, and store program files in a separate directory.**
 
-## 3. Configure the services you need
+## 3. Sign in and voiceover
 
-**Put keys and tool paths in your local `.env`, not `.env.example`.** Programs read it automatically; no repeated `export` commands are needed. Existing process environment variables take precedence. `.env` and login state are excluded from Git.
+For the default finished video, sign in to Codex, install and sign in to AGY, then enter your own MiniMax key. Images and word timing need no additional configuration.
 
-| When needed | What to prepare |
-|---|---|
-| Start P0 planning | A signed-in Codex host; public-source explainer planning can begin here |
-| Use NotebookLM sources | `nlm` is included in setup; sign in with the command below. The documentary route requires NotebookLM |
-| P1 scripts and P2 default subtitle author | Install and sign in to [Antigravity CLI (AGY)](https://antigravity.google/docs/getting-started?tab=cli) |
-| P1 covers and P3 / P4 images | Codex native image generation |
-| P2 narration and narrated openers | Set `MINIMAX_API_KEY`; keep the public default `MINIMAX_VOICE_ID` or choose a voice available to your account |
-| Optional lookup of a specific claim in cited sources | Set `TYPESAFE_API_KEY`; the existing `~/.config/typesafe/api-key` location also works |
-| Fallback subtitle recognition or word timing for narrated openers | Install [VideoCaptioner](https://github.com/WEIFENG2333/VideoCaptioner) with Bcut / Jianying word-level timing support and set `VIDEO_CAPTIONER_ROOT` |
-| Explicitly requested generated video clips | Follow the [Dreamina CLI and login instructions](packages/modules/produce-video-assets/references/canvas-cli.md) |
-
-Get a MiniMax key from the [China platform](https://platform.minimax.cn/docs/guides/quickstart-preparation) or [international platform](https://platform.minimax.io/docs/guides/quickstart-preparation). The original China endpoint remains the default. For an international account, add `MINIMAX_API_HOST=https://api.minimax.io` to `.env`; use a key from that region. Get a TypeSafe key from its [official console](https://console.typesafe.ai/).
-
-<details>
-<summary>NotebookLM login, AGY and optional music</summary>
-
-Sign in to NotebookLM from the repository directory:
-
-```bash
-node packages/runtime-config.mjs nlm login
-```
-
-Install AGY using the command in its [official guide](https://antigravity.google/docs/getting-started?tab=cli):
+Install AGY using its [official guide](https://antigravity.google/docs/getting-started?tab=cli):
 
 ```bash
 curl -fsSL https://antigravity.google/cli/install.sh | bash
 ```
 
-Open a new terminal, run `agy` and complete the interactive login. AGY remains the script and default subtitle author.
+Open a new terminal, run `agy` once and sign in. It authors scripts and the default subtitles.
 
-When VideoCaptioner is needed, follow its [source installation instructions](https://github.com/WEIFENG2333/VideoCaptioner#开发) in a sibling directory:
+Open the local configuration created by setup:
 
 ```bash
-git clone https://github.com/WEIFENG2333/VideoCaptioner.git ../VideoCaptioner
-(cd ../VideoCaptioner && uv sync)
+open -a TextEdit .env
 ```
 
-Then set `VIDEO_CAPTIONER_ROOT=../VideoCaptioner` in this repository’s `.env`. VideoCaptioner has its own environment; do not copy its files into this project.
+Fill in `MINIMAX_API_KEY`. Keep `MINIMAX_VOICE_ID` at its default or choose a voice available to your account. Get a key from the [MiniMax China console](https://platform.minimax.cn/); international accounts also set `MINIMAX_API_HOST=https://api.minimax.io`. The key and region must match. Enter keys only in your local `.env`, not `.env.example` or chat; `.env` is excluded from Git.
 
-No personal default background track is included. Without one, the main video has no background music. See the [music configuration](packages/features/background-music/library/README.md) to add music you have permission to use. Some teaching and opener sound files are silent placeholders; see [asset notices](THIRD_PARTY_NOTICES.md).
+Prepare accounts as needed: Codex for P0, AGY before P1, and the narration key before P2.
+
+<details>
+<summary>Optional: sources, music, generated video and existing tools</summary>
+
+| When needed | What to prepare |
+|---|---|
+| NotebookLM sources; required for documentaries | Already installed; run `node packages/runtime-config.mjs nlm login` from the repository |
+| Lookup of a specific claim in cited sources | Set `TYPESAFE_API_KEY` from the [official console](https://console.typesafe.ai/); the existing `~/.config/typesafe/api-key` also works |
+| Background music | Add music you have permission to use, following the [music configuration](packages/features/background-music/library/README.md) |
+| Explicitly requested generated video | Follow the [Dreamina instructions](packages/modules/produce-video-assets/references/canvas-cli.md) |
+| Your own separate VideoCaptioner installation | Only then set `VIDEO_CAPTIONER_ROOT` and, if needed, `VIDEO_CAPTIONER_PYTHON`; otherwise use the project-installed version |
+
+The public version has no personal default BGM, some opener sounds are silent placeholders, and subtitles use bundled fonts. No other user's private files or settings are needed. See [asset notices](THIRD_PARTY_NOTICES.md). Programs read `.env` automatically; process environment values take precedence. Normally no tool-path changes or repeated `export` commands are needed.
 
 </details>
 
@@ -99,24 +89,19 @@ To inspect local dependencies and configuration:
 npm run setup -- --check
 ```
 
-This checks local dependencies and reports configuration status. It does not sign in or call generation services. A local check passing does not verify account login, API credit or final video quality. You do not need to run it before every production session.
+This checks the actual local tools and distinguishes them from account preparation. It does not sign in or call generation services. Do not run it before every production session.
 
 ## 4. Create your first program
 
-From the repository directory, create a program directory outside the repository:
-
-```bash
-mkdir -p ../my-program
-cp scripts/request.example.yaml ../my-program/request.yaml
-```
-
-Open `../my-program/request.yaml` in an editor. Replace `idea` with your topic; keep the other fields for your first try. Despite the `.yaml` extension, this file contains JSON: preserve its double quotes and commas.
-
-In Codex, with this repository open, send the following. When first accessing the program directory, approve its read/write access in your host if prompted:
+With this repository open in Codex, send the following, replacing the topic:
 
 ```text
-Read director/SKILL.md and complete P0 for ../my-program.
+Read director/SKILL.md.
+Create a historical explainer in ../my-program about [your historical question].
+Plan from the topic and complete P0.
 ```
+
+The director prepares the directory and request file; no manual JSON editing is needed. Include any source paths or links. State explicitly if you want a documentary or planning based on a book or reference program. Approve access to the program directory when prompted by the host.
 
 P0 delivers the program plan. When ready to continue, send:
 
@@ -126,19 +111,15 @@ Complete P1 for ep01 in ../my-program.
 
 Continue with P2, P3 and P4 as needed, or explicitly request a range such as “Complete P2 through P4.” A request for P0 stops after P0.
 
-To inspect the example request's planning progress:
-
-```bash
-node engine/cli.mjs status --workspace ../my-program --program first-video --stage p0
-```
+To inspect progress or continue, tell Codex the program directory and stage.
 
 The final MP4 is in the episode's `output/final.mp4` **inside the program directory**. The director returns the exact path. Ask it for previews and revisions at the current stage.
 
-The production skills and detailed methods are currently written in Chinese. Both hosts use those same files; the prompts above can be given in English.
+The production skills and detailed methods are currently written in Chinese. The prompts above can be given to Codex in English.
 
 ## Common commands
 
-Normally, tell Codex or Claude which stage to complete or which part to change. These commands are available for direct use:
+Normally, tell Codex which stage to complete or which part to change. These commands are available for direct use:
 
 ```bash
 # Inspect program or episode progress

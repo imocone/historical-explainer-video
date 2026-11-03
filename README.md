@@ -8,7 +8,7 @@
 
 **当前支持 macOS。** 需要自行登录所用的 AI 和外部服务；生图、配音等可能产生费用。先完成安装，再按当前阶段配置账号即可。
 
-[安装](#1-安装) · [Codex](#2-使用-codex) · [配置](#3-配置用到的服务) · [第一个节目](#4-做第一个节目) · [常见问题](#常见问题)
+[安装](#1-安装) · [Codex](#2-使用-codex) · [登录与配音](#3-登录与配音) · [第一个节目](#4-做第一个节目) · [常见问题](#常见问题)
 
 ## 能做什么
 
@@ -38,85 +38,70 @@ cd historical-explainer-video
 npm run setup
 ```
 
-需要 **Node.js 22.12 或更新版本**。安装过程会下载 Node 依赖、Python 环境和渲染用浏览器，需要联网。看到“安装完成”表示本地基础依赖已准备好。
+需要 **Node.js 22.12 或更新版本**。安装过程会下载 Node 依赖、Python 环境和渲染用浏览器，需要联网。看到“本地工具已就绪”表示本地基础依赖已准备好。
 
-安装会自动创建 `.env`，再次运行会保留已有配置。无需自己创建 Python 环境或安装 Python 包；安装也不会替你登录账号或调用付费生成服务。
+安装会自动创建 `.env`，再次运行会保留已有配置。无需自己创建Python环境、安装Python包或另装VideoCaptioner；安装不会替你登录账号或调用付费生成服务。
 
 ## 2. 使用 Codex
 
 安装并登录 [Codex](https://developers.openai.com/codex/)，把本仓库作为项目打开。项目使用Codex原生生图和子代理，不需要图片API Key或客户端配置。**始终打开代码仓库 `historical-explainer-video`，节目成果另放目录。**
 
-## 3. 配置用到的服务
+## 3. 登录与配音
 
-**密钥与工具路径统一填本机 `.env`，不要填 `.env.example`。** 程序会自动读取，不需要每次 `export`；已设置的进程环境变量优先。`.env` 和登录状态不进入 Git。
+默认成片需要登录Codex、安装并登录AGY，再填写自己的MiniMax配音Key。图片和词级时间工具不需要另外配置。
 
-| 什么时候需要 | 准备什么 |
-|---|---|
-| P0 先策划 | 已登录的 Codex；公开资料策划可以先开始 |
-| 使用 NotebookLM 资料 | 安装已包含 `nlm`；先运行下方登录命令。纪录片路线需要 NotebookLM |
-| P1 正文、P2 默认字幕作者 | 安装并登录 [Antigravity CLI（AGY）](https://antigravity.google/docs/getting-started?tab=cli) |
-| P1 封面、P3 / P4 图片 | Codex 原生生图 |
-| P2 配音、有旁白的片头 | 在 `.env` 填 `MINIMAX_API_KEY`；`MINIMAX_VOICE_ID` 可保留公共默认音色，也可换成自己账号可用的音色 |
-| 按需定位具体断言的出处 | 在 `.env` 填 `TYPESAFE_API_KEY`；已有 `~/.config/typesafe/api-key` 仍可用 |
-| 备用字幕识别、有旁白片头取词级时间 | 安装支持必剪 / 剪映词级时间的 [VideoCaptioner](https://github.com/WEIFENG2333/VideoCaptioner)，在 `.env` 填 `VIDEO_CAPTIONER_ROOT` |
-| 明确要求剧情视频 | 按[即梦安装与登录说明](packages/modules/produce-video-assets/references/canvas-cli.md)准备 CLI 与账号 |
-
-MiniMax Key 可按[中国区官方说明](https://platform.minimax.cn/docs/guides/quickstart-preparation)获取。默认保留原中国区地址；海外账号在 `.env` 增加 `MINIMAX_API_HOST=https://api.minimax.io`，Key 与账号区域须对应。TypeSafe Key 在[官方控制台](https://console.typesafe.ai/)获取。
-
-<details>
-<summary>NotebookLM、AGY 与可选配乐的准备方法</summary>
-
-NotebookLM 登录，在仓库目录运行：
-
-```bash
-node packages/runtime-config.mjs nlm login
-```
-
-按 [AGY 官方安装说明](https://antigravity.google/docs/getting-started?tab=cli)运行：
+按[AGY官方说明](https://antigravity.google/docs/getting-started?tab=cli)安装：
 
 ```bash
 curl -fsSL https://antigravity.google/cli/install.sh | bash
 ```
 
-重新打开终端，运行 `agy` 并完成交互登录。它仍负责原流程的正文与默认字幕创作。
+重新打开终端，运行一次`agy`并登录。它负责正文与默认字幕创作。
 
-需要 VideoCaptioner 时，可按其[源码安装说明](https://github.com/WEIFENG2333/VideoCaptioner#开发)在相邻目录安装：
+打开安装时自动创建的本机配置：
 
 ```bash
-git clone https://github.com/WEIFENG2333/VideoCaptioner.git ../VideoCaptioner
-(cd ../VideoCaptioner && uv sync)
+open -a TextEdit .env
 ```
 
-然后在本仓库 `.env` 填 `VIDEO_CAPTIONER_ROOT=../VideoCaptioner`。它有独立的环境，不需要把其文件复制进本项目。
+把`MINIMAX_API_KEY=`后面填成自己的Key。`MINIMAX_VOICE_ID`先保留默认，或改成自己账号可用的音色。Key从[MiniMax中国区控制台](https://platform.minimax.cn/)获取；海外账号另加`MINIMAX_API_HOST=https://api.minimax.io`，Key与区域须对应。密钥只填本机`.env`，不要填`.env.example`或发到聊天里；它不会进入Git。
 
-仓库不附个人默认背景音乐，不配置就没有正文配乐。需要时按[个人配乐说明](packages/features/background-music/library/README.md)添加有权使用的音乐。部分教学和片头音效为静音占位，详见[素材许可](THIRD_PARTY_NOTICES.md)。
+这些账号可以按阶段准备：只做P0先登录Codex；P1前准备AGY，P2前填写配音Key。
+
+<details>
+<summary>按需配置：资料、配乐、剧情视频与已有工具</summary>
+
+| 什么时候需要 | 准备什么 |
+|---|---|
+| 使用NotebookLM资料；纪录片路线需要 | 工具已随安装准备好，在仓库运行`node packages/runtime-config.mjs nlm login` |
+| 按需定位具体断言出处 | 在`.env`填`TYPESAFE_API_KEY`，从[官方控制台](https://console.typesafe.ai/)获取；已有`~/.config/typesafe/api-key`仍可用 |
+| 正文配乐 | 按[个人配乐说明](packages/features/background-music/library/README.md)放入有使用权的音乐并配置 |
+| 明确要求剧情视频 | 按[即梦安装与登录说明](packages/modules/produce-video-assets/references/canvas-cli.md)准备CLI和账号 |
+| 使用自己另装的VideoCaptioner | 才在`.env`填写`VIDEO_CAPTIONER_ROOT`，必要时指定`VIDEO_CAPTIONER_PYTHON`；默认使用项目安装版本 |
+
+公开版不附个人BGM，部分片头音效是静音占位，默认字幕使用随仓字体；不需要复制别人的私有素材或配置。详见[素材说明](THIRD_PARTY_NOTICES.md)。程序读取本机`.env`，进程环境变量优先；通常无需改工具路径或每次`export`。
 
 </details>
 
-遇到安装或配置问题，运行：
+遇到本地工具问题，运行：
 
 ```bash
 npm run setup -- --check
 ```
 
-它检查本地依赖并显示配置状态，不登录、不调用生成服务。“本地环境检查通过”不代表外部账号已登录、API 有额度，或整片已经验收；无需每次制作前重复运行。
+它检查实际可用的本地工具，不登录或调用生成服务。结果会区分本地工具与账号准备；无需每次制作前重复运行。
 
 ## 4. 做第一个节目
 
-在仓库目录创建仓库外的节目目录：
-
-```bash
-mkdir -p ../my-program
-cp scripts/request.example.yaml ../my-program/request.yaml
-```
-
-用编辑器打开 `../my-program/request.yaml`，把 `idea` 改成自己的选题；其它字段第一次可保留。此文件虽以 `.yaml` 结尾，内容使用 JSON，注意保留双引号和逗号。
-
-在刚才打开本仓库的 Codex 中发送；首次访问节目目录时，按宿主提示允许该目录的读写：
+在Codex中打开本仓库，直接发送下面的话，把方括号内换成自己的选题：
 
 ```text
-读取 director/SKILL.md，为 ../my-program 完成 P0。
+读取 director/SKILL.md。
+在 ../my-program 新建历史解说节目，选题是【自己的历史问题】。
+从选题开始策划，为我完成 P0。
 ```
+
+Director会准备节目目录和委托文件，不需要手工编辑JSON。已有资料可同时给出路径或链接；选择纪录片、按书或参考节目策划时也直接说清。首次访问仓库外的节目目录，按宿主提示允许该目录读写。
 
 P0 完成后会交付节目策划。确认要继续时，再说：
 
@@ -126,11 +111,7 @@ P0 完成后会交付节目策划。确认要继续时，再说：
 
 后续可以指定 P2、P3、P4，或明确连续范围，例如“从 P2 做到 P4”。只要求 P0，就会在 P0 完成后停止。
 
-查看示例委托的策划进度：
-
-```bash
-node engine/cli.mjs status --workspace ../my-program --program first-video --stage p0
-```
+查看进度或继续时，直接告诉Codex节目目录和阶段。
 
 成片在**节目目录内**的单集 `output/final.mp4`，导演完成后会返回准确路径。运行中的预览与修改也交给导演按当前阶段处理。
 

@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { access, mkdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { runMediaProcess } from "../render-video/runtime/media-process.mjs";
-import { runtimePath } from '../../runtime-config.mjs';
+import { captionerRuntime } from '../../runtime-config.mjs';
 
 const MODELS = ["JIANYING", "BIJIAN", "WHISPER_CPP"];
 
@@ -183,12 +183,12 @@ const commandError = ({ model, error }) => {
 
 export const createOpenerTimingService = ({
   workDir,
-  root = runtimePath('VIDEO_CAPTIONER_ROOT'),
-  python = runtimePath('VIDEO_CAPTIONER_PYTHON', root ? path.join(root, '.venv/bin/python') : ''),
+  root,
+  python,
   spawnImpl = spawnSync
 } = {}) => {
+  ({root, python} = captionerRuntime({root, python}));
   const assertReady = async () => {
-    if (!root) throw new Error('请先在本机 .env 设置 VIDEO_CAPTIONER_ROOT');
     await access(root).catch(() => { throw new Error(`VideoCaptioner runtime 缺失: ${root}`); });
     await access(python).catch(() => { throw new Error(`VideoCaptioner Python 缺失: ${python}`); });
     const help = spawnImpl(

@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
 import test from 'node:test';
-import { runtimeEnvironment, runtimePath, runtimeCommand, ttsVoice, systemRoot } from './runtime-config.mjs';
+import { runtimeEnvironment, runtimePath, runtimeCommand, captionerRuntime, ttsVoice, systemRoot } from './runtime-config.mjs';
 import { loadTtsContract } from './modules/synthesize-narration/run.mjs';
 import { miniMaxPayload } from './modules/synthesize-narration/minimax.mjs';
 
@@ -34,6 +34,18 @@ test('配置音色实际进入原MiniMax请求，公共默认不绑定个人音�
   assert.equal(ttsVoice(empty), 'male-qn-jingying');
 });
 
+test('词级时间默认用项目Python，显式工具目录和解释器仍优先', () => {
+  const options = {envFile:path.join(tmpdir(), `missing-captioner-config-${process.pid}`), environment:{}};
+  assert.deepEqual(captionerRuntime(options), {root:systemRoot, python:path.join(systemRoot,'.venv/bin/python')});
+  const root = path.join(tmpdir(), 'custom captioner');
+  assert.deepEqual(captionerRuntime({...options, environment:{VIDEO_CAPTIONER_ROOT:root}}),
+    {root, python:path.join(root,'.venv/bin/python')});
+  const python = path.join(root, 'custom python');
+  assert.deepEqual(captionerRuntime({...options, environment:{VIDEO_CAPTIONER_ROOT:root,VIDEO_CAPTIONER_PYTHON:python}}),
+    {root, python});
+  assert.equal(captionerRuntime({...options, environment:{XIAOXINXIXN_PYTHON:python}}).python, python);
+});
+
 test('Python入口使用指定解释器和原参数，不依赖调用目录', async t => {
   const directory = await mkdtemp(path.join(tmpdir(), 'runtime-python-'));
   t.after(() => rm(directory, {recursive:true, force:true}));
@@ -43,4 +55,9 @@ test('Python入口使用指定解释器和原参数，不依赖调用目录', as
     cwd:directory, env:{...process.env, XIAOXINXIXN_PYTHON:executable}
   });
   assert.deepEqual(JSON.parse(stdout), {args:['-B','script.py','argument with spaces'], cwd:systemRoot.replace(/\/$/, '')});
+  const captioner = await promisify(execFile)(process.execPath, [path.join(systemRoot, 'packages/runtime-config.mjs'),
+    'captioner','transcribe','audio with spaces.mp3','--word-timestamps'], {
+    cwd:systemRoot, env:{...process.env,VIDEO_CAPTIONER_ROOT:directory,VIDEO_CAPTIONER_PYTHON:executable}
+  });
+  assert.deepEqual(JSON.parse(captioner.stdout), {args:['-m','videocaptioner','transcribe','audio with spaces.mp3','--word-timestamps'],cwd:await realpath(directory)});
 });

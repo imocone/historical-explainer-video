@@ -58,6 +58,15 @@ export function runtimeCommand(name, fallback, options) {
 export const pythonCommand = options => runtimePath('XIAOXINXIXN_PYTHON', '.venv/bin/python', options);
 export const notebookCommand = options => runtimeCommand('NLM_BIN', path.join(systemRoot, '.venv/bin/nlm'), options);
 
+export function captionerRuntime(options = {}) {
+  const customRoot = options.root ?? runtimePath('VIDEO_CAPTIONER_ROOT', '', options);
+  return {
+    root: customRoot || systemRoot,
+    python: options.python ?? runtimePath('VIDEO_CAPTIONER_PYTHON', customRoot
+      ? path.join(customRoot, '.venv/bin/python') : pythonCommand(options), options)
+  };
+}
+
 export function ttsVoice(options) {
   return runtimeValue('MINIMAX_VOICE_ID', 'male-qn-jingying', options);
 }
@@ -68,9 +77,7 @@ async function main() {
   if (command === 'nlm') {
     python = notebookCommand();
   } else if (command === 'captioner') {
-    cwd = runtimePath('VIDEO_CAPTIONER_ROOT');
-    if (!cwd) throw new Error('请先在本机 .env 设置 VIDEO_CAPTIONER_ROOT');
-    python = runtimePath('VIDEO_CAPTIONER_PYTHON', path.join(cwd, '.venv/bin/python'));
+    ({root: cwd, python} = captionerRuntime());
     prefix = ['-m', 'videocaptioner'];
   } else if (command !== 'python') {
     throw new Error('用法: node packages/runtime-config.mjs python <脚本和参数> | captioner <参数> | nlm <参数>');

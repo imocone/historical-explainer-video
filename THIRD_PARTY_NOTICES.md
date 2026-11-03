@@ -7,7 +7,7 @@
 | 对象 | 许可与说明 |
 |---|---|
 | `packages/features/sound-effects/lemo/` | © 2026 LemoLab，MIT；原[许可证](packages/features/sound-effects/lemo/LICENSE)保持。制声脚本引用的方法沿代码注释保留来源 |
-| HyperFrames、Playwright MCP | Apache-2.0；从npm安装，原上游声明随依赖保留 |
+| HyperFrames | Apache-2.0；从npm安装，原上游声明随依赖保留 |
 | GSAP | [Standard No Charge License](https://gsap.com/standard-license/)，不是MIT。官方明确允许AI生成GSAP代码；若将其用于可视化动画搭建产品，另按协议中的用途限制判断 |
 | sharp及其本机图像组件 | sharp为Apache-2.0，部分预编译依赖另含LGPL许可；不把它们统一改标为MIT |
 | 其它npm、Python及系统工具 | 依赖版本见`package-lock.json`、`requirements.txt`和安装说明；各组件原许可保持。仓库不附`node_modules`、Python环境、FFmpeg或ImageMagick二进制；再次打包这些组件时须保留上游许可与其要求的文件 |
