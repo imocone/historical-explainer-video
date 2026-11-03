@@ -26,7 +26,7 @@
 当前资料明确记为本项目原创生成或程序合成的资源，其本项目可授权部分按MIT开放：
 
 - `visuals/*/references/assets/`中当前说明明确记为本项目生图的画风参考；原始外部作品或截图未因此取得本项目的授权。
-- `.github/assets/showcase/`中的README展示封面、截图和无声动图来自本项目作者已公开的节目，节目链接见[成片展示](README.md#成片展示)；随仓仅提供压缩展示图与无声片段动图，不附原视频、音轨或字体文件。
+- `.github/assets/showcase/`中的README展示封面、截图和无声动图来自本项目作者已公开的节目及原创模板示例，来源见[画面示例](README.md#画面示例)与[成片展示](README.md#成片展示)；讲解动图取自[工资示例](packages/templates/vox-explainer/examples/salary/README.md)的18—32秒。随仓仅提供压缩展示图与无声片段动图，不附原视频、音轨或字体文件。
 - [封面参考](packages/covers/type-first-editorial/examples/README.md)、[透明前景](packages/templates/fullframe-narrative/effects/assets/README.md)、玻璃`glass-cracks.png`与`glass-edge.png`，以及全画幅示意图中本项目绘制的SVG和对应渲染图。
 - `packages/features/sound-effects/library/*.wav`的程序制声音效、crossfire-opener的`ember-*.wav`合成声音，以及documentary-opener的`memory-piano.wav`原创采样编配；Lemo代码和FreePats采样继续分别保留原许可。
 
