@@ -4,13 +4,89 @@
 
 [![Checks](https://github.com/imocone/historical-explainer-video/actions/workflows/check.yml/badge.svg)](https://github.com/imocone/historical-explainer-video/actions/workflows/check.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-Create historical explainers and documentaries locally with **Codex**. Bring a topic and your sources. The agent and local tools work through planning, scripts, covers, narration, subtitles, visuals and an opener, then deliver an MP4. Work one stage at a time, resume existing progress, or revise a specific part.
+**Turn a historical question into a complete video—with a story to follow and ideas to understand.**
 
-[Watch videos](#watch-the-finished-videos) · [Inside an episode](#inside-an-episode) · [Install](#1-install) · [First project](#4-create-your-first-program) · [FAQ](#faq)
+Bring a topic, a book or source material to **Codex**. Work through P0–P4: research and planning, narration, covers, voiceover, subtitles, storyboards, visuals, an opener and a locally rendered MP4. Built for independent creators making historical explainers and documentaries.
+
+[See the visuals](#inside-an-episode) · [Watch complete episodes](#watch-the-finished-videos) · [Explore the workflow](#from-sources-to-a-finished-episode) · [Install](#1-install) · [Start creating](#4-create-your-first-program)
+
+## Inside an episode
+
+**Scenes tell the story. Animation unpacks the relationships.** These clips come directly from the published *Yuan Shu* episode. Select either preview to watch the original with sound.
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <a href="https://www.youtube.com/watch?v=xhhdzvd3pbI&t=18s"><img src=".github/assets/showcase/narrative-motion.gif" alt="Narrative scene: the camera moves through grain carts and storehouses in a full-frame historical setting" width="100%"></a>
+      <strong>Storytelling: enter the characters’ world</strong>
+      <p>People, grain carts, storehouses and their surroundings form a scene. Framing and camera movement follow the narration’s account of status, resources and circumstances.</p>
+    </td>
+    <td width="50%" valign="top">
+      <a href="https://www.youtube.com/watch?v=xhhdzvd3pbI&t=88s"><img src=".github/assets/showcase/explainer-motion.gif" alt="Explainer animation: a proclamation, Sun Ce and the Han court’s authority reveal why he could refuse Yuan Shu" width="100%"></a>
+      <strong>Explanation: reveal how the relationships work</strong>
+      <p>A proclamation, Sun Ce and an alternative source of official authority unfold with the narration, making the reasons he could refuse Yuan Shu visible.</p>
+    </td>
+  </tr>
+</table>
+
+These are compressed, silent previews. Watch the original for full image quality, narration, subtitles and sound. Maps, routes and diagrams are also available when the subject needs them. [Narrative method](packages/templates/fullframe-narrative/AUTHOR.md) · [Explainer animation method](packages/templates/vox-explainer/AUTHOR.md)
+
+## From sources to a finished episode
+
+### Decide what the episode should explain before making the visuals
+
+Start from a topic, a specified book or a reference program. Establish the editorial direction, each episode’s question and the source material before writing. Explainers and documentaries use their own planning and writing methods. Source references, factual grounding and the boundaries of historical reconstruction remain part of the production records.
+
+For *Yuan Shu*, the question is: “With money and troops, why couldn’t he command his allies?” The script, scenes and explanations develop that question. [Program planning](packages/modules/plan-program/SKILL.md) · [Documentary planning](packages/modules/plan-historical-documentary/SKILL.md)
+
+### Work in stages, resume progress and revise specific parts
+
+Use natural language to request a stage or a range. Codex resumes existing progress. Scripts, subtitles, openers and main visuals have targeted revision paths that preserve work which remains valid. Preview visuals during production in HyperFrames Studio.
+
+```text
+Complete P0 for ../my-program.
+```
+
+Once the program is planned, work on an episode:
+
+```text
+Complete P1 for ep01 in ../my-program.
+Complete P2 through P4 for ep01 in ../my-program.
+Adjust only the opener visuals for ep01; keep the narration unchanged.
+```
+
+### Get the finished video, production documents and publishing materials
+
+<table>
+  <tr>
+    <td width="70%" align="center" valign="top">
+      <a href="https://www.youtube.com/watch?v=xhhdzvd3pbI&t=2s"><img src=".github/assets/showcase/opener.jpg" alt="Yuan Shu opener: why did declaring himself emperor weaken his authority over his allies?" height="220"></a><br>
+      <strong>An opener that introduces the episode’s question</strong>
+    </td>
+    <td width="30%" align="center" valign="top">
+      <img src=".github/assets/showcase/yuan-shu-vertical.jpg" alt="Portrait cover for Yuan Shu, delivered alongside the landscape version below" height="220"><br>
+      <strong>Portrait cover</strong>
+    </td>
+  </tr>
+</table>
+
+The video gallery below uses landscape covers. Each episode also delivers a portrait cover to help prepare publishing materials for different platforms.
+
+| Stage | What you receive |
+|---|---|
+| P0 — Planning | Program direction, sources and episode plan |
+| P1 — Writing | Narration, opener copy, platform copy and landscape/portrait covers |
+| P2 — Audio | Narration and subtitles, including pronunciation handling for proper names |
+| P3 — Main visuals | Storyboards, full-frame scenes, explanatory animation and camera design |
+| P4 — Opener and final render | Opener and the episode’s `output/final.mp4` |
+
+The final delivery retains the **MP4, two cover formats, publication copy and chapter timing**, plus formal scripts, subtitles, storyboards, designs and source records. Rendering chooses concurrency based on temporary disk space and memory conditions, then cleans production media and caches after success.
+
+**Generated video clips are off by default and require an explicit request.** The open-source production workflow ends at P4; publishing is handled outside the project. After cleanup, previewing or rendering again requires preparing deleted media again. Documents and publishing materials remain available.
 
 ## Watch the finished videos
 
-Published videos made with this project. Select a cover to watch on YouTube.
+Published episodes made with this project. Select a cover to watch on YouTube.
 
 <table>
   <tr>
@@ -34,31 +110,6 @@ Published videos made with this project. Select a cover to watch on YouTube.
     </td>
   </tr>
 </table>
-
-## Inside an episode
-
-Frames from *Yuan Shu*: the opener, a narrative scene and a code-driven explainer. Select a frame to jump to that moment.
-
-| Opener | Visual storytelling | Code-driven explainer |
-|:---:|:---:|:---:|
-| [![Opener](.github/assets/showcase/opener.jpg)](https://www.youtube.com/watch?v=xhhdzvd3pbI&t=2s) | [![Visual storytelling](.github/assets/showcase/narrative.jpg)](https://www.youtube.com/watch?v=xhhdzvd3pbI&t=18s) | [![Code-driven explainer](.github/assets/showcase/explainer.jpg)](https://www.youtube.com/watch?v=xhhdzvd3pbI&t=88s) |
-
-## What it produces
-
-- Historical explainers and documentaries, each with its own planning and writing method.
-- Full-frame visual storytelling, code-driven explanatory animation, diagrams and maps.
-- Landscape and portrait covers, voiceover, subtitles, sound effects, an opener and a final MP4.
-- HyperFrames Studio previews, saved progress and targeted revisions.
-
-| Stage | Output |
-|---|---|
-| P0 — Planning | Program direction, sources and episode plan |
-| P1 — Writing | Narration, opener copy, platform copy and two cover formats |
-| P2 — Audio | Narration audio and subtitles |
-| P3 — Main visuals | Storyboards, images, animation and camera design |
-| P4 — Opener and final render | Opener and the episode's `output/final.mp4` |
-
-**Generated video clips are off by default and require an explicit request.** P4 normally creates the opener and renders the final video last. The open-source workflow ends at P4; publish to platforms yourself.
 
 ## 1. Install
 
