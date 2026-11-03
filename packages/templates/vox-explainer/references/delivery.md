@@ -22,6 +22,7 @@
 | 当前动作 | 读取 |
 |---|---|
 | 绑定moments、使用实测短语 | [Cue与句内时序](tools/cues.md) |
+| 制作二维镜头、动作错时与联动 | [运动实现示例](tools/motion.md) |
 | 生成、导入、裁件及摆放图片 | [图片接口](tools/images.md) |
 | 使用Three.js并与SVG协作 | [三维接口](tools/three.md) |
 | 纸面、标注、字体测量和数值 | [图文工具](tools/graphics.md) |
