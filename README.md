@@ -4,13 +4,89 @@
 
 [![Checks](https://github.com/imocone/historical-explainer-video/actions/workflows/check.yml/badge.svg)](https://github.com/imocone/historical-explainer-video/actions/workflows/check.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-用 **Codex** 在本地制作历史解说和纪录片。你提供选题和资料，AI 与本地工具按阶段完成策划、口播、封面、配音、字幕、画面与片头，最后输出 MP4。可以逐阶段制作，也可以接着已有进度继续或局部修改。
+**把一个历史问题，做成一集有故事、有解释的完整视频。**
 
-[观看成片](#成片展示) · [画面示例](#画面示例) · [安装](#1-安装) · [快速开始](#4-做第一个节目) · [常见问题](#常见问题)
+在 **Codex** 里提供选题、书籍或参考资料，按 P0–P4 完成策划、口播、封面、配音、字幕、分镜、画面、片头与本地压片。适合制作历史解说和纪录片的个人创作者。
+
+[看画面如何表达](#画面示例) · [看完整节目](#成片展示) · [了解制作能力](#从资料到成片) · [安装](#1-安装) · [做第一个节目](#4-做第一个节目)
+
+## 画面示例
+
+**同一集里，故事用场面讲，关系用动画拆。** 以下动图直接截自已发布的《袁术称帝》，点击可观看有声原片。
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <a href="https://www.youtube.com/watch?v=xhhdzvd3pbI&t=18s"><img src=".github/assets/showcase/narrative-motion.gif" alt="叙事画面：粮车与仓廪的全画幅场景，镜头随旁白移动" width="100%"></a>
+      <strong>叙事：让观众进入人物所处的世界</strong>
+      <p>人物、粮车、仓廪与环境共同构成场面，再设计取景和运镜，承接口播中的身份、资源与处境。</p>
+    </td>
+    <td width="50%" valign="top">
+      <a href="https://www.youtube.com/watch?v=xhhdzvd3pbI&t=88s"><img src=".github/assets/showcase/explainer-motion.gif" alt="讲解动画：从劝绝书、孙策到汉廷的任命来源，逐步解释孙策为何能拒绝袁术" width="100%"></a>
+      <strong>讲解：把抽象关系一步步展开</strong>
+      <p>劝绝书、孙策与汉廷的任命来源依口播展开，让“为什么能拒绝袁术”变成看得见的关系与变化。</p>
+    </td>
+  </tr>
+</table>
+
+动图为轻量、无声预览；完整清晰度、配音、字幕与音效请看原片。还支持地图、路线与图解，按内容需要选择。[叙事画面方法](packages/templates/fullframe-narrative/AUTHOR.md) · [讲解动画方法](packages/templates/vox-explainer/AUTHOR.md)
+
+## 从资料到成片
+
+### 先想清楚讲什么，再决定怎么拍
+
+从选题、指定书籍或参考节目出发，先形成节目方向、每集要回答的问题和必要材料，再进入写作。解说与纪录片分别使用自己的策划和写作方法；资料的出处、事实依据与允许重构的边界随制作保留。
+
+例如《袁术称帝》，题目聚焦的是“有钱有兵，为什么盟友不听号令？”——后面的口播、场面和解释都围绕这个问题展开。[节目策划方法](packages/modules/plan-program/SKILL.md) · [纪录片策划方法](packages/modules/plan-historical-documentary/SKILL.md)
+
+### 可以一段段做，也可以只改不满意的地方
+
+用自然语言指定阶段或连续范围，Codex 按已有进度继续。正文、字幕、片头和正文画面有各自的返工入口，修改时保留仍有效的成果；画面制作中可通过 HyperFrames Studio 预览。
+
+```text
+为 ../my-program 完成 P0。
+```
+
+节目策划完成后，进入单集制作：
+
+```text
+为 ../my-program 的 ep01 完成 P1。
+为 ../my-program 的 ep01 从 P2 做到 P4。
+只调整 ep01 片头的画面，口播不变。
+```
+
+### 交付成片，也交付制作文档与发布材料
+
+<table>
+  <tr>
+    <td width="70%" align="center" valign="top">
+      <a href="https://www.youtube.com/watch?v=xhhdzvd3pbI&t=2s"><img src=".github/assets/showcase/opener.jpg" alt="袁术称帝片头：为什么称帝之后反而号令不了盟友？" height="220"></a><br>
+      <strong>片头：把本集问题放到观众面前</strong>
+    </td>
+    <td width="30%" align="center" valign="top">
+      <img src=".github/assets/showcase/yuan-shu-vertical.jpg" alt="袁术称帝竖版封面，与下方横版封面共同交付" height="220"><br>
+      <strong>竖版封面</strong>
+    </td>
+  </tr>
+</table>
+
+下方成片入口展示横版封面；同一集同时交付竖版封面，方便准备不同平台的发布材料。
+
+| 阶段 | 你拿到什么 |
+|---|---|
+| P0 策划 | 节目方向、资料与单集安排 |
+| P1 写作 | 正文口播、片头文案、平台文案与横竖双封面 |
+| P2 音频 | 正式旁白与字幕，包含专名读音处理 |
+| P3 正文画面 | 分镜、全画幅叙事、讲解动画与镜头设计 |
+| P4 片头与压片 | 片头与单集 `output/final.mp4` |
+
+最终保留 **MP4、横竖双封面、发布文案、章节计时**，以及正式稿件、字幕、分镜、设计和来源记录。压片根据临时空间和内存情况选择并发，成功后自动清理制作素材与缓存，避免一集做完留下大量中间文件。
+
+**剧情视频默认关闭，只有主动要求才制作。** 开源制作流程到 P4；平台发布在项目之外进行。压片后的素材清理意味着重新预演或压片需重新准备已删除素材，文档与发布材料仍可使用。
 
 ## 成片展示
 
-这些是本项目制作并已公开的节目。点击封面，在 YouTube 观看完整视频。
+本项目制作并已公开的节目。点击封面，在 YouTube 观看完整视频。
 
 <table>
   <tr>
@@ -34,31 +110,6 @@
     </td>
   </tr>
 </table>
-
-## 画面示例
-
-《袁术称帝》的实际成片截图。点击画面，直接观看对应片段。
-
-| 片头 | 叙事画面 | 讲解动画 |
-|:---:|:---:|:---:|
-| [![片头](.github/assets/showcase/opener.jpg)](https://www.youtube.com/watch?v=xhhdzvd3pbI&t=2s) | [![叙事画面](.github/assets/showcase/narrative.jpg)](https://www.youtube.com/watch?v=xhhdzvd3pbI&t=18s) | [![讲解动画](.github/assets/showcase/explainer.jpg)](https://www.youtube.com/watch?v=xhhdzvd3pbI&t=88s) |
-
-## 能做什么
-
-- 历史解说与历史纪录片，按各自的方法策划和写作。
-- 全画幅叙事、代码驱动的讲解动画、图解和地图。
-- 横竖双封面、旁白、字幕、音效、片头与最终 MP4。
-- HyperFrames Studio 预览、保存进度、局部返工。
-
-| 阶段 | 交付 |
-|---|---|
-| P0 策划 | 节目方向、资料与单集安排 |
-| P1 写作 | 正文口播、片头文案、平台文案与横竖双封面 |
-| P2 音频 | 正式旁白与字幕 |
-| P3 正文画面 | 故事板、实图、动画与镜头设计 |
-| P4 片头与压片 | 片头与单集 `output/final.mp4` |
-
-**剧情视频默认关闭，只有主动要求才制作。** P4 默认做片头并在最后压片；开源版没有 P5，平台发布由你自行处理。
 
 ## 1. 安装
 
