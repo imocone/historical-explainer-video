@@ -8,6 +8,7 @@ import {projectP3TaskView} from '../../p3-task-view.mjs';
 import {readP3Sources} from '../../p3-sources.mjs';
 import {loadProgramVisualPackage} from '../../visual-package.mjs';
 import {visualFontEntries, withVisualFontPaths} from '../../visual-fonts.mjs';
+import {assetFile} from '../../runtime-config.mjs';
 import {getEpisodePaths} from '../../workspace-paths.mjs';
 import {VIDEO_SPEC, frameForMs, frameSpanForMs} from '../../video-spec.mjs';
 import {resolveCueBindingsToFrames} from '../../cue-boundaries.mjs';
@@ -85,8 +86,8 @@ export async function preview({workOrderPath, candidatePath, outputDirectory, va
   }
   for (const file of rendered.resourceFiles) await copy(path.join(systemRoot, file), file);
   for (const [, entry] of visualFontEntries(visual.renderTokens))
-    await copy(path.join(visual.directory, entry.file), `visuals/${visual.id}/${entry.file}`);
-  await copy(path.join(visual.directory, font.file), `visuals/${visual.id}/${font.file}`);
+    await copy(assetFile(path.join(visual.directory, entry.file), {root: systemRoot}), `visuals/${visual.id}/${entry.file}`);
+  await copy(assetFile(path.join(visual.directory, font.file), {root: systemRoot}), `visuals/${visual.id}/${font.file}`);
   const audio = path.resolve(paths.p2, narration.files.audio.path);
   await assertProjectPath({root: paths.p2, file: audio, label: '正式旁白'});
   await copy(audio, 'narration' + path.extname(audio));
