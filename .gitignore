@@ -93,6 +93,3 @@ _work/
 *.[mM][tT][sS]
 *.[mM]2[tT][sS]
 *.[fF][lL][vV]
-
-# Local generation request records are not teaching source.
-/packages/templates/vox-explainer/examples/pulley/assets/imagegen-call.json

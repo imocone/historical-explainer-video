@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFile} from 'node:fs/promises';
+import {PNG} from 'pngjs';
 import {fileURLToPath} from 'node:url';
 import path from 'node:path';
 import {build, stop} from 'esbuild';
@@ -91,7 +91,9 @@ test('讲解首帧等待SVG、HTML与CSS图片，缺图使seek失败', async t =
     bundle: true, write: false, platform: 'browser', format: 'iife', globalName: 'VoxRenderer',
     define: {'process.env.NODE_ENV': '"production"'}, logLevel: 'silent'});
   await stop();
-  const png = await readFile(new URL('./examples/parcel/assets/parcel.png', import.meta.url));
+  const picture = new PNG({width: 2, height: 2});
+  picture.data.fill(255);
+  const png = PNG.sync.write(picture);
   await withBrowserSession(async session => {
     const browser = await session.browser();
     for (const [kind, missing] of [['svg', false], ['html', false], ['css', false], ['svg', true]]) {

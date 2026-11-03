@@ -1,0 +1,3421 @@
+{
+  "duration": 190.898,
+  "scenes": [
+    {
+      "id": "question",
+      "text": "公元前一五四年，汉景帝削藩，七个诸侯国起兵。一个削字，削的是王爷的称号，还是地图上的几块地？要看懂这场叛乱，得先把封地里面的东西摊开。",
+      "start": 0.65,
+      "voiceDuration": 13.68,
+      "duration": 14.43,
+      "words": [
+        {
+          "type": "WordBoundary",
+          "offset": 971660,
+          "duration": 5778330,
+          "text": "公元前"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 6985830,
+          "duration": 7193330,
+          "text": "一五四年"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 17717080,
+          "duration": 4480830,
+          "text": "汉景"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 22197910,
+          "duration": 1297080,
+          "text": "帝"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 23495410,
+          "duration": 4245410,
+          "text": "削藩"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 30217080,
+          "duration": 2476250,
+          "text": "七"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 32693330,
+          "duration": 707500,
+          "text": "个"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 33518750,
+          "duration": 2594160,
+          "text": "诸侯"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 36113330,
+          "duration": 1179160,
+          "text": "国"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 37410410,
+          "duration": 4245410,
+          "text": "起兵"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 47052080,
+          "duration": 2122500,
+          "text": "一个"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 49292500,
+          "duration": 6603750,
+          "text": "削字"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 58608330,
+          "duration": 2594160,
+          "text": "削"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 61202910,
+          "duration": 943330,
+          "text": "的"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 62146250,
+          "duration": 1179160,
+          "text": "是"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 63561250,
+          "duration": 2712080,
+          "text": "王爷"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 66273750,
+          "duration": 707500,
+          "text": "的"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 67099160,
+          "duration": 5188750,
+          "text": "称号"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 75825410,
+          "duration": 3184160,
+          "text": "还是"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 79245410,
+          "duration": 2947910,
+          "text": "地图"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 82193330,
+          "duration": 1415000,
+          "text": "上"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 83608330,
+          "duration": 707500,
+          "text": "的"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 84552080,
+          "duration": 1297080,
+          "text": "几"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 85849160,
+          "duration": 1768750,
+          "text": "块"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 87617910,
+          "duration": 2240410,
+          "text": "地"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 95047080,
+          "duration": 1650830,
+          "text": "要"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 96697910,
+          "duration": 3065830,
+          "text": "看懂"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 100000000,
+          "duration": 943330,
+          "text": "这"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 100943330,
+          "duration": 1297080,
+          "text": "场"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 102358330,
+          "duration": 5660410,
+          "text": "叛乱"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 111320830,
+          "duration": 1297080,
+          "text": "得"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 112735830,
+          "duration": 1415000,
+          "text": "先"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 114150830,
+          "duration": 1061250,
+          "text": "把"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 115447910,
+          "duration": 3420000,
+          "text": "封地"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 118985830,
+          "duration": 1532910,
+          "text": "里面"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 120518750,
+          "duration": 707500,
+          "text": "的"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 121344160,
+          "duration": 2358330,
+          "text": "东西"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 123820830,
+          "duration": 4599160,
+          "text": "摊开"
+        }
+      ]
+    },
+    {
+      "id": "system",
+      "text": "汉初，同一个帝国里，郡与诸侯国并存。郡由朝廷设置官员治理；诸侯国则封给诸侯王。它们都属于汉朝，却不是完全相同的一套管理关系。王国，也不只是给王爷收租的一座庄园。",
+      "start": 15.08,
+      "voiceDuration": 16.728,
+      "duration": 17.478,
+      "words": [
+        {
+          "type": "WordBoundary",
+          "offset": 971660,
+          "duration": 5306660,
+          "text": "汉初"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 8754580,
+          "duration": 2004580,
+          "text": "同"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 10759580,
+          "duration": 1415000,
+          "text": "一个"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 12292500,
+          "duration": 3065830,
+          "text": "帝国"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 15358330,
+          "duration": 2122500,
+          "text": "里"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 20782910,
+          "duration": 2122500,
+          "text": "郡"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 23023750,
+          "duration": 1297080,
+          "text": "与"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 24438750,
+          "duration": 3065830,
+          "text": "诸侯"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 27504580,
+          "duration": 1415000,
+          "text": "国"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 29037910,
+          "duration": 5188750,
+          "text": "并存"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 39622500,
+          "duration": 2122500,
+          "text": "郡"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 41745410,
+          "duration": 1415000,
+          "text": "由"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 43278330,
+          "duration": 4717080,
+          "text": "朝廷"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 48113330,
+          "duration": 2712080,
+          "text": "设置"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 51061250,
+          "duration": 2947910,
+          "text": "官员"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 54127500,
+          "duration": 3773750,
+          "text": "治理"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 62735830,
+          "duration": 3773750,
+          "text": "诸侯"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 66509580,
+          "duration": 2712080,
+          "text": "国"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 69457500,
+          "duration": 1179160,
+          "text": "则"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 70754580,
+          "duration": 1532910,
+          "text": "封"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 72287910,
+          "duration": 1061250,
+          "text": "给"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 73585000,
+          "duration": 2830000,
+          "text": "诸侯"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 76415000,
+          "duration": 2947910,
+          "text": "王"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 84670000,
+          "duration": 2476250,
+          "text": "它们"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 87264160,
+          "duration": 1532910,
+          "text": "都"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 88797080,
+          "duration": 1886660,
+          "text": "属于"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 90802080,
+          "duration": 6367910,
+          "text": "汉朝"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 100117910,
+          "duration": 1768750,
+          "text": "却"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 101886660,
+          "duration": 1650830,
+          "text": "不是"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 103773750,
+          "duration": 3065830,
+          "text": "完全"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 106957500,
+          "duration": 3420000,
+          "text": "相同"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 110377500,
+          "duration": 707500,
+          "text": "的"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 111202910,
+          "duration": 2240410,
+          "text": "一套"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 113679160,
+          "duration": 2594160,
+          "text": "管理"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 116391660,
+          "duration": 3773750,
+          "text": "关系"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 125589580,
+          "duration": 6839580,
+          "text": "王国"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 135023750,
+          "duration": 1415000,
+          "text": "也"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 136556660,
+          "duration": 2712080,
+          "text": "不只"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 139268750,
+          "duration": 3655830,
+          "text": "是"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 143985830,
+          "duration": 1297080,
+          "text": "给"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 145282910,
+          "duration": 2476250,
+          "text": "王爷"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 147877500,
+          "duration": 3537500,
+          "text": "收租"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 151415000,
+          "duration": 707500,
+          "text": "的"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 152358330,
+          "duration": 707500,
+          "text": "一"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 153066250,
+          "duration": 1061250,
+          "text": "座"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 154245410,
+          "duration": 4599160,
+          "text": "庄园"
+        }
+      ]
+    },
+    {
+      "id": "offices",
+      "text": "诸侯王能够治理自己的封国，国内还有一套官署：丞相统领众官，内史管理民政，中尉掌管武职。王国拥有组织人口、财力与军事力量的条件。当然，诸侯王仍受皇帝约束，并不是独立的皇帝。",
+      "start": 32.558,
+      "voiceDuration": 17.136,
+      "duration": 17.886,
+      "words": [
+        {
+          "type": "WordBoundary",
+          "offset": 971660,
+          "duration": 3184160,
+          "text": "诸侯"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 4273750,
+          "duration": 2004580,
+          "text": "王"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 6278330,
+          "duration": 2240410,
+          "text": "能够"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 8636660,
+          "duration": 2712080,
+          "text": "治理"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 11585000,
+          "duration": 2004580,
+          "text": "自己"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 13589580,
+          "duration": 589580,
+          "text": "的"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 14297080,
+          "duration": 4952910,
+          "text": "封国"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 21490410,
+          "duration": 3773750,
+          "text": "国内"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 25500000,
+          "duration": 2476250,
+          "text": "还有"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 28094160,
+          "duration": 1886660,
+          "text": "一套"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 30099160,
+          "duration": 4481250,
+          "text": "官署"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 38353750,
+          "duration": 4835000,
+          "text": "丞相"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 43424580,
+          "duration": 2712080,
+          "text": "统领"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 46254580,
+          "duration": 4481250,
+          "text": "众官"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 52858330,
+          "duration": 3065830,
+          "text": "内史"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 56160410,
+          "duration": 2594160,
+          "text": "管理"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 58872500,
+          "duration": 4009580,
+          "text": "民政"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 65122500,
+          "duration": 3537910,
+          "text": "中尉"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 68896250,
+          "duration": 2947910,
+          "text": "掌管"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 71962080,
+          "duration": 4127500,
+          "text": "武职"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 81485830,
+          "duration": 4245410,
+          "text": "王国"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 85849160,
+          "duration": 2830000,
+          "text": "拥有"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 88915000,
+          "duration": 2830000,
+          "text": "组织"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 91863330,
+          "duration": 4599160,
+          "text": "人口"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 99292500,
+          "duration": 5896250,
+          "text": "财力"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 106250000,
+          "duration": 1532910,
+          "text": "与"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 107900830,
+          "duration": 3655830,
+          "text": "军事"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 111674580,
+          "duration": 2240410,
+          "text": "力量"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 113915000,
+          "duration": 589580,
+          "text": "的"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 114622500,
+          "duration": 4009580,
+          "text": "条件"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 124056660,
+          "duration": 4835000,
+          "text": "当然"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 133018750,
+          "duration": 4952910,
+          "text": "诸侯王"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 138207500,
+          "duration": 1415000,
+          "text": "仍"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 139622500,
+          "duration": 1768750,
+          "text": "受"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 141627500,
+          "duration": 3184160,
+          "text": "皇帝"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 144929160,
+          "duration": 4481250,
+          "text": "约束"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 152004580,
+          "duration": 2122500,
+          "text": "并"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 154127500,
+          "duration": 2004580,
+          "text": "不是"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 156367910,
+          "duration": 2122500,
+          "text": "独立"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 158490410,
+          "duration": 707500,
+          "text": "的"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 159316250,
+          "duration": 3773750,
+          "text": "皇帝"
+        }
+      ]
+    },
+    {
+      "id": "wealth",
+      "text": "看东南的吴国。吴王刘濞经营铜山铸钱，又煮海水取盐。铜与盐带来雄厚财力，他因此招聚人众，积累抗衡朝廷的资本。所以，封地不是一块空白色面：里面有人，有资源，还有把这些东西组织起来的权力。",
+      "start": 50.444,
+      "voiceDuration": 18.864,
+      "duration": 19.614,
+      "words": [
+        {
+          "type": "WordBoundary",
+          "offset": 971660,
+          "duration": 2240410,
+          "text": "看"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 3212080,
+          "duration": 3184160,
+          "text": "东南"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 6396250,
+          "duration": 825410,
+          "text": "的"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 7339580,
+          "duration": 4835000,
+          "text": "吴国"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 17570830,
+          "duration": 2712080,
+          "text": "吴王"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 20400830,
+          "duration": 5660410,
+          "text": "刘濞"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 27122500,
+          "duration": 3537910,
+          "text": "经营"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 30896250,
+          "duration": 3537910,
+          "text": "铜山"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 34552080,
+          "duration": 1532910,
+          "text": "铸"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 36085000,
+          "duration": 3537910,
+          "text": "钱"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 43042500,
+          "duration": 1768750,
+          "text": "又"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 44811250,
+          "duration": 1179160,
+          "text": "煮"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 46108330,
+          "duration": 3773750,
+          "text": "海水"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 50000000,
+          "duration": 1886660,
+          "text": "取"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 51886660,
+          "duration": 2712080,
+          "text": "盐"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 59905830,
+          "duration": 2240410,
+          "text": "铜"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 62146250,
+          "duration": 943330,
+          "text": "与"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 63207500,
+          "duration": 2947910,
+          "text": "盐带"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 66273750,
+          "duration": 825410,
+          "text": "来"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 67335000,
+          "duration": 3537910,
+          "text": "雄厚"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 70990410,
+          "duration": 4363330,
+          "text": "财力"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 78537910,
+          "duration": 1650830,
+          "text": "他"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 80306660,
+          "duration": 3302080,
+          "text": "因此"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 83844160,
+          "duration": 3302080,
+          "text": "招聚"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 87264160,
+          "duration": 4009580,
+          "text": "人众"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 94103750,
+          "duration": 3184160,
+          "text": "积累"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 97523750,
+          "duration": 3773750,
+          "text": "抗衡"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 101415000,
+          "duration": 3420000,
+          "text": "朝廷"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 104835000,
+          "duration": 707500,
+          "text": "的"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 105660410,
+          "duration": 3065830,
+          "text": "资本"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 114032910,
+          "duration": 4599160,
+          "text": "所以"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 121462080,
+          "duration": 4009580,
+          "text": "封地"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 125707500,
+          "duration": 2358330,
+          "text": "不是"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 128184160,
+          "duration": 2004580,
+          "text": "一块"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 130424580,
+          "duration": 2830000,
+          "text": "空白"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 133372500,
+          "duration": 4009580,
+          "text": "色面"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 140684160,
+          "duration": 2240410,
+          "text": "里面"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 143042500,
+          "duration": 4952910,
+          "text": "有人"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 150471660,
+          "duration": 2004580,
+          "text": "有"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 152476250,
+          "duration": 5896250,
+          "text": "资源"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 160967080,
+          "duration": 2358330,
+          "text": "还有"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 163443330,
+          "duration": 1061250,
+          "text": "把"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 164622500,
+          "duration": 1886660,
+          "text": "这些"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 166627500,
+          "duration": 3655830,
+          "text": "东西"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 170518750,
+          "duration": 2594160,
+          "text": "组织"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 173231250,
+          "duration": 1886660,
+          "text": "起来"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 175117910,
+          "duration": 707500,
+          "text": "的"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 175943330,
+          "duration": 4245410,
+          "text": "权力"
+        }
+      ]
+    },
+    {
+      "id": "edict",
+      "text": "景帝采纳晁错的建议，开始削减诸侯封地。楚国被削东海郡，胶西国被削六县，朝廷又决定削吴国的会稽等郡。这里的削，是把原属王国的辖地划出去。王的称号可以暂时留下，支撑王国的地盘却在缩小。",
+      "start": 70.058,
+      "voiceDuration": 18.672,
+      "duration": 19.422,
+      "words": [
+        {
+          "type": "WordBoundary",
+          "offset": 971660,
+          "duration": 3655830,
+          "text": "景帝"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 4745410,
+          "duration": 3655830,
+          "text": "采纳"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 8636660,
+          "duration": 3184160,
+          "text": "晁错"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 11820830,
+          "duration": 707500,
+          "text": "的"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 12646250,
+          "duration": 4127500,
+          "text": "建议"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 18778330,
+          "duration": 3302080,
+          "text": "开始"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 22197910,
+          "duration": 4127500,
+          "text": "削减"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 26561250,
+          "duration": 3420000,
+          "text": "诸侯"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 30099160,
+          "duration": 3420000,
+          "text": "封地"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 38915000,
+          "duration": 4127500,
+          "text": "楚国"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 43160410,
+          "duration": 1297080,
+          "text": "被"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 44575410,
+          "duration": 3184160,
+          "text": "削东"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 47877500,
+          "duration": 4835000,
+          "text": "海郡"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 54835000,
+          "duration": 2004580,
+          "text": "胶"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 56839580,
+          "duration": 3891660,
+          "text": "西国"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 60967080,
+          "duration": 1297080,
+          "text": "被"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 62264160,
+          "duration": 1650830,
+          "text": "削"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 64032910,
+          "duration": 1886660,
+          "text": "六"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 65920000,
+          "duration": 2712080,
+          "text": "县"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 71462080,
+          "duration": 3891660,
+          "text": "朝廷"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 75471660,
+          "duration": 1179160,
+          "text": "又"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 76768750,
+          "duration": 4127500,
+          "text": "决定"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 81839580,
+          "duration": 2947910,
+          "text": "削"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 84905830,
+          "duration": 1768750,
+          "text": "吴"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 86674580,
+          "duration": 1297080,
+          "text": "国"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 87971660,
+          "duration": 707500,
+          "text": "的"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 88915000,
+          "duration": 4127500,
+          "text": "会稽"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 93160410,
+          "duration": 1297080,
+          "text": "等"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 94457500,
+          "duration": 2122500,
+          "text": "郡"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 101886660,
+          "duration": 2594160,
+          "text": "这里"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 104481250,
+          "duration": 943330,
+          "text": "的"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 105424580,
+          "duration": 3891660,
+          "text": "削"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 111556660,
+          "duration": 1886660,
+          "text": "是"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 113443330,
+          "duration": 943330,
+          "text": "把"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 114504580,
+          "duration": 2240410,
+          "text": "原"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 116745410,
+          "duration": 1297080,
+          "text": "属"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 118160410,
+          "duration": 2476250,
+          "text": "王国"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 120636660,
+          "duration": 707500,
+          "text": "的"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 121462080,
+          "duration": 4481250,
+          "text": "辖地"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 126179160,
+          "duration": 1415000,
+          "text": "划"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 127594160,
+          "duration": 3420000,
+          "text": "出去"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 136320830,
+          "duration": 2122500,
+          "text": "王"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 138443330,
+          "duration": 589580,
+          "text": "的"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 139150830,
+          "duration": 5306660,
+          "text": "称号"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 145400830,
+          "duration": 2358330,
+          "text": "可以"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 147877500,
+          "duration": 3065830,
+          "text": "暂时"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 151061250,
+          "duration": 4363330,
+          "text": "留下"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 158254580,
+          "duration": 3655830,
+          "text": "支撑"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 162028330,
+          "duration": 2358330,
+          "text": "王国"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 164386660,
+          "duration": 825410,
+          "text": "的"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 165330000,
+          "duration": 4481250,
+          "text": "地盘"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 170754580,
+          "duration": 1768750,
+          "text": "却"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 172523750,
+          "duration": 943330,
+          "text": "在"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 173585000,
+          "duration": 4835000,
+          "text": "缩小"
+        }
+      ]
+    },
+    {
+      "id": "meaning",
+      "text": "把一块辖地从王国中拿走，连着它的人口和资源，也就退出了这个王国的治理范围。这不是把土地搬走，更不是百姓突然消失。变化的是归属：诸侯王能支配的范围变小了。他们担心的，还包括下一次会削到哪里。",
+      "start": 89.48,
+      "voiceDuration": 17.976,
+      "duration": 18.726,
+      "words": [
+        {
+          "type": "WordBoundary",
+          "offset": 971660,
+          "duration": 1650830,
+          "text": "把"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 2740410,
+          "duration": 2122500,
+          "text": "一块"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 4863330,
+          "duration": 2947910,
+          "text": "辖"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 7811250,
+          "duration": 2004580,
+          "text": "地"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 10052080,
+          "duration": 1532910,
+          "text": "从"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 11702910,
+          "duration": 1768750,
+          "text": "王"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 13471660,
+          "duration": 2594160,
+          "text": "国中"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 16184160,
+          "duration": 4717080,
+          "text": "拿走"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 23259580,
+          "duration": 2594160,
+          "text": "连着"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 25971660,
+          "duration": 1179160,
+          "text": "它"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 27150830,
+          "duration": 707500,
+          "text": "的"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 27976250,
+          "duration": 4835000,
+          "text": "人口和"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 32929160,
+          "duration": 4835000,
+          "text": "资源"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 40712080,
+          "duration": 1297080,
+          "text": "也"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 42009580,
+          "duration": 943330,
+          "text": "就"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 43070830,
+          "duration": 3655410,
+          "text": "退出"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 46726250,
+          "duration": 707500,
+          "text": "了"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 47670000,
+          "duration": 1532910,
+          "text": "这个"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 49320830,
+          "duration": 2712080,
+          "text": "王国"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 52032910,
+          "duration": 707500,
+          "text": "的"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 52976250,
+          "duration": 2476250,
+          "text": "治理"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 55570830,
+          "duration": 3891660,
+          "text": "范围"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 64858330,
+          "duration": 1768750,
+          "text": "这"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 66627500,
+          "duration": 2004580,
+          "text": "不是"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 68867910,
+          "duration": 1061250,
+          "text": "把"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 70047080,
+          "duration": 2947910,
+          "text": "土地"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 73113330,
+          "duration": 5660410,
+          "text": "搬走"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 81485830,
+          "duration": 1768750,
+          "text": "更"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 83254580,
+          "duration": 1532910,
+          "text": "不是"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 84905830,
+          "duration": 3420000,
+          "text": "百姓"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 88561250,
+          "duration": 2476250,
+          "text": "突然"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 91155830,
+          "duration": 4363330,
+          "text": "消失"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 100943330,
+          "duration": 3065830,
+          "text": "变化"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 104009580,
+          "duration": 707500,
+          "text": "的"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 104717080,
+          "duration": 825410,
+          "text": "是"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 105660410,
+          "duration": 5306660,
+          "text": "归属"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 115330000,
+          "duration": 5778330,
+          "text": "诸侯王"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 121344160,
+          "duration": 1297080,
+          "text": "能"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 122759580,
+          "duration": 2358330,
+          "text": "支配"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 125117910,
+          "duration": 589580,
+          "text": "的"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 125825410,
+          "duration": 2594160,
+          "text": "范围"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 128655830,
+          "duration": 1297080,
+          "text": "变"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 129952910,
+          "duration": 2476250,
+          "text": "小"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 132429160,
+          "duration": 2004580,
+          "text": "了"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 139740410,
+          "duration": 2594160,
+          "text": "他们"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 142452910,
+          "duration": 3537500,
+          "text": "担心"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 145990410,
+          "duration": 2358330,
+          "text": "的"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 152240410,
+          "duration": 1650830,
+          "text": "还"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 153891660,
+          "duration": 4717080,
+          "text": "包括"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 159670000,
+          "duration": 3065830,
+          "text": "下"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 162735830,
+          "duration": 1650830,
+          "text": "一次"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 164622500,
+          "duration": 943330,
+          "text": "会"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 165566250,
+          "duration": 2358330,
+          "text": "削到"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 168042500,
+          "duration": 3302080,
+          "text": "哪里"
+        }
+      ]
+    },
+    {
+      "id": "rebellion",
+      "text": "削地诏书到达后，吴王起兵。吴、楚、赵，再加上胶西、胶东、淄川、济南，合成七国。但七国不等于天下诸侯全部反叛。夹在东西之间的梁国，同样是刘姓王国，这一次却站在朝廷一边。",
+      "start": 108.206,
+      "voiceDuration": 19.44,
+      "duration": 20.19,
+      "words": [
+        {
+          "type": "WordBoundary",
+          "offset": 971660,
+          "duration": 5306660,
+          "text": "削地诏"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 6278330,
+          "duration": 1768750,
+          "text": "书"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 8165000,
+          "duration": 3065830,
+          "text": "到达"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 11231250,
+          "duration": 2830000,
+          "text": "后"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 16773750,
+          "duration": 2594160,
+          "text": "吴王"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 19485830,
+          "duration": 4245410,
+          "text": "起兵"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 29127500,
+          "duration": 3773750,
+          "text": "吴"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 36202910,
+          "duration": 3065830,
+          "text": "楚"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 41509580,
+          "duration": 3302080,
+          "text": "赵"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 49528330,
+          "duration": 1768750,
+          "text": "再"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 51415000,
+          "duration": 3065830,
+          "text": "加上"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 54717080,
+          "duration": 4952910,
+          "text": "胶西"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 63207500,
+          "duration": 5188750,
+          "text": "胶东"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 71462080,
+          "duration": 5778330,
+          "text": "淄川"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 80306660,
+          "duration": 4835000,
+          "text": "济南"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 88561250,
+          "duration": 4245410,
+          "text": "合成"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 92924580,
+          "duration": 4599160,
+          "text": "七国"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 102947910,
+          "duration": 2358330,
+          "text": "但"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 105424580,
+          "duration": 3065830,
+          "text": "七国"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 108490410,
+          "duration": 2358330,
+          "text": "不"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 110967080,
+          "duration": 2712080,
+          "text": "等于"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 113915000,
+          "duration": 3302080,
+          "text": "天下"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 117335000,
+          "duration": 3184160,
+          "text": "诸侯"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 120754580,
+          "duration": 3537910,
+          "text": "全部"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 124410410,
+          "duration": 4245410,
+          "text": "反叛"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 134080000,
+          "duration": 2004580,
+          "text": "夹"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 136085000,
+          "duration": 1179160,
+          "text": "在"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 137500000,
+          "duration": 3184160,
+          "text": "东西"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 140802080,
+          "duration": 1886660,
+          "text": "之间"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 142688750,
+          "duration": 589580,
+          "text": "的"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 143396250,
+          "duration": 5424580,
+          "text": "梁国"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 151179160,
+          "duration": 3773750,
+          "text": "同样"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 154952910,
+          "duration": 1179160,
+          "text": "是"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 156367910,
+          "duration": 1297080,
+          "text": "刘"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 157665000,
+          "duration": 1415000,
+          "text": "姓"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 159197910,
+          "duration": 4952910,
+          "text": "王国"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 166981250,
+          "duration": 1650830,
+          "text": "这"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 168632080,
+          "duration": 4952910,
+          "text": "一次"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 174646250,
+          "duration": 1886660,
+          "text": "却"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 176532910,
+          "duration": 1179160,
+          "text": "站"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 177712080,
+          "duration": 707500,
+          "text": "在"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 178655830,
+          "duration": 3773750,
+          "text": "朝廷"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 182547080,
+          "duration": 3537910,
+          "text": "一边"
+        }
+      ]
+    },
+    {
+      "id": "fronts",
+      "text": "把地图拉开，叛军也不是一整块。吴楚联军向西，攻打梁国；山东的胶西等四国围攻齐国都城临淄；赵国又是另一路。朝廷因此分路应对。梁国守住城池，吴楚主力无法顺利西进，七国的声势，并没有变成一支直扑长安的大军。",
+      "start": 128.396,
+      "voiceDuration": 20.544,
+      "duration": 21.294,
+      "words": [
+        {
+          "type": "WordBoundary",
+          "offset": 971660,
+          "duration": 1532910,
+          "text": "把"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 2622500,
+          "duration": 2830000,
+          "text": "地图"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 5570830,
+          "duration": 4127500,
+          "text": "拉开"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 13353750,
+          "duration": 4127500,
+          "text": "叛军"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 17717080,
+          "duration": 1061250,
+          "text": "也"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 18778330,
+          "duration": 2358330,
+          "text": "不是"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 21254580,
+          "duration": 943330,
+          "text": "一"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 22197910,
+          "duration": 1179160,
+          "text": "整"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 23377500,
+          "duration": 2476250,
+          "text": "块"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 31132080,
+          "duration": 3655830,
+          "text": "吴楚"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 34905830,
+          "duration": 3065830,
+          "text": "联军"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 38089580,
+          "duration": 1886660,
+          "text": "向"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 39976250,
+          "duration": 3065830,
+          "text": "西"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 44693330,
+          "duration": 3184160,
+          "text": "攻打"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 47995410,
+          "duration": 5306660,
+          "text": "梁国"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 56485830,
+          "duration": 4245410,
+          "text": "山东"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 60731250,
+          "duration": 825410,
+          "text": "的"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 61792500,
+          "duration": 3773330,
+          "text": "胶西"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 65565830,
+          "duration": 1297080,
+          "text": "等"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 66981250,
+          "duration": 2122500,
+          "text": "四"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 69103750,
+          "duration": 3065830,
+          "text": "国"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 73231250,
+          "duration": 3891250,
+          "text": "围攻"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 77122500,
+          "duration": 1886660,
+          "text": "齐"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 79127500,
+          "duration": 2712080,
+          "text": "国都"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 81839580,
+          "duration": 1650830,
+          "text": "城"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 83608330,
+          "duration": 4127500,
+          "text": "临淄"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 90802080,
+          "duration": 4717080,
+          "text": "赵国"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 95754580,
+          "duration": 2594160,
+          "text": "又是"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 98467080,
+          "duration": 1650830,
+          "text": "另"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 100117910,
+          "duration": 3065830,
+          "text": "一路"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 108490410,
+          "duration": 3773750,
+          "text": "朝廷"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 112382080,
+          "duration": 2947910,
+          "text": "因此"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 115566250,
+          "duration": 2947910,
+          "text": "分路"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 118632080,
+          "duration": 4245410,
+          "text": "应对"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 128302080,
+          "duration": 3655830,
+          "text": "梁国"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 132193330,
+          "duration": 2947910,
+          "text": "守住"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 135259580,
+          "duration": 5660410,
+          "text": "城池"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 144457500,
+          "duration": 3655830,
+          "text": "吴楚"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 148231250,
+          "duration": 2476250,
+          "text": "主力"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 150943330,
+          "duration": 2122500,
+          "text": "无法"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 153184160,
+          "duration": 3065830,
+          "text": "顺利"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 156367910,
+          "duration": 2122500,
+          "text": "西"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 158490410,
+          "duration": 1886660,
+          "text": "进"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 163325410,
+          "duration": 3773750,
+          "text": "七国"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 167099160,
+          "duration": 589580,
+          "text": "的"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 167806660,
+          "duration": 4717080,
+          "text": "声势"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 174292500,
+          "duration": 2004580,
+          "text": "并"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 176415000,
+          "duration": 1886660,
+          "text": "没有"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 178420000,
+          "duration": 2947910,
+          "text": "变成"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 181485830,
+          "duration": 1297080,
+          "text": "一"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 182782910,
+          "duration": 2122500,
+          "text": "支"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 185141660,
+          "duration": 2830000,
+          "text": "直"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 187971660,
+          "duration": 1532910,
+          "text": "扑"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 189622500,
+          "duration": 2830000,
+          "text": "长安"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 192452910,
+          "duration": 589580,
+          "text": "的"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 193160410,
+          "duration": 3891660,
+          "text": "大军"
+        }
+      ]
+    },
+    {
+      "id": "reform",
+      "text": "平乱以后，削弱诸侯又向制度深处推进。这里要把年份分开：前一五四年，冲突首先围绕削地展开；到前一四五年，汉景帝规定，诸侯王不得再亲自治理封国，由天子为王国设置官吏。王国这个名称还在，王与官署之间的治理关系却变了。",
+      "start": 149.69,
+      "voiceDuration": 20.736,
+      "duration": 21.486,
+      "words": [
+        {
+          "type": "WordBoundary",
+          "offset": 971660,
+          "duration": 3302080,
+          "text": "平乱"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 4391660,
+          "duration": 4481250,
+          "text": "以后"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 11349160,
+          "duration": 4127500,
+          "text": "削弱"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 15594160,
+          "duration": 5070830,
+          "text": "诸侯"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 21490410,
+          "duration": 1415000,
+          "text": "又"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 22905830,
+          "duration": 1532910,
+          "text": "向"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 24674580,
+          "duration": 2947910,
+          "text": "制度"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 27740410,
+          "duration": 3302080,
+          "text": "深处"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 31160410,
+          "duration": 3655830,
+          "text": "推进"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 40212080,
+          "duration": 2594160,
+          "text": "这里"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 42924580,
+          "duration": 1179160,
+          "text": "要"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 44103750,
+          "duration": 943330,
+          "text": "把"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 45282910,
+          "duration": 2830000,
+          "text": "年份"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 48231250,
+          "duration": 4717080,
+          "text": "分开"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 56367910,
+          "duration": 2594160,
+          "text": "前"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 59080000,
+          "duration": 7193330,
+          "text": "一五四年"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 67924580,
+          "duration": 3655830,
+          "text": "冲突"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 71815830,
+          "duration": 3184160,
+          "text": "首先"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 75117910,
+          "duration": 2122500,
+          "text": "围绕"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 77476250,
+          "duration": 1179160,
+          "text": "削"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 78655830,
+          "duration": 589580,
+          "text": "地"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 79363330,
+          "duration": 4363330,
+          "text": "展开"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 87028330,
+          "duration": 1886660,
+          "text": "到"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 88915000,
+          "duration": 2594160,
+          "text": "前"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 91745410,
+          "duration": 6839580,
+          "text": "一四五年"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 101532910,
+          "duration": 4599160,
+          "text": "汉景帝"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 106250000,
+          "duration": 4127500,
+          "text": "规定"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 113325410,
+          "duration": 2947910,
+          "text": "诸侯"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 116391660,
+          "duration": 2004580,
+          "text": "王"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 118396250,
+          "duration": 2240410,
+          "text": "不得"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 120754580,
+          "duration": 1532910,
+          "text": "再"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 122523750,
+          "duration": 3537910,
+          "text": "亲自"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 126179160,
+          "duration": 2004580,
+          "text": "治理"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 128302080,
+          "duration": 4599160,
+          "text": "封国"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 135141660,
+          "duration": 1768750,
+          "text": "由"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 137028330,
+          "duration": 3537910,
+          "text": "天子"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 140802080,
+          "duration": 943330,
+          "text": "为"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 141863330,
+          "duration": 3655830,
+          "text": "王国"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 145754580,
+          "duration": 2240410,
+          "text": "设置"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 148113330,
+          "duration": 3537910,
+          "text": "官吏"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 157075410,
+          "duration": 3891660,
+          "text": "王国"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 161085000,
+          "duration": 1415000,
+          "text": "这个"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 162617910,
+          "duration": 3302080,
+          "text": "名称"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 166037910,
+          "duration": 1768750,
+          "text": "还"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 167806660,
+          "duration": 3420000,
+          "text": "在"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 174764160,
+          "duration": 2358330,
+          "text": "王"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 177122500,
+          "duration": 825410,
+          "text": "与"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 178066250,
+          "duration": 3891660,
+          "text": "官署"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 182075410,
+          "duration": 2004580,
+          "text": "之间"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 184080000,
+          "duration": 707500,
+          "text": "的"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 185023750,
+          "duration": 2122500,
+          "text": "治理"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 187264160,
+          "duration": 5306660,
+          "text": "关系"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 193632080,
+          "duration": 1886660,
+          "text": "却"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 195518750,
+          "duration": 2122500,
+          "text": "变"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 197641660,
+          "duration": 1532910,
+          "text": "了"
+        }
+      ]
+    },
+    {
+      "id": "answer",
+      "text": "所以，汉景帝究竟在削什么？眼前削的是封地，背后压缩的是诸侯王掌握人口、财源和治理封国的能力。从削地，到收回治国权，汉朝要解决的是：一座帝国内部，谁能真正把这些力量组织起来。",
+      "start": 171.176,
+      "voiceDuration": 18.072,
+      "duration": 18.822,
+      "words": [
+        {
+          "type": "WordBoundary",
+          "offset": 971660,
+          "duration": 4835000,
+          "text": "所以"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 9815830,
+          "duration": 5896250,
+          "text": "汉景帝"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 15947910,
+          "duration": 2476250,
+          "text": "究竟"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 18542500,
+          "duration": 1061250,
+          "text": "在"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 19603750,
+          "duration": 2240410,
+          "text": "削"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 21844160,
+          "duration": 3420000,
+          "text": "什么"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 30542500,
+          "duration": 3537910,
+          "text": "眼前"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 34315830,
+          "duration": 1415000,
+          "text": "削"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 35731250,
+          "duration": 707500,
+          "text": "的"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 36438750,
+          "duration": 943330,
+          "text": "是"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 37500000,
+          "duration": 4009580,
+          "text": "封地"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 45754580,
+          "duration": 2947910,
+          "text": "背后"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 48820830,
+          "duration": 3183750,
+          "text": "压缩"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 52004580,
+          "duration": 943330,
+          "text": "的"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 53065830,
+          "duration": 3302080,
+          "text": "是"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 57429160,
+          "duration": 4009580,
+          "text": "诸侯"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 61438750,
+          "duration": 1532910,
+          "text": "王"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 63207500,
+          "duration": 2947910,
+          "text": "掌握"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 66273750,
+          "duration": 3891660,
+          "text": "人口"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 73231250,
+          "duration": 5896250,
+          "text": "财源"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 80188750,
+          "duration": 4481250,
+          "text": "和治理"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 84787910,
+          "duration": 2947910,
+          "text": "封国"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 87735830,
+          "duration": 707500,
+          "text": "的"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 88561250,
+          "duration": 3420000,
+          "text": "能力"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 97405830,
+          "duration": 1886660,
+          "text": "从"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 99410410,
+          "duration": 5306660,
+          "text": "削地"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 106367910,
+          "duration": 1415000,
+          "text": "到"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 107900830,
+          "duration": 4127500,
+          "text": "收回"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 112264160,
+          "duration": 1886660,
+          "text": "治"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 114150830,
+          "duration": 5424580,
+          "text": "国权"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 123702910,
+          "duration": 3891660,
+          "text": "汉朝"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 127712080,
+          "duration": 1179160,
+          "text": "要"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 129009580,
+          "duration": 2476250,
+          "text": "解决"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 131485830,
+          "duration": 1061250,
+          "text": "的"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 132547080,
+          "duration": 3420000,
+          "text": "是"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 138915000,
+          "duration": 1650830,
+          "text": "一"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 140566250,
+          "duration": 1297080,
+          "text": "座"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 142099160,
+          "duration": 3184160,
+          "text": "帝国"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 145400830,
+          "duration": 4363330,
+          "text": "内部"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 151415000,
+          "duration": 2947910,
+          "text": "谁"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 154363330,
+          "duration": 1532910,
+          "text": "能"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 156014160,
+          "duration": 3655830,
+          "text": "真正"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 159787910,
+          "duration": 1061250,
+          "text": "把"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 160967080,
+          "duration": 1886660,
+          "text": "这些"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 162971660,
+          "duration": 2712080,
+          "text": "力量"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 165920000,
+          "duration": 2712080,
+          "text": "组织"
+        },
+        {
+          "type": "WordBoundary",
+          "offset": 168750000,
+          "duration": 3537910,
+          "text": "起来"
+        }
+      ]
+    }
+  ],
+  "captions": [
+    {
+      "text": "公元前一五四年",
+      "start": 0.7472,
+      "end": 2.1679,
+      "scene": "question"
+    },
+    {
+      "text": "汉景帝削藩七个诸侯国起兵",
+      "start": 2.4217,
+      "end": 4.9156,
+      "scene": "question"
+    },
+    {
+      "text": "一个削字削的是王爷的称号",
+      "start": 5.3552,
+      "end": 7.9788,
+      "scene": "question"
+    },
+    {
+      "text": "还是地图上的几块地",
+      "start": 8.2325,
+      "end": 9.7358,
+      "scene": "question"
+    },
+    {
+      "text": "要看懂这场叛乱",
+      "start": 10.1547,
+      "end": 11.5519,
+      "scene": "question"
+    },
+    {
+      "text": "得先把封地里面的东西摊开",
+      "start": 11.7821,
+      "end": 13.592,
+      "scene": "question"
+    },
+    {
+      "text": "汉初同一个帝国里",
+      "start": 15.1772,
+      "end": 16.9281,
+      "scene": "system"
+    },
+    {
+      "text": "郡与诸侯国并存",
+      "start": 17.1583,
+      "end": 18.6027,
+      "scene": "system"
+    },
+    {
+      "text": "郡由朝廷设置官员治理",
+      "start": 19.0422,
+      "end": 20.9701,
+      "scene": "system"
+    },
+    {
+      "text": "诸侯国则封给诸侯王",
+      "start": 21.3536,
+      "end": 23.1163,
+      "scene": "system"
+    },
+    {
+      "text": "它们都属于汉朝",
+      "start": 23.547,
+      "end": 24.897,
+      "scene": "system"
+    },
+    {
+      "text": "却不是完全相同的一套管理关系",
+      "start": 25.0918,
+      "end": 27.1965,
+      "scene": "system"
+    },
+    {
+      "text": "王国也不只是给王爷收租的一座庄园",
+      "start": 27.639,
+      "end": 31.0645,
+      "scene": "system"
+    },
+    {
+      "text": "诸侯王能够治理自己的封国",
+      "start": 32.6552,
+      "end": 34.583,
+      "scene": "offices"
+    },
+    {
+      "text": "国内还有一套官署丞相统领众官",
+      "start": 34.707,
+      "end": 37.7316,
+      "scene": "offices"
+    },
+    {
+      "text": "内史管理民政",
+      "start": 37.8438,
+      "end": 38.9462,
+      "scene": "offices"
+    },
+    {
+      "text": "中尉掌管武职",
+      "start": 39.0703,
+      "end": 40.267,
+      "scene": "offices"
+    },
+    {
+      "text": "王国拥有组织人口财力与军事力量的条件",
+      "start": 40.7066,
+      "end": 44.5212,
+      "scene": "offices"
+    },
+    {
+      "text": "当然诸侯王仍受皇帝约束",
+      "start": 44.9637,
+      "end": 47.599,
+      "scene": "offices"
+    },
+    {
+      "text": "并不是独立的皇帝",
+      "start": 47.7585,
+      "end": 48.967,
+      "scene": "offices"
+    },
+    {
+      "text": "看东南的吴国",
+      "start": 50.5412,
+      "end": 51.7615,
+      "scene": "wealth"
+    },
+    {
+      "text": "吴王刘濞经营铜山铸钱",
+      "start": 52.2011,
+      "end": 54.5063,
+      "scene": "wealth"
+    },
+    {
+      "text": "又煮海水取盐",
+      "start": 54.7482,
+      "end": 56.0039,
+      "scene": "wealth"
+    },
+    {
+      "text": "铜与盐带来雄厚财力",
+      "start": 56.4346,
+      "end": 58.0794,
+      "scene": "wealth"
+    },
+    {
+      "text": "他因此招聚人众",
+      "start": 58.2978,
+      "end": 59.6714,
+      "scene": "wealth"
+    },
+    {
+      "text": "积累抗衡朝廷的资本",
+      "start": 59.8544,
+      "end": 61.4166,
+      "scene": "wealth"
+    },
+    {
+      "text": "所以封地不是一块空白色面里面有人",
+      "start": 61.8473,
+      "end": 65.3435,
+      "scene": "wealth"
+    },
+    {
+      "text": "有资源还有把这些东西组织起来的权力",
+      "start": 65.4912,
+      "end": 68.5629,
+      "scene": "wealth"
+    },
+    {
+      "text": "景帝采纳晁错的建议",
+      "start": 70.1552,
+      "end": 71.8354,
+      "scene": "edict"
+    },
+    {
+      "text": "开始削减诸侯封地",
+      "start": 71.9358,
+      "end": 73.5099,
+      "scene": "edict"
+    },
+    {
+      "text": "楚国被削东海郡",
+      "start": 73.9495,
+      "end": 75.4292,
+      "scene": "edict"
+    },
+    {
+      "text": "胶西国被削六县",
+      "start": 75.5415,
+      "end": 77.0212,
+      "scene": "edict"
+    },
+    {
+      "text": "朝廷又决定削吴国的会稽等郡",
+      "start": 77.2042,
+      "end": 79.816,
+      "scene": "edict"
+    },
+    {
+      "text": "这里的削是把原属王国的辖地划出去",
+      "start": 80.2467,
+      "end": 83.2594,
+      "scene": "edict"
+    },
+    {
+      "text": "王的称号可以暂时留下",
+      "start": 83.6901,
+      "end": 85.7005,
+      "scene": "edict"
+    },
+    {
+      "text": "支撑王国的地盘却在缩小",
+      "start": 85.8835,
+      "end": 88.0,
+      "scene": "edict"
+    },
+    {
+      "text": "把一块辖地从王国中拿走",
+      "start": 89.5772,
+      "end": 91.6701,
+      "scene": "meaning"
+    },
+    {
+      "text": "连着它的人口和资源",
+      "start": 91.806,
+      "end": 93.3564,
+      "scene": "meaning"
+    },
+    {
+      "text": "也就退出了这个王国的治理范围",
+      "start": 93.5512,
+      "end": 95.5262,
+      "scene": "meaning"
+    },
+    {
+      "text": "这不是把土地搬走",
+      "start": 95.9658,
+      "end": 97.4574,
+      "scene": "meaning"
+    },
+    {
+      "text": "更不是百姓突然消失",
+      "start": 97.6286,
+      "end": 99.1319,
+      "scene": "meaning"
+    },
+    {
+      "text": "变化的是归属诸侯王能支配的范围变小了",
+      "start": 99.5743,
+      "end": 103.0234,
+      "scene": "meaning"
+    },
+    {
+      "text": "他们担心的还包括下一次会削到哪里",
+      "start": 103.454,
+      "end": 106.7145,
+      "scene": "meaning"
+    },
+    {
+      "text": "削地诏书到达后",
+      "start": 108.3032,
+      "end": 109.7121,
+      "scene": "rebellion"
+    },
+    {
+      "text": "吴王起兵吴楚赵",
+      "start": 109.8834,
+      "end": 112.7872,
+      "scene": "rebellion"
+    },
+    {
+      "text": "再加上胶西胶东淄川济南",
+      "start": 113.1588,
+      "end": 116.8202,
+      "scene": "rebellion"
+    },
+    {
+      "text": "合成七国但七国不等于天下诸侯全部反叛",
+      "start": 117.0621,
+      "end": 121.1716,
+      "scene": "rebellion"
+    },
+    {
+      "text": "夹在东西之间的梁国",
+      "start": 121.614,
+      "end": 123.1881,
+      "scene": "rebellion"
+    },
+    {
+      "text": "同样是刘姓王国",
+      "start": 123.3239,
+      "end": 124.7211,
+      "scene": "rebellion"
+    },
+    {
+      "text": "这一次却站在朝廷一边",
+      "start": 124.9041,
+      "end": 126.9145,
+      "scene": "rebellion"
+    },
+    {
+      "text": "把地图拉开叛军也不是一整块",
+      "start": 128.4932,
+      "end": 131.0814,
+      "scene": "fronts"
+    },
+    {
+      "text": "吴楚联军向西",
+      "start": 131.5092,
+      "end": 132.8002,
+      "scene": "fronts"
+    },
+    {
+      "text": "攻打梁国山东的胶西等四国围攻齐国都城临淄",
+      "start": 132.8653,
+      "end": 137.2696,
+      "scene": "fronts"
+    },
+    {
+      "text": "赵国又是另一路",
+      "start": 137.4762,
+      "end": 138.8144,
+      "scene": "fronts"
+    },
+    {
+      "text": "朝廷因此分路应对",
+      "start": 139.245,
+      "end": 140.7837,
+      "scene": "fronts"
+    },
+    {
+      "text": "梁国守住城池",
+      "start": 141.2262,
+      "end": 142.588,
+      "scene": "fronts"
+    },
+    {
+      "text": "吴楚主力无法顺利西进",
+      "start": 142.8418,
+      "end": 144.5337,
+      "scene": "fronts"
+    },
+    {
+      "text": "七国的声势并没有变成一支直扑长安的大军",
+      "start": 144.7285,
+      "end": 148.2012,
+      "scene": "fronts"
+    },
+    {
+      "text": "平乱以后削弱诸侯又向制度深处推进",
+      "start": 149.7872,
+      "end": 153.2716,
+      "scene": "reform"
+    },
+    {
+      "text": "这里要把年份分开前一五四年",
+      "start": 153.7112,
+      "end": 156.4173,
+      "scene": "reform"
+    },
+    {
+      "text": "冲突首先围绕削地展开",
+      "start": 156.4825,
+      "end": 158.1627,
+      "scene": "reform"
+    },
+    {
+      "text": "到前一四五年",
+      "start": 158.3928,
+      "end": 159.6485,
+      "scene": "reform"
+    },
+    {
+      "text": "汉景帝规定诸侯王不得再亲自治理封国",
+      "start": 159.8433,
+      "end": 163.0801,
+      "scene": "reform"
+    },
+    {
+      "text": "由天子为王国设置官吏",
+      "start": 163.2042,
+      "end": 164.9551,
+      "scene": "reform"
+    },
+    {
+      "text": "王国这个名称还在",
+      "start": 165.3975,
+      "end": 166.9127,
+      "scene": "reform"
+    },
+    {
+      "text": "王与官署之间的治理关系却变了",
+      "start": 167.1664,
+      "end": 169.7075,
+      "scene": "reform"
+    },
+    {
+      "text": "所以汉景帝究竟在削什么",
+      "start": 171.2732,
+      "end": 173.8024,
+      "scene": "answer"
+    },
+    {
+      "text": "眼前削的是封地",
+      "start": 174.2303,
+      "end": 175.427,
+      "scene": "answer"
+    },
+    {
+      "text": "背后压缩的是诸侯王掌握人口财源和治理封国的能力",
+      "start": 175.7515,
+      "end": 180.4741,
+      "scene": "answer"
+    },
+    {
+      "text": "从削地到收回治国权",
+      "start": 180.9166,
+      "end": 183.2335,
+      "scene": "answer"
+    },
+    {
+      "text": "汉朝要解决的是一座帝国内部",
+      "start": 183.5463,
+      "end": 186.2524,
+      "scene": "answer"
+    },
+    {
+      "text": "谁能真正把这些力量组织起来",
+      "start": 186.3175,
+      "end": 188.5048,
+      "scene": "answer"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+export const C={paper:'#f4f1e8',ink:'#203b43',muted:'#657c7c',gold:'#e3ae4f',goldD:'#b87b31',goldL:'#f2cf80',red:'#c9563c',redD:'#a33f31',green:'#4c8b79',greenL:'#a5c5ae',water:'#b6d5d5',waterD:'#689aab',wood:'#b78960',woodD:'#775b44',cream:'#e6dec9',pale:'#e7ebe1',roof:'#3d6570',white:'#fffdf5'};
+export const N=(n,f)=>Array.from({length:n},(_,i)=>f(i)).join('');
+export const g=(id,s,tr='',ex='')=>`<g ${id?`id="${id}"`:''} ${tr?`transform="${tr}"`:''} ${ex}>${s}</g>`;
+export const at=(s,x=0,y=0,k=1)=>g('',s,`translate(${x} ${y}) scale(${k})`);
+export const P=(d,f='none',s=C.ink,w=2,ex='')=>`<path d="${d}" fill="${f}" stroke="${s}" stroke-width="${w}" stroke-linejoin="round" stroke-linecap="round" ${ex}/>`;
+export const R=(x,y,w,h,f=C.paper,s='none',sw=0,r=0)=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="${f}" stroke="${s}" stroke-width="${sw}"/>`;
+export const L=(x,y,xx,yy,c=C.ink,w=2,ex='')=>P(`M${x} ${y}L${xx} ${yy}`,'none',c,w,ex);
+export const E=(x,y,rx,ry,c=C.ink,s='none',w=0)=>`<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${ry}" fill="${c}" stroke="${s}" stroke-width="${w}"/>`;
+export const T=(s,x,y,size=40,c=C.ink,cl='body',anchor='start',ex='')=>`<text x="${x}" y="${y}" font-size="${size}" fill="${c}" class="${cl}" text-anchor="${anchor}" ${ex}>${s}</text>`;
+export const U=(sym,x=0,y=0,k=1,ex='')=>`<use href="#${sym}" transform="translate(${x} ${y}) scale(${k})" ${ex}/>`;
+export const trace=(id,d,c=C.ink,w=4,ex='')=>P(d,'none',c,w,`id="${id}" pathLength="1" ${ex}`);
+export const title=(id,a,b='',x=120,y=160)=>g(id,T(a,x,y,64,C.ink,'title')+(b?T(b,x+3,y+55,32,C.muted):''));
+export const tag=(s,x,y,color=C.gold)=>g('',R(x-36,y-96,72,99,color,C.ink,2)+P(`M${x-36} ${y+3}l36-13 36 13`,color,C.ink,2)+T(s,x,y-30,42,C.paper,'title','middle'));

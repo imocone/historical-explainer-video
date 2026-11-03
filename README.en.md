@@ -12,7 +12,7 @@ Bring a topic, a book or source material to **Codex**. Work through P0–P4: res
 
 ## Inside an episode
 
-**Scenes tell the story. Animation unpacks the relationships.** The left preview comes from the published *Xiao Daocheng: From Saving Liu Song to Founding Qi* episode. The right features the explainer template’s *What Does the Average Salary Hide?* example.
+**Scenes tell the story. Animation unpacks the relationships.** The left preview comes from the published *Xiao Daocheng: From Saving Liu Song to Founding Qi* episode. The right features the 2D motion graphic *Why Can the Front Line Run Out of Grain?*.
 
 <table>
   <tr>
@@ -22,14 +22,14 @@ Bring a topic, a book or source material to **Codex**. Work through P0–P4: res
       <p>Look past a foreground soldier toward the burning gates. Crowds, walls and distant fire build layers of depth, while framing, lighting and camera movement convey the tension of battle.</p>
     </td>
     <td width="50%" valign="top">
-      <a href="packages/templates/vox-explainer/examples/salary/README.md"><img src=".github/assets/showcase/explainer-motion.gif" alt="Explainer template example: money moves between eight people in an office, then transforms into an income staircase" width="100%"></a>
+      <a href="packages/templates/vox-explainer/examples/supply-mg/README.md"><img src=".github/assets/showcase/explainer-motion.gif" alt="2D explainer: six portions arrive, four come from reserves, and daily consumption leaves less grain in storage" width="100%"></a>
       <strong>Explanation: reveal how the relationships work</strong>
-      <p>The same payroll is redistributed among eight people, then the money stacks become an income staircase. Characters, objects and camera movement reveal why an average can misrepresent most people’s earnings.</p>
+      <p>Six portions arrive and four come from reserves to meet the day’s demand. Following the grain from its source through consumption reveals why eating enough today can still leave the army with fewer reserves.</p>
     </td>
   </tr>
 </table>
 
-These are compressed, silent previews. Select the left image to watch the published episode with sound, or the right to explore the example’s source code and production notes. Maps, routes and diagrams are also available when the subject needs them. [Narrative method](packages/templates/fullframe-narrative/AUTHOR.md) · [Explainer animation method](packages/templates/vox-explainer/AUTHOR.md)
+These are compressed, silent previews. Select the left image to watch the published episode with sound, or the right to explore the example’s source code and production notes. Use this example to judge craft and finish; develop the explanation, scenes, layout and pacing for each new subject. Maps, routes and diagrams are also available when the subject needs them. [Narrative method](packages/templates/fullframe-narrative/AUTHOR.md) · [Explainer animation method](packages/templates/vox-explainer/AUTHOR.md)
 
 ## From sources to a finished episode
 
