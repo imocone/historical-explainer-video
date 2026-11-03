@@ -60,11 +60,11 @@ const validateNextOptions = async ({
   if (authorizePaidTts && stageId !== "p2") {
     throw new Error("--authorize-paid-tts 只能用于 next --stage p2");
   }
-  if (reviseOpener && stageId !== "p1") {
-    throw new Error("--revise-opener 只能用于 next --stage p1");
+  if (reviseOpener && !["p1", "p4"].includes(stageId)) {
+    throw new Error("--revise-opener 只能用于 next --stage p1 或 p4");
   }
-  if (openerText !== null && !reviseOpener && !reviseNarration) {
-    throw new Error("--opener-text 只能与 --revise-opener 或 --revise-narration 同时使用");
+  if (openerText !== null && (stageId !== "p1" || (!reviseOpener && !reviseNarration))) {
+    throw new Error("--opener-text 只能在 P1 与 --revise-opener 或 --revise-narration 同时使用");
   }
   if (openerText !== null && (typeof openerText !== "string" || !openerText.trim())) {
     throw new Error("--opener-text 必须提供非空片头原句");
@@ -120,6 +120,9 @@ const validateNextOptions = async ({
   if (reviseVideo && stageId !== "p4") {
     throw new Error("--revise-video 只能用于 next --stage p4");
   }
+  if (stageId === "p4" && reviseOpener && (reviseVideo || !revisionReason?.trim())) {
+    throw new Error("P4片头返工须提供 --revision-reason，不能同时重做视频设计");
+  }
   if (reviseCover && stageId !== "p1") {
     throw new Error("--revise-cover 只能用于 next --stage p1");
   }
@@ -154,7 +157,7 @@ const validateNextOptions = async ({
     throw new Error("视频设计、发布内容返工、封面成图重生与样图接纳不能同时发起");
   }
   if (revisionReason !== null && (typeof revisionReason !== "string" || !revisionReason.trim()
-    || !(revisePublication || reviseCover || regenerateCover || adoptCoverExamples || adoptCoverImages || reviseDirector || redesignBody || reviseQuotes))) {
+    || !(revisePublication || reviseCover || regenerateCover || adoptCoverExamples || adoptCoverImages || reviseDirector || redesignBody || reviseQuotes || (stageId === "p4" && reviseOpener)))) {
     throw new Error("--revision-reason 必须是本次导演修订、正文重作、发布内容返工或封面重生的非空意见");
   }
   if (!Array.isArray(publicationFields)

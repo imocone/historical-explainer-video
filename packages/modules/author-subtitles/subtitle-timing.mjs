@@ -7,13 +7,18 @@ export const withoutWhitespace = visibleText;
 
 export const normalizeWordTimeline = (cues, label = "词级时间轴") => {
   if (!Array.isArray(cues) || !cues.length) throw new Error(`${label}为空`);
+  let previousStart = -1;
   let previousEnd = -1;
   const all = cues.map((cue, index) => {
     const { text, startMs, endMs } = cue ?? {};
     if (typeof text !== "string" || !text.trim() || !Number.isInteger(startMs) || !Number.isInteger(endMs)
-      || startMs < 0 || endMs < startMs || (endMs === startMs && contentLength(text)) || startMs < previousEnd) {
+      || startMs < 0 || endMs < startMs || (endMs === startMs && contentLength(text))
+      || startMs < previousStart || endMs < previousEnd) {
       throw new Error(`${label}第 ${index + 1} 项无效`);
     }
+    // Measured neighbouring words may overlap. Preserve their intervals;
+    // the subtitle validator separately rejects overlapping display cues.
+    previousStart = startMs;
     previousEnd = endMs;
     return { text, startMs, endMs };
   });

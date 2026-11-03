@@ -2,7 +2,7 @@ import {configureVideo} from './video-settings.mjs';
 import { recoverProgramCompletion } from "./program-execution.mjs";
 import { commitAcceptance, recoverAcceptance, withWorkflowWrite } from "./acceptance-commit.mjs";
 import { rm, rmdir } from "node:fs/promises";
-import { atomicWriteData, hashObject } from "../../packages/program-utils.mjs";
+import { atomicWriteData, hashObject, readData } from "../../packages/program-utils.mjs";
 import path from "node:path";
 import { getEpisodePaths, getStageWorkPaths } from "../../packages/workspace-paths.mjs";
 import { assertProjectPaths, exists, importModule, initializeMissingSourceAssets } from "./files.mjs";
@@ -145,27 +145,32 @@ async function prepareNext({
       throw new Error("当前不是P1封面替换相位，保留原任务");
     }
   }
-  if (reviseVideo) {
+  if (reviseVideo || (stageId === "p4" && reviseOpener)) {
     const paths = getEpisodePaths(workspaceRoot, episodeId);
     const workPaths = getStageWorkPaths(paths, "p4");
-    const requestPath = workPaths.returnRequest("video");
-    if (!(await exists(paths.videoPlan))) {
-      throw new Error("没有已接纳的视频设计；请用普通 next --stage p4 创作");
+    const nodeId = reviseVideo ? "video" : "opener";
+    const acceptedPath = reviseVideo ? paths.videoPlan : paths.episodePackage;
+    const requestPath = workPaths.returnRequest(nodeId);
+    if (!(await exists(acceptedPath)) || (!reviseVideo && !(await readData(acceptedPath)).opener)) {
+      throw new Error(`没有已接纳的${reviseVideo ? "视频设计" : "片头"}；请用普通 next --stage p4 创作`);
     }
     const existingRequest = await exists(requestPath);
+    if (existingRequest && !reviseVideo && (await readData(requestPath)).reason !== revisionReason.trim()) {
+      throw new Error("已有片头返工请求，请用普通 next 继续当前工作单");
+    }
     if (!existingRequest) {
       const activeFiles = (reviseVideo ? ["video", "video-assets"] : ["opener", "video", "video-assets"]).flatMap(id => {
         const work = getStageWorkPaths(paths, "p4", null, id);
         return [work.workOrder, work.candidate];
       });
-      await assertProjectPaths({ root: workspaceRoot, label: "P4视频设计重作路径",
-        files: [paths.videoPlan, requestPath, ...activeFiles] });
+      await assertProjectPaths({ root: workspaceRoot, label: "P4定点返工路径",
+        files: [acceptedPath, requestPath, ...activeFiles] });
       if ((await Promise.all(activeFiles.map(exists))).some(Boolean)) {
         throw new Error("P4当前作者仍有未收口工作单或候选，先完成或明确重置本阶段");
       }
       await atomicWriteData(requestPath, {
-        target: "video",
-        reason: "用户明确要求从当前正式正文重新划定剧情范围并重做视频设计",
+        target: nodeId,
+        reason: reviseVideo ? "用户明确要求从当前正式正文重新划定剧情范围并重做视频设计" : revisionReason.trim(),
         cueRefs: []
       });
     }
@@ -174,8 +179,8 @@ async function prepareNext({
         current = await resolveStageCurrent({ root, workspaceRoot, episodeId, programId,
           targetId, stageId, nodeId, model });
       }
-      if (current.kind !== "task" || current.runner !== "ai" || current.workOrder?.nodeId !== "video") {
-        throw new Error("P4视频设计重作没有形成唯一 video 工作单");
+      if (current.kind !== "task" || current.runner !== "ai" || current.workOrder?.nodeId !== nodeId) {
+        throw new Error(`P4定点返工没有形成唯一 ${nodeId} 工作单`);
       }
       await validateSchema(path.join(root, "contracts", "work-order.schema.json"), current.workOrder, "work-order");
     } catch (error) {
@@ -193,7 +198,7 @@ async function prepareNext({
       model,
       current
     }));
-  if (reviseOpener || reviseNarration || rerunNarration)
+  if ((stageId === "p1" && reviseOpener) || reviseNarration || rerunNarration)
     ({ current } = await prepareNarrationRevision({
       root,
       workspaceRoot,

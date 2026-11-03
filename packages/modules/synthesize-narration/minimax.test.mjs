@@ -4,7 +4,7 @@ import { mkdtemp, writeFile, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
-import { createMiniMaxTtsService } from "./minimax.mjs";
+import { createMiniMaxTtsService, miniMaxPayload } from "./minimax.mjs";
 import { createOpenerMiniMaxTtsService } from '../author-bookend/validate.mjs';
 
 const contract = {
@@ -55,6 +55,18 @@ test('MiniMax 保留原默认地址，本机配置可选择账号对应区域且
       fetchImpl:async () => assert.fail('无效地址不得发送凭据')});
     await assert.rejects(invalid.synthesize({text:'甲。',contract}), error => error.code === 'local-preflight-failed');
   }
+});
+
+test("生僻姓名用供应商原生读音覆盖，正文和无关请求保持原样", () => {
+  const text = "秦熺问相位，万俟卨承办。";
+  const payload = miniMaxPayload({ text, contract });
+  assert.equal(payload.text, text);
+  assert.deepEqual(payload.pronunciation_dict, {
+    tone: ["秦熺/(qin2)(xi1)", "万俟卨/(mo4)(qi2)(xie4)"]
+  });
+  assert.equal(payload.voice_setting.voice_id, contract.voice);
+  assert.equal(payload.model, contract.model);
+  assert.equal(Object.hasOwn(miniMaxPayload({ text: "甲。", contract }), "pronunciation_dict"), false);
 });
 
 test("MiniMax 只把确定未创建与远端结果未知区分开", async () => {

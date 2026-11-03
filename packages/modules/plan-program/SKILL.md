@@ -118,6 +118,6 @@ P01是P02方案形成前的内部调查与理解，不是独立交付步骤；�
 ### P04：提交唯一P0成果
 
 12. 先完整读取当前`candidatePath`，不得从模型记忆重组结果。本步核对当前候选的完整性与委托一致性；P02已形成、P03已复核且未变化的内容不重复完整编辑审查。把其中策划与工作单`programRequest`逐项比较，确认仍服从显式目标、约束和`planningBasis`。实际采用NotebookLM时，再核对`requiredSourceIds`恰好是本次认定的最小充分材料来源回执而不是整个Notebook来源清单，并确认每项都已就绪。视觉包、封面包和片头必须分别来自工作单投递的当前目录；只换其中一项时保持内容策划与材料原值，不扩大为整季返工。
-13. 严格按工作单`outputContract`反查并提交这个同一路径中的唯一`result`，不在Skill中复制第二份字段合同。未使用NotebookLM时省略`researchLibrary`；使用时，`topic-led`必须省略`baseBookSourceId`；`requiredSourceIds`只写本次全节目最小充分材料的来源编号，不写来源标题、书目卷章、缺口说明或逐集映射。候选不写策划入口、基础书关系说明、完整Notebook来源清单、平台调研、确认记录、NotebookLM查询报告、正式路径、`_producer`、过程状态或单集文件副本。Engine接纳时重新读取候选，实时拒绝任一`requiredSourceId`不存在或未就绪的结果；接纳后负责一次建齐每集`制作/input`、`制作/p0`至`制作/p4`（含`制作/p4`）和`output`目录，并从`program.yaml`投影唯一`episode-brief.yaml`；缺少任何一项时P0不成立。
+13. 严格按工作单`outputContract`反查并提交这个同一路径中的唯一`result`，不在Skill中复制第二份字段合同。未使用NotebookLM时省略`researchLibrary`；使用时，`topic-led`必须省略`baseBookSourceId`；`requiredSourceIds`只写本次全节目最小充分材料的来源编号，不写来源标题、书目卷章、缺口说明或逐集映射。候选不写策划入口、基础书关系说明、完整Notebook来源清单、平台调研、确认记录、NotebookLM查询报告、正式路径、`_producer`、过程状态或单集文件副本。Engine接纳时重新读取候选，实时拒绝任一`requiredSourceId`不存在或未就绪的结果；接纳后负责一次建齐每集`制作/input`、`制作/p0`至`制作/p4`和`output`目录，并从`program.yaml`投影唯一`episode-brief.yaml`；缺少任何一项时P0不成立。
 
 完成条件：候选逐项服从当前`programRequest`与显式`planningBasis`，六项内容合同与材料回执恰好覆盖本次最小充分集合，视觉包与封面包选择来自工作单允许范围，并通过工作单当前输出合同；随后提交唯一候选。任何缺口回到其真实上游步骤，不在P04补第二份说明。
