@@ -24,11 +24,11 @@
 
 ### 一、形成整章设计
 
-设计前完整读取[运动编排](references/creative/motion.md)和[整章设计与镜内编排](references/creative/design.md)。先在本单`scratchPath/design.md`简记观众要明白什么、感到什么，以及不能画错的关系；据此选择视觉想法，在原scene里摆出前后关键画面的构图与取景，组织分镜，再把主体动作、镜头变化与回应接进原声时窗，把从开头到结尾的观看过程排出来。前一步的判断直接供后一步取用，疑点在粗排中试实；完整设计由这条同源粗片与随制作修订的短稿共同建立，具体参见[贯穿示例](references/creative/design.md#贯穿示例任务为什么越积越多)。
+设计前完整读取[运动的创作方法](references/creative/motion.md#创作方法)和[整章设计与镜内编排](references/creative/design.md)；运动文档的[实现示例](references/creative/motion.md#实现示例)在制作需要时读取。先在本单`scratchPath/design.md`简记观众要明白什么、感到什么，以及不能画错的关系；据此选择视觉想法，在原scene里摆出前后关键画面的构图与取景，组织分镜，再把动作、阅读与镜头交接排进原声时窗。完整设计由同源粗片与短稿共同建立，具体参见[贯穿示例](references/creative/design.md#贯穿示例任务为什么越积越多)。
 
 写入粗排前读取[制作与交付](references/delivery.md)，形成当前实现所需的合法treatment。将观看转折写入`moments`，沿[卡点接口](references/tools/cues.md#cue绑定)取得合法选项，由本单cue-sync绑定真实字幕；观看转折变化时更新受影响绑定。
 
-沿[全章粗排](references/creative/design.md#全章粗排)，先摆镜头怎样看见关键作用，再连接主体、镜头与下一次观察，各自进入原声时窗。已有合格素材直接使用，暂缺图片沿原`--draft`推敲，不为粗排提前生成全套素材。沿[原预演](references/tools/preview.md#预演)观察，再按[设计审看](references/creative/design.md#设计审看)修订；不要求提前导出整片。
+沿[全章粗排](references/creative/design.md#全章粗排)，摆清每次观察的依据与取景，接好前后画面。已有合格素材直接使用，暂缺图片沿原`--draft`推敲，不为粗排提前生成全套素材。沿[原预演](references/tools/preview.md#预演)观察，再按[设计审看](references/creative/design.md#设计审看)修订；不要求提前导出整片。
 
 让粗片实际指导整章制作，短稿只保留观看推进、工程位置、关键取舍与尚待精作处，再进入关键试制。
 

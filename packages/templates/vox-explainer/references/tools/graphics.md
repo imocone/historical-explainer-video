@@ -67,7 +67,7 @@ const bottomFromBaseline = line => line.box.y + line.box.height - line.baseline;
 const unitBaseline = ny + bottomFromBaseline(number) - bottomFromBaseline(unit);
 ```
 
-单位横向位置取数字的实际可见末端加所需间隙。先测完整终值、设定字组位置，再在原scene时间轴中揭示、移动或更新；浏览器实测用于校准，语义与排版由作者决定。
+单位横向位置取数字的实际可见末端加所需间隙。按实际显示格式测量变化中可能出现的最宽字组，计入符号、小数、单位及间距，再预留空间、设定字组位置；揭示、移动或更新沿原scene时间轴完成。浏览器实测用于校准，语义与排版由作者决定。
 
 数值保留为数值，单位与格式只作用于显示。用同一份原始值生成表格、图形长度、标签与算式；例如下面的虚构数值只示范换算，不提供当前题材或布局：
 
