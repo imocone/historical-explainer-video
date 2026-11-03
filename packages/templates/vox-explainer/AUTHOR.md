@@ -24,7 +24,7 @@
 
 ### 一、形成整章设计
 
-设计前完整读取[运动的创作方法](references/creative/motion.md#创作方法)和[整章设计与镜内编排](references/creative/design.md)；运动文档的[实现示例](references/creative/motion.md#实现示例)在制作需要时读取。先在本单`scratchPath/design.md`简记观众要明白什么、感到什么，以及不能画错的关系；据此选择视觉想法，在原scene里摆出前后关键画面的构图与取景，组织分镜，再把动作、阅读与镜头交接排进原声时窗。完整设计由同源粗片与短稿共同建立，具体参见[贯穿示例](references/creative/design.md#贯穿示例任务为什么越积越多)。
+设计前完整读取[运动编排](references/creative/motion.md)和[整章设计与镜内编排](references/creative/design.md)；[运动实现示例](references/tools/motion.md)在制作需要时读取。先在本单`scratchPath/design.md`简记观众要明白什么、感到什么，以及不能画错的关系；据此选择视觉想法，在原scene里摆出前后关键画面的构图与取景，组织分镜，再把动作、阅读与镜头交接排进原声时窗。完整设计由同源粗片与短稿共同建立，具体参见[贯穿示例](references/creative/design.md#贯穿示例任务为什么越积越多)。
 
 写入粗排前读取[制作与交付](references/delivery.md)，形成当前实现所需的合法treatment。将观看转折写入`moments`，沿[卡点接口](references/tools/cues.md#cue绑定)取得合法选项，由本单cue-sync绑定真实字幕；观看转折变化时更新受影响绑定。
 
