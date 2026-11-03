@@ -6,9 +6,42 @@
 
 用 **Codex** 在本地制作历史解说和纪录片。你提供选题和资料，AI 与本地工具按阶段完成策划、口播、封面、配音、字幕、画面与片头，最后输出 MP4。可以逐阶段制作，也可以接着已有进度继续或局部修改。
 
-**当前支持 macOS。** 需要自行登录所用的 AI 和外部服务；生图、配音等可能产生费用。先完成安装，再按当前阶段配置账号即可。
+[观看成片](#成片展示) · [画面示例](#画面示例) · [安装](#1-安装) · [快速开始](#4-做第一个节目) · [常见问题](#常见问题)
 
-[安装](#1-安装) · [Codex](#2-使用-codex) · [登录与配音](#3-登录与配音) · [第一个节目](#4-做第一个节目) · [常见问题](#常见问题)
+## 成片展示
+
+这些是本项目制作并已公开的节目。点击封面，在 YouTube 观看完整视频。
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <a href="https://www.youtube.com/watch?v=xhhdzvd3pbI"><img src=".github/assets/showcase/yuan-shu.jpg" alt="袁术称帝：为什么号令不了盟友？" width="100%"></a>
+      <a href="https://www.youtube.com/watch?v=xhhdzvd3pbI"><strong>▶ 袁术称帝：为什么号令不了盟友？</strong></a>
+    </td>
+    <td width="50%" valign="top">
+      <a href="https://www.youtube.com/watch?v=JVIIlA-AvBw"><img src=".github/assets/showcase/song-gaozong.jpg" alt="宋高宗为什么离不开秦桧？" width="100%"></a>
+      <a href="https://www.youtube.com/watch?v=JVIIlA-AvBw"><strong>▶ 宋高宗为什么离不开秦桧？</strong></a>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <a href="https://www.youtube.com/watch?v=LHVS_zGPVvI"><img src=".github/assets/showcase/northern-wei.jpg" alt="北魏改革：前途分给了谁？" width="100%"></a>
+      <a href="https://www.youtube.com/watch?v=LHVS_zGPVvI"><strong>▶ 北魏改革：前途分给了谁？</strong></a>
+    </td>
+    <td width="50%" valign="top">
+      <a href="https://www.youtube.com/watch?v=Qvwd7P1AvsQ"><img src=".github/assets/showcase/liu-song.jpg" alt="萧道成：从平乱救宋到登基建齐" width="100%"></a>
+      <a href="https://www.youtube.com/watch?v=Qvwd7P1AvsQ"><strong>▶ 萧道成：从平乱救宋到登基建齐</strong></a>
+    </td>
+  </tr>
+</table>
+
+## 画面示例
+
+《袁术称帝》的实际成片截图。点击画面，直接观看对应片段。
+
+| 片头 | 叙事画面 | 讲解动画 |
+|:---:|:---:|:---:|
+| [![片头](.github/assets/showcase/opener.jpg)](https://www.youtube.com/watch?v=xhhdzvd3pbI&t=2s) | [![叙事画面](.github/assets/showcase/narrative.jpg)](https://www.youtube.com/watch?v=xhhdzvd3pbI&t=18s) | [![讲解动画](.github/assets/showcase/explainer.jpg)](https://www.youtube.com/watch?v=xhhdzvd3pbI&t=88s) |
 
 ## 能做什么
 
@@ -28,6 +61,8 @@
 **剧情视频默认关闭，只有主动要求才制作。** P4 默认做片头并在最后压片；开源版没有 P5，平台发布由你自行处理。
 
 ## 1. 安装
+
+**当前支持 macOS。** 需要自行登录所用的 AI 和外部服务；生图、配音等可能产生费用。先完成安装，再按当前阶段配置账号即可。
 
 先准备 [Homebrew](https://brew.sh/zh-cn/)，然后在“终端”依次运行：
 
