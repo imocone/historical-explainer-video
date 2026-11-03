@@ -12,7 +12,7 @@
 
 ## 画面示例
 
-**同一集里，故事用场面讲，关系用动画拆。** 以下动图直接截自已发布的《袁术称帝》，点击可观看有声原片。
+**故事用场面讲，关系用动画拆。** 左侧来自已发布的《袁术称帝》，右侧选自讲解模板作品《平均工资，藏住了谁？》。
 
 <table>
   <tr>
@@ -22,14 +22,14 @@
       <p>人物、粮车、仓廪与环境共同构成场面，再设计取景和运镜，承接口播中的身份、资源与处境。</p>
     </td>
     <td width="50%" valign="top">
-      <a href="https://www.youtube.com/watch?v=xhhdzvd3pbI&t=88s"><img src=".github/assets/showcase/explainer-motion.gif" alt="讲解动画：从劝绝书、孙策到汉廷的任命来源，逐步解释孙策为何能拒绝袁术" width="100%"></a>
+      <a href="packages/templates/vox-explainer/examples/salary/README.md"><img src=".github/assets/showcase/explainer-motion.gif" alt="讲解模板示例：办公室里八个人的钱束依次转移，再重组为收入阶梯" width="100%"></a>
       <strong>讲解：把抽象关系一步步展开</strong>
-      <p>劝绝书、孙策与汉廷的任命来源依口播展开，让“为什么能拒绝袁术”变成看得见的关系与变化。</p>
+      <p>同一笔工资在八个人之间重新分配，再从钱束变成收入阶梯。人物、物件与镜头接力，让观众看懂“平均数为什么代表不了多数人”。</p>
     </td>
   </tr>
 </table>
 
-动图为轻量、无声预览；完整清晰度、配音、字幕与音效请看原片。还支持地图、路线与图解，按内容需要选择。[叙事画面方法](packages/templates/fullframe-narrative/AUTHOR.md) · [讲解动画方法](packages/templates/vox-explainer/AUTHOR.md)
+动图为轻量、无声预览。点击左图观看有声成片，点击右图查看讲解作品的源码与制作说明。还支持地图、路线与图解，按内容需要选择。[叙事画面方法](packages/templates/fullframe-narrative/AUTHOR.md) · [讲解动画方法](packages/templates/vox-explainer/AUTHOR.md)
 
 ## 从资料到成片
 

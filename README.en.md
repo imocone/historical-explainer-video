@@ -12,7 +12,7 @@ Bring a topic, a book or source material to **Codex**. Work through P0–P4: res
 
 ## Inside an episode
 
-**Scenes tell the story. Animation unpacks the relationships.** These clips come directly from the published *Yuan Shu* episode. Select either preview to watch the original with sound.
+**Scenes tell the story. Animation unpacks the relationships.** The left preview comes from the published *Yuan Shu* episode. The right features the explainer template’s *What Does the Average Salary Hide?* example.
 
 <table>
   <tr>
@@ -22,14 +22,14 @@ Bring a topic, a book or source material to **Codex**. Work through P0–P4: res
       <p>People, grain carts, storehouses and their surroundings form a scene. Framing and camera movement follow the narration’s account of status, resources and circumstances.</p>
     </td>
     <td width="50%" valign="top">
-      <a href="https://www.youtube.com/watch?v=xhhdzvd3pbI&t=88s"><img src=".github/assets/showcase/explainer-motion.gif" alt="Explainer animation: a proclamation, Sun Ce and the Han court’s authority reveal why he could refuse Yuan Shu" width="100%"></a>
+      <a href="packages/templates/vox-explainer/examples/salary/README.md"><img src=".github/assets/showcase/explainer-motion.gif" alt="Explainer template example: money moves between eight people in an office, then transforms into an income staircase" width="100%"></a>
       <strong>Explanation: reveal how the relationships work</strong>
-      <p>A proclamation, Sun Ce and an alternative source of official authority unfold with the narration, making the reasons he could refuse Yuan Shu visible.</p>
+      <p>The same payroll is redistributed among eight people, then the money stacks become an income staircase. Characters, objects and camera movement reveal why an average can misrepresent most people’s earnings.</p>
     </td>
   </tr>
 </table>
 
-These are compressed, silent previews. Watch the original for full image quality, narration, subtitles and sound. Maps, routes and diagrams are also available when the subject needs them. [Narrative method](packages/templates/fullframe-narrative/AUTHOR.md) · [Explainer animation method](packages/templates/vox-explainer/AUTHOR.md)
+These are compressed, silent previews. Select the left image to watch the published episode with sound, or the right to explore the example’s source code and production notes. Maps, routes and diagrams are also available when the subject needs them. [Narrative method](packages/templates/fullframe-narrative/AUTHOR.md) · [Explainer animation method](packages/templates/vox-explainer/AUTHOR.md)
 
 ## From sources to a finished episode
 
