@@ -12,14 +12,14 @@ Bring a topic, a book or source material to **Codex**. Work through P0–P4: res
 
 ## Inside an episode
 
-**Scenes tell the story. Animation unpacks the relationships.** The left preview comes from the published *Yuan Shu* episode. The right features the explainer template’s *What Does the Average Salary Hide?* example.
+**Scenes tell the story. Animation unpacks the relationships.** The left preview comes from the published *Xiao Daocheng: From Saving Liu Song to Founding Qi* episode. The right features the explainer template’s *What Does the Average Salary Hide?* example.
 
 <table>
   <tr>
     <td width="50%" valign="top">
-      <a href="https://www.youtube.com/watch?v=xhhdzvd3pbI&t=18s"><img src=".github/assets/showcase/narrative-motion.gif" alt="Narrative scene: the camera moves through grain carts and storehouses in a full-frame historical setting" width="100%"></a>
+      <a href="https://www.youtube.com/watch?v=Qvwd7P1AvsQ&t=145s"><img src=".github/assets/showcase/narrative-motion.gif" alt="Narrative scene: foreground soldiers, city gates, crowds and distant fire create a battlefield with depth as the camera advances" width="100%"></a>
       <strong>Storytelling: enter the characters’ world</strong>
-      <p>People, grain carts, storehouses and their surroundings form a scene. Framing and camera movement follow the narration’s account of status, resources and circumstances.</p>
+      <p>Look past a foreground soldier toward the burning gates. Crowds, walls and distant fire build layers of depth, while framing, lighting and camera movement convey the tension of battle.</p>
     </td>
     <td width="50%" valign="top">
       <a href="packages/templates/vox-explainer/examples/salary/README.md"><img src=".github/assets/showcase/explainer-motion.gif" alt="Explainer template example: money moves between eight people in an office, then transforms into an income staircase" width="100%"></a>
