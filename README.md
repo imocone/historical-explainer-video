@@ -12,7 +12,7 @@
 
 ## 画面示例
 
-**故事用场面讲，关系用动画拆。** 左侧来自已发布的《萧道成：从平乱救宋到登基建齐》，右侧选自讲解模板作品《平均工资，藏住了谁？》。
+**故事用场面讲，关系用动画拆。** 左侧来自已发布的《萧道成：从平乱救宋到登基建齐》，右侧选自二维 MG 讲解作品《粮在后方，前线为何断粮？》。
 
 <table>
   <tr>
@@ -22,14 +22,14 @@
       <p>从前景士兵望向燃烧的城门，人群、城墙与远处火光层层展开。构图、光影和运镜一起带出战场的纵深与紧张感。</p>
     </td>
     <td width="50%" valign="top">
-      <a href="packages/templates/vox-explainer/examples/salary/README.md"><img src=".github/assets/showcase/explainer-motion.gif" alt="讲解模板示例：办公室里八个人的钱束依次转移，再重组为收入阶梯" width="100%"></a>
+      <a href="packages/templates/vox-explainer/examples/supply-mg/README.md"><img src=".github/assets/showcase/explainer-motion.gif" alt="二维MG讲解：六份粮送到，四份从储备补入，吃够当天口粮后储备减少" width="100%"></a>
       <strong>讲解：把抽象关系一步步展开</strong>
-      <p>同一笔工资在八个人之间重新分配，再从钱束变成收入阶梯。人物、物件与镜头接力，让观众看懂“平均数为什么代表不了多数人”。</p>
+      <p>六份粮送到，四份从储备补入，随后一起供当天消耗。粮袋的来处、去向和留存清楚可见，让观众看懂“今天吃够了，储备却在减少”。</p>
     </td>
   </tr>
 </table>
 
-动图为轻量、无声预览。点击左图观看有声成片，点击右图查看讲解作品的源码与制作说明。还支持地图、路线与图解，按内容需要选择。[叙事画面方法](packages/templates/fullframe-narrative/AUTHOR.md) · [讲解动画方法](packages/templates/vox-explainer/AUTHOR.md)
+动图为轻量、无声预览。点击左图观看有声成片，点击右图查看讲解作品的源码与制作说明。本例供参考制作水准，具体题目的讲法、场景、布局与节奏重新设计。还支持地图、路线与图解，按内容需要选择。[叙事画面方法](packages/templates/fullframe-narrative/AUTHOR.md) · [讲解动画方法](packages/templates/vox-explainer/AUTHOR.md)
 
 ## 从资料到成片
 

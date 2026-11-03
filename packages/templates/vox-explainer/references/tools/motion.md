@@ -25,7 +25,7 @@ onFrame(() => select('#camera').setAttribute('transform',
   `translate(${view.x+view.width/2} ${view.y+view.height/2}) scale(${camera.s}) translate(${-camera.x} ${-camera.y})`));
 ```
 
-这些范围取自[批准与送达的可运行示范](../../examples/parcel/README.md)：先建立文书与箱货，接近印章落点，接触与印迹形成后返回；箱货出发时跟随它，再提前到接收处停住，最后展开比较。`frame`按所选范围适配窗口，原scene的`cameraKeys`把镜头与印章、货物各自的时间接起来；相机落定后保留位置，直到下一次观察。实际题目重选范围与时间，范围仍包住整张图时不会形成近景，不能直接套本例坐标或镜头顺序。
+上面的数值只说明范围适配。实际取景可看[七国之乱的官署过程](../../examples/seven-kingdoms/README.md#观看设计)：由外观叠化进入内部，再依三处职能安排开门、取景和回到全景。相机与人物、门扇各自排时，共同服务当前观看。实际题目重选范围与时间；范围仍包住整张图时不会形成近景，不直接套用本例坐标和镜头顺序。
 
 按对象范围求取景可参照[Manim的auto_zoom实际实现](https://github.com/ManimCommunity/manim/blob/16ea443e2a5f1d79db0a721161411ce916d6e733/manim/camera/moving_camera.py)；[Motion Canvas相机示例](https://github.com/motion-canvas/motion-canvas/blob/7b91435c301d530351dcf5ebb91dd139c002e405/packages/docs/docs/getting-started/camera.mdx)同样把对象状态与观看窗口分开。此处二维适配不提供三维透视；Three.js与数据地图使用自身相机。取景、比较尺度和标签归属沿[主体动作与取景](../creative/motion.md#主体动作与取景一起排)判断，屏幕字号按观看距离调整。
 

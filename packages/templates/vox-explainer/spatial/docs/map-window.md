@@ -41,7 +41,7 @@ onFrame(async () => {
 
 `map.project([lon,lat])`返回内部SVG坐标，`map.path(coordinates)`返回共用投影的SVG折线路径；`map.screenPoint`返回包括纸边、平移及旋转的父画布坐标，用于旁图引线；`map.overlay`是内部SVG，文字与兵棋放在其内可保持屏幕尺寸。`map.size`返回内部width/height/pad。窗口缩小时若希望保持原地理范围，按视口尺寸比给zoom加`Math.log2(Math.min(newWidth/baseWidth,newHeight/baseHeight))`；是否保持范围由讲法决定。对象路线与已走轨迹仍使用同一几何/进度，再经过当前投影；每帧更新图件位置而非缩放整幅SVG。
 
-数据已内嵌scene；本地MapLibre worker由原renderData.resourceFiles收集，预演和P4沿同一资源复制与Renderer使用。制作脚本和缓存不进入成片。地图窗口与普通图解交替的可运行教材见[地图窗口示例](../../examples/map-window/README.md)。
+数据已内嵌scene；本地MapLibre worker由原renderData.resourceFiles收集，预演和P4沿同一资源复制与Renderer使用。制作脚本和缓存不进入成片。地图与普通图解的观看交接沿[地图对象构图](../../references/spatial.md#地图对象构图)设计，本页接口继续负责实际地图窗口。
 
 ## 区域涂色
 

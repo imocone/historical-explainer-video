@@ -150,8 +150,15 @@ test('全画幅新创作的音效错误保留原画面及最终相机锁', async
   const formed=await readData(work.candidate),picture=structuredClone(formed.result.treatment);
   const lock=path.join(workspace,task.scratchPath,'step-locks/fullframe-camera-final.json');
   const lockBefore=await readFile(lock);
-  await write(paths.narrationPackage,{durationMs:6000,files:{audio:{path:'narration.wav'}}});
-  await writeFile(path.join(paths.p2,'narration.wav'),await readFile(path.join(root,'packages/templates/vox-explainer/examples/salary/assets/narration.wav')));
+  await write(paths.storyboard,{beats:[task.inputs.authorUnit],templateRuns:[],features:{}});
+  await write(paths.narrationText,cues[0].text);
+  const srt='1\n00:00:00,000 --> 00:00:06,000\n'+cues[0].text+'\n';
+  await write(paths.narrationSubtitles,srt);
+  const audio=await readFile(path.join(root,'packages/templates/vox-explainer/examples/supply-mg/assets/narration.wav'));
+  await writeFile(path.join(paths.p2,'narration.wav'),audio);
+  await write(paths.narrationPackage,{durationMs:6000,files:{
+    narration:{path:'narration.txt',sha256:sha256(cues[0].text)},
+    subtitles:{path:'narration.srt',sha256:sha256(srt)},audio:{path:'narration.wav',sha256:sha256(audio)}}});
   formed.result.featureResults['sound-effects']={events:[{id:'S001',purpose:'关键落点',soundId:'paper',
     anchor:{target:'AR999',action:'start-frame-motion',offsetSeconds:1}}]};
   await write(work.candidate,formed);
