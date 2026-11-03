@@ -43,7 +43,7 @@ description: 按显式生产阶段驱动本仓库完成节目策划、单集口�
 
 ## 固定循环
 
-1. 运行当前对象的 `status` 并始终提供 `--workspace` 与 `--stage`：P0 提供 `--program`；P1—P4提供`--episode`；P1封面与P4同时提供`--target release-main`。
+1. 用户明确创建新节目、目录尚无`request.yaml`与`program.yaml`时，先按[P0入口](references/p0.md)把用户明确的委托写入原文件。随后运行当前对象的 `status` 并始终提供 `--workspace` 与`--stage`：P0 提供`--program`；P1—P4提供`--episode`；P1封面与P4同时提供`--target release-main`。
 2. `status`只加载当前阶段责任包，只查看本节点直接交付是否到位；不递归重审上游、旧规则或制作摘要。`blocked-upstream`必须停止；`recovery-required`同参运行`next`补完原接纳，不重新创作；`stage-complete`转入本阶段reference规定的收尾；单阶段到此结束，范围执行按“连续执行、暂停与重跑”推进。`queue`由工作流与现场即时推导，不另建队列。
 
    **进度显示。** 获准阶段包含多个动作时，首次取得正式`status`后，使用`update_plan`建立UI计划列表；后续正式状态发生变化时同步更新，阶段收尾结束时标记完成。计划概括当前`queue`、工作单、回执及reference明确要求的收尾进度；重复单位显示“完成数／总数＋当前单位”，不猜未形成任务，也不写入工作区。

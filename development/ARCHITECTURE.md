@@ -43,7 +43,7 @@ Workflow拥有完整依赖关系；Stage是可独立运行和停止的范围；N
 
 System Control的`packages/runtime-config.mjs`统一读取仓库根本机`.env`与进程环境，供现有配音、图片、音效、资料工具和视频程序取得运行位置及用户配置；进程环境优先。`.env.example`提供可公开的配置说明，本机`.env`不进入Git、工作单或生产摘要。节目选择仍归原节目配置，技术与创作合同仍归原责任包。配音程序把本次实际音色合入原请求和恢复身份，不因凭据或工具路径变化重做已交付成果。
 
-System Control的`scripts/setup.mjs`由`npm run setup`安装本仓库Node和Python依赖并准备HyperFrames浏览器；`--check`只检查本地环境。首次安装以macOS为支持范围，不登录账号、不调用生成或发布服务，也不成为每次生产的前置步骤。
+System Control的`scripts/setup.mjs`由`npm run setup`安装本仓库Node和Python依赖（含VideoCaptioner）并准备HyperFrames浏览器；`--check`只检查本地环境。VideoCaptioner缺省使用原项目Python环境，显式自定义路径优先；CLI、片头与安装检查通过原运行配置取得同一工具位置，安装检查复用片头已有的词级时间准备入口。首次安装以macOS为支持范围，不登录账号、不调用生成或发布服务，也不成为每次生产的前置步骤。
 
 System Control的`packages/image-provenance.mjs`只读核对已成图片的真实来源，不调用生成服务。正文Template继续拥有画面与镜头，produce-covers继续拥有完整双封面交付；Codex沿现有图片入口取得原参数、原生生图并导入，不增加生产节点或服务选择。
 

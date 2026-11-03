@@ -36,6 +36,8 @@ export const resolveSoundEvents = ({result, actionTimings, eventTimings = [], fp
 
 export const isSoundDesignSegment = segment => segment.segmentType === 'body'
   && ['fullframe-narrative', 'vox-explainer'].includes(segment.templateId)
+  // Boundary-only preview placeholders have no action clock.
+  && Array.isArray(segment.actionTimings)
   && segment.renderData && (segment.assetRefs.length || segment.templateId === 'vox-explainer');
 
 export const soundTracksForSegment = ({segment, result, fps, durationMs = Infinity, earliestMs = 0}) => {

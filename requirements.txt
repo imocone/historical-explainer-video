@@ -3,3 +3,4 @@ numpy==2.3.5
 scipy==1.17.0
 soundfile==0.13.1
 notebooklm-mcp-cli==0.13.0
+videocaptioner==1.4.2
