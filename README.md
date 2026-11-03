@@ -12,14 +12,14 @@
 
 ## 画面示例
 
-**故事用场面讲，关系用动画拆。** 左侧来自已发布的《袁术称帝》，右侧选自讲解模板作品《平均工资，藏住了谁？》。
+**故事用场面讲，关系用动画拆。** 左侧来自已发布的《萧道成：从平乱救宋到登基建齐》，右侧选自讲解模板作品《平均工资，藏住了谁？》。
 
 <table>
   <tr>
     <td width="50%" valign="top">
-      <a href="https://www.youtube.com/watch?v=xhhdzvd3pbI&t=18s"><img src=".github/assets/showcase/narrative-motion.gif" alt="叙事画面：粮车与仓廪的全画幅场景，镜头随旁白移动" width="100%"></a>
+      <a href="https://www.youtube.com/watch?v=Qvwd7P1AvsQ&t=145s"><img src=".github/assets/showcase/narrative-motion.gif" alt="叙事画面：前景士兵、城门、人群与远处火光组成有纵深的战场，镜头沿场面推进" width="100%"></a>
       <strong>叙事：让观众进入人物所处的世界</strong>
-      <p>人物、粮车、仓廪与环境共同构成场面，再设计取景和运镜，承接口播中的身份、资源与处境。</p>
+      <p>从前景士兵望向燃烧的城门，人群、城墙与远处火光层层展开。构图、光影和运镜一起带出战场的纵深与紧张感。</p>
     </td>
     <td width="50%" valign="top">
       <a href="packages/templates/vox-explainer/examples/salary/README.md"><img src=".github/assets/showcase/explainer-motion.gif" alt="讲解模板示例：办公室里八个人的钱束依次转移，再重组为收入阶梯" width="100%"></a>
