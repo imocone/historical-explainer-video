@@ -78,6 +78,7 @@ Prepare accounts as needed: Codex for P0, AGY before P1, and the narration key b
 | Background music | Add music you have permission to use, following the [music configuration](packages/features/background-music/library/README.md) |
 | Explicitly requested generated video | Follow the [Dreamina instructions](packages/modules/produce-video-assets/references/canvas-cli.md) |
 | Your own separate VideoCaptioner installation | Only then set `VIDEO_CAPTIONER_ROOT` and, if needed, `VIDEO_CAPTIONER_PYTHON`; otherwise use the project-installed version |
+| Lower resource use while rendering | Automatic selection uses video duration, temporary disk space and available memory. Set `RENDER_WORKERS=1` in `.env` for one worker, or `RENDER_WORKERS=auto` to restore automatic selection. |
 
 The public version has no personal default BGM, some opener sounds are silent placeholders, and subtitles use bundled fonts. No other user's private files or settings are needed. See [asset notices](THIRD_PARTY_NOTICES.md). Programs read `.env` automatically; process environment values take precedence. Normally no tool-path changes or repeated `export` commands are needed.
 
@@ -114,6 +115,8 @@ Continue with P2, P3 and P4 as needed, or explicitly request a range such as “
 To inspect progress or continue, tell Codex the program directory and stage.
 
 The final MP4 is in the episode's `output/final.mp4` **inside the program directory**. The director returns the exact path. Ask it for previews and revisions at the current stage.
+
+After the final video passes the media checks and is saved, production images, intermediate audio/video and episode caches are cleaned automatically. Formal scripts, subtitles, storyboards, designs and source records remain, along with the MP4, covers, publication copy and chapter timing. Failed renders, shared programme materials and other episodes are not cleaned. Publishing and document review still work; rendering again requires preparing the removed media again. Existing completed videos are not retroactively cleaned.
 
 The production skills and detailed methods are currently written in Chinese. The prompts above can be given to Codex in English.
 

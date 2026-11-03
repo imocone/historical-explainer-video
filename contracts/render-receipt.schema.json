@@ -3,6 +3,7 @@
   "type": "object", "additionalProperties": false,
   "required": ["episodeId", "visualPackage", "renderDigest", "renderPlanSha256", "renderPlanDurationMs", "output", "sha256", "durationMs", "video", "audio", "_producer"],
   "properties": {
+    "mediaRetention": {"const": "documents-and-release"},
     "episodeId": {"type": "string"},
     "visualPackage": {
       "type": "object", "additionalProperties": false,

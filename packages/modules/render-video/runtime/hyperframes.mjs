@@ -1,5 +1,5 @@
 import { execFile, spawn } from "node:child_process";
-import { mkdir, mkdtemp, open as openFile, readFile, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, open as openFile, readFile, rm, statfs } from "node:fs/promises";
 import { promisify } from "node:util";
 import path from "node:path";
 import os from "node:os";
@@ -10,6 +10,7 @@ import { setTimeout as delay } from "node:timers/promises";
 import { VIDEO_SPEC } from "../../../video-spec.mjs";
 import { hyperframesCli, hyperframesEnv, loadStudioRuntime, studioBuildSignature } from "./browser-session.mjs";
 import { runMediaProcess } from "./media-process.mjs";
+import { runtimeValue } from "../../../runtime-config.mjs";
 
 const exec = promisify(execFile);
 
@@ -75,8 +76,8 @@ const startComposition = async (projectDirectory, logPath, open) => {
   finally { await log.close(); }
 };
 
-const runHyperframes = args => new Promise((resolve, reject) => {
-  const child = spawn(process.execPath, [hyperframesCli, ...args], { env: hyperframesEnv, stdio: 'inherit' });
+const runHyperframes = (args, env = hyperframesEnv) => new Promise((resolve, reject) => {
+  const child = spawn(process.execPath, [hyperframesCli, ...args], { env, stdio: 'inherit' });
   child.once('error', reject);
   child.once('close', (code, signal) => code === 0 ? resolve() : reject(new Error(`HyperFrames ${signal ?? `退出码 ${code}`}`)));
 });
@@ -89,10 +90,37 @@ export const snapshotComposition = async ({ projectDirectory, frames, outputDire
 
 export const renderComposition = options => render(options);
 
+export function selectRenderWorkers({ mode = 'auto', duration, fps, width, height,
+  freeDiskBytes, memoryPercent, totalMemoryBytes }) {
+  if (!['auto', '1'].includes(mode)) throw new Error('RENDER_WORKERS 只能填写 auto 或 1');
+  if (![duration, fps, width, height].every(value => Number.isFinite(value) && value > 0))
+    throw new Error('压片缺少有效的时长、帧率或画面尺寸');
+  // HY 0.8.223 estimates high-quality JPEG at RGBA / 4, with 10% disk headroom.
+  // Reserve another 2 GiB for the encoded picture, audio and final mux.
+  const estimatedBytes = Math.ceil(duration * fps) * width * height;
+  const requiredBytes = Math.ceil(estimatedBytes / 0.9) + 2 * 1024 ** 3;
+  const single = reason => ({ workers: 1, reason, requiredBytes });
+  if (mode === '1') return single('本机指定省资源');
+  if (!Number.isFinite(freeDiskBytes) || !Number.isFinite(memoryPercent)) return single('资源余量无法确认');
+  if (freeDiskBytes < requiredBytes) return single('临时空间不足以保存全部画面');
+  if (totalMemoryBytes <= 8 * 1024 ** 3 || memoryPercent < 25) return single('内存余量较少');
+  return { workers: 'auto', reason: '空间和内存余量充足', requiredBytes };
+}
+
 const render = async ({ projectDirectory, output, fps = VIDEO_SPEC.fps }) => {
   const html = await readFile(path.join(projectDirectory, 'capture/index.html'), 'utf8');
-  const duration = Number(html.match(/<div[^>]*id="episode"[^>]*data-duration="([\d.]+)"/)?.[1]);
-  if (!(duration > 0)) throw new Error('出片项目缺少有效时长');
+  const root = html.match(/<div[^>]*id="episode"[^>]*>/)?.[0] ?? '';
+  const dimension = name => Number(root.match(new RegExp(`data-${name}="([\\d.]+)"`))?.[1]);
+  const [disk, memory] = await Promise.all([
+    statfs(os.tmpdir()).catch(() => null),
+    exec('/usr/bin/memory_pressure', ['-Q'], { timeout: 3000, maxBuffer: 65536 }).catch(() => null)
+  ]);
+  const selection = selectRenderWorkers({ mode: runtimeValue('RENDER_WORKERS', 'auto'),
+    duration: dimension('duration'), width: dimension('width'), height: dimension('height'), fps,
+    freeDiskBytes: disk ? disk.bavail * disk.bsize : NaN,
+    memoryPercent: Number(memory?.stdout.match(/System-wide memory free percentage:\s*(\d+)%/)?.[1] ?? NaN),
+    totalMemoryBytes: os.totalmem() });
+  console.log(`压片方式：${selection.workers === 1 ? '单进程，边渲染边编码' : '自动并发'}（${selection.reason}）`);
   const scratch = await mkdtemp(path.join(os.tmpdir(), `media-session-${process.pid}-`));
   try {
     const picture = path.join(scratch, "picture.mp4");
@@ -100,7 +128,9 @@ const render = async ({ projectDirectory, output, fps = VIDEO_SPEC.fps }) => {
     // long composition, discarding all captured frames. Use the native
     // screenshot path directly for formal output; keep FPS and quality intact.
     await runHyperframes(["render", projectDirectory, "--composition", "capture/index.html", "--output", picture,
-      "--fps", String(fps), "--experimental-fast-capture=false"]);
+      "--fps", String(fps), "--workers", String(selection.workers), "--experimental-fast-capture=false"],
+    selection.workers === 1 ? { ...hyperframesEnv, PRODUCER_ENABLE_STREAMING_ENCODE: 'true',
+      PRODUCER_STREAMING_ENCODE_DURATION_CAP_ENABLED: 'false' } : hyperframesEnv);
     const audio = VIDEO_SPEC.finalOutput.audio;
     try { await runMediaProcess("ffmpeg", ["-hide_banner", "-loglevel", "error", "-y", "-i", picture, "-i", path.join(projectDirectory, "audio.wav"),
       "-map", "0:v:0", "-map", "1:a:0", "-c:v", "copy", "-c:a", "aac", "-b:a", audio.bitrate,

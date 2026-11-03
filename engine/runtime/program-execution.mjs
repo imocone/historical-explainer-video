@@ -6,6 +6,7 @@ import { exists, importModule } from "./files.mjs";
 import { controllerSpecFor } from "./implementations.mjs";
 import { programInvocationTask } from "./tasks.mjs";
 import { withWorkflowWrite } from "./acceptance-commit.mjs";
+import { cleanupEpisodeMedia } from "../../packages/modules/render-video/runtime/cleanup.mjs";
 
 const executionPaths = ({ workspaceRoot, episodeId, stageId }) => {
   const work = getStageWorkPaths(getEpisodePaths(workspaceRoot, episodeId), stageId).work;
@@ -13,7 +14,7 @@ const executionPaths = ({ workspaceRoot, episodeId, stageId }) => {
 };
 const readOptional = async (file) => file && await exists(file) ? readData(file) : null;
 const same = (left, right) => stableStringify(left) === stableStringify(right);
-const finishProgram = async ({ workspaceRoot, episodeId, journalPath, journal, output }) => {
+const finishProgram = async ({ root, workspaceRoot, episodeId, journalPath, journal, output }) => {
   const paths = getEpisodePaths(workspaceRoot, episodeId);
   const repair = async (stageId, node, reason, extra = {}) => {
     const file = getStageWorkPaths(paths, stageId).returnRequest(node);
@@ -41,6 +42,7 @@ const finishProgram = async ({ workspaceRoot, episodeId, journalPath, journal, o
       await rm(journal.returnRequestPath, { force: true });
     }
   }
+  if (journal.primitive === "program-render") await cleanupEpisodeMedia({ workspaceRoot, systemRoot: root, episodeId });
   await rm(journalPath, { force: true });
 };
 
@@ -110,7 +112,7 @@ export const executeProgramNode = async ({ root, workspaceRoot, current, authori
     const output = pending?.output ?? await readData(current.outputPath);
     journal = { ...journal, phase: "completed", outputSha256: hashObject(output) };
     await atomicWriteData(files.journal, journal);
-    const finish = () => finishProgram({ workspaceRoot, episodeId, journalPath: files.journal, journal, output });
+    const finish = () => finishProgram({ root, workspaceRoot, episodeId, journalPath: files.journal, journal, output });
     if (workflowWriteHeld) await finish();
     else await withWorkflowWrite(workspaceRoot, finish);
     return output;

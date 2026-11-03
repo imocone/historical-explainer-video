@@ -78,6 +78,7 @@ open -a TextEdit .env
 | 正文配乐 | 按[个人配乐说明](packages/features/background-music/library/README.md)放入有使用权的音乐并配置 |
 | 明确要求剧情视频 | 按[即梦安装与登录说明](packages/modules/produce-video-assets/references/canvas-cli.md)准备CLI和账号 |
 | 使用自己另装的VideoCaptioner | 才在`.env`填写`VIDEO_CAPTIONER_ROOT`，必要时指定`VIDEO_CAPTIONER_PYTHON`；默认使用项目安装版本 |
+| 压片省资源 | 默认按视频长度、临时空间和内存选择并发；在`.env`填写`RENDER_WORKERS=1`可始终只开一个渲染进程，恢复自动用`RENDER_WORKERS=auto` |
 
 公开版不附个人BGM，部分片头音效是静音占位，默认字幕使用随仓字体；不需要复制别人的私有素材或配置。详见[素材说明](THIRD_PARTY_NOTICES.md)。程序读取本机`.env`，进程环境变量优先；通常无需改工具路径或每次`export`。
 
@@ -114,6 +115,8 @@ P0 完成后会交付节目策划。确认要继续时，再说：
 查看进度或继续时，直接告诉Codex节目目录和阶段。
 
 成片在**节目目录内**的单集 `output/final.mp4`，导演完成后会返回准确路径。运行中的预览与修改也交给导演按当前阶段处理。
+
+压片检查通过并保存成片后，会自动清理本集制作图片、音频中间文件、中间视频和缓存；正式稿件、字幕、分镜、设计与来源记录，以及成片、双封面、发布文案和章节计时保留。压片失败不删，节目共用资料和其它集不动。清理后仍可查看文档和发布；要重新预演或压片，需要重新准备已删除素材。已有成片不会追溯清理。
 
 ## 常用命令
 
@@ -217,6 +220,8 @@ P4默认按`opener → render`完成片头和压片。只有你明确要求剧�
 ```bash
 node engine/cli.mjs status --workspace <节目目录> --episode <epNN> --stage p4
 node engine/cli.mjs next --workspace <节目目录> --episode <epNN> --stage p4
+# 仅本次压片省资源；不修改长期配置
+RENDER_WORKERS=1 node engine/cli.mjs next --workspace <节目目录> --episode <epNN> --stage p4
 ```
 
 作者候选仍用原accept，最后render是程序交付，无需accept。指定节点操作仍用`--node`，不扩大当前授权范围。
@@ -267,7 +272,7 @@ npm run studio -- --workspace <节目目录> --episode <epNN> --beat <Bxxx> [--b
 npm run studio -- --workspace <节目目录> --episode <epNN> --beat <Bxxx> --prepare-only
 ```
 
-地图在正常预览和出片前自动准备画面，静止帧复用原图，保留原镜头、路线、标记与Cue动画。预览和出片按实际地图输入共用缓存，只补所需窗口的缺帧；地图、素材、字体或绘制实现变化时更新，损坏时重建，无需单独导出地图。Studio按输入版本保留编译项目；HY预演和捕获使用官方默认运行配置与生命周期。修改原候选后沿原预演入口更新现有预览；正式修改接纳后，再按正常入口更新预览和成片，旧MP4不会在后台自行覆盖。
+地图在正常预览和出片前自动准备画面，静止帧复用原图，保留原镜头、路线、标记与Cue动画。预览和出片按实际地图输入共用缓存，只补所需窗口的缺帧；地图、素材、字体或绘制实现变化时更新，损坏时重建，无需单独导出地图。制作期间Studio按输入版本保留编译项目，HY负责预演和捕获的执行与生命周期；导出并发按本机资源选项选择。修改原候选后沿原预演入口更新现有预览；正式修改接纳后，再按正常入口更新预览和成片，旧MP4不会在后台自行覆盖。正式压片成功后按上文清理本集预演和缓存。
 
 Studio内移动、裁剪场景或字幕，只影响临时项目的播放与导出；正式设计仍回原作者修改。点进子场景与独立导出使用同一裁剪窗口。导出、缩略图、波形、响度分析和冻结帧等任务由HY原生处理。
 

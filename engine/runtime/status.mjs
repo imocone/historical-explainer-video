@@ -8,6 +8,7 @@ import { loadStageModel } from "./model.mjs";
 import { resolveVideoCurrent } from "./state-video.mjs";
 import { resolveNarrationCurrent } from "./state-narration.mjs";
 import { resolveProgramCurrent } from "./state-program.mjs";
+import { hasProductionWork, readRetainedDelivery } from "../../packages/modules/render-video/runtime/cleanup.mjs";
 const requireStageId = (stageId, operation) => {
   if (typeof stageId !== "string" || !stageId) {
     throw new Error(`${operation} 必须提供 stageId`);
@@ -61,6 +62,12 @@ const resolveStageCurrent = async ({
   const programCompletion = await pendingProgramCompletion({ workspaceRoot, episodeId, stageId });
   if (programCompletion) return { kind: "recovery-required", subject, workflowId: model.workflowRecord.id, stageId,
     reason: "程序已写出成果；运行同参 next 补完下游待办与请求清理" };
+  if (stageId !== "p0" && await readRetainedDelivery({ workspaceRoot, episodeId })
+    && !await hasProductionWork({ workspaceRoot, episodeId, stageId })) return {
+    kind: stageId === "p4" ? "complete" : "stage-complete", subject,
+    workflowId: model.workflowRecord.id, stageId, output: `${episodeId}/output/final.mp4`,
+    mediaRetention: "documents-and-release", message: "成片已完成；正式文档与发布文件保留，制作素材按压片后清理规则收口"
+  };
   const resolver = resolverForWorkflow(model.workflowRecord.id);
   let current;
   try {
