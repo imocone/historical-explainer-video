@@ -134,7 +134,7 @@ function reform(){return g('s-reform',g('reform-dates',
 function answer(){return g('s-answer',g('answer-view',at(landscape('answer-area'),80,230,1.15))+
  g('answer-head',T('从封地，深入到治国权',120,160,64,C.ink,'title'))+
  g('answer-landmark',L(80,880,80,303,C.gold,5)+L(80,303,1185,303,C.gold,5)+L(1185,303,1185,880,C.gold,5))+
- g('answer-labels',T('治理',586,922,44,C.ink,'title','middle')+T('人口',1120,922,44,C.green,'title','middle')+T('财源',1640,922,44,C.goldD,'title','middle'))+
+ g('answer-labels',g('answer-governance-label',T('治理',586,922,44,C.ink,'title','middle'))+g('answer-population-label',T('人口',1120,922,44,C.green,'title','middle'))+g('answer-income-label',T('财源',1640,922,44,C.goldD,'title','middle')))+
  trace('answer-authority','M1648 342V297H642V330',C.green,4,'marker-end="url(#art-arrow)"')+
  g('answer-court',tag('汉',1648,330,C.green))+
  g('answer-final',T('谁来组织',116,412,96,C.ink,'title')+T('帝国的力量？',112,538,96,C.ink,'title')+L(120,584,704,584,C.red,4)+T('削地 → 收回治国权',120,650,36,C.muted))+
