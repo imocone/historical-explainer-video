@@ -6,7 +6,7 @@
     {
       "if": {
         "required": ["moduleId"],
-        "properties": {"moduleId": {"enum": ["author-narration", "author-documentary-narration", "author-subtitles", "understand-episode", "direct-episode", "author-beat", "author-bookend"]}}
+        "properties": {"moduleId": {"enum": ["author-narration", "author-documentary-narration", "author-subtitles", "direct-episode", "author-beat", "author-bookend"]}}
       },
       "then": {"required": ["scratchPath"]}
     }

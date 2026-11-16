@@ -20,9 +20,9 @@ const personalBackgroundMusic = () => {
     usageNotes:'个人配置仅声明视频使用权利，不代表允许将音频随源码再分发。'};
 };
 
-// One source choice for author context, candidate playback and final rendering.
-export const musicPlaybackContext = ({featureData, sourceAssets = [], episodeId}) => {
-  if (featureData === undefined) return {enabled:false};
+// Like the default-selected body render slot, P3 playback uses the local default
+// when its stage has no music state. An explicit off still wins.
+export const musicPlaybackContext = ({featureData = {}, sourceAssets = [], episodeId}) => {
   if (featureData === null) throw new Error('background-music 已启用但尚未完成');
   if (featureData.enabled === false) return {enabled:false};
   const usesEpisodeSource = featureData.sourceAssetId !== undefined;
@@ -57,7 +57,7 @@ export const contribute = ({
   if (!playback.enabled) return {audioTracks:[]};
   const {source} = playback;
   const trackEndMs = episodeEnding?.afterSegmentType === "body"
-    ? episodeEnding.startMs + episodeEnding.durationMs
+    ? episodeEnding.fadeEndMs
     : bodyEndMs;
   const fadeInFrames = Math.round(BACKGROUND_MUSIC_RENDER_POLICY.fadeInSeconds * fps);
   const entryLeadFrames = Number.isInteger(bodyEntranceLeadFrames)
@@ -79,9 +79,9 @@ export const contribute = ({
       volume: BACKGROUND_MUSIC_RENDER_POLICY.volume,
       loop: BACKGROUND_MUSIC_RENDER_POLICY.loop,
       gainEnvelopes: musicEnvelopesForSegments({soundDesign:storyboard?.features?.['sound-effects'],
-        segments, fps, trackStartMs:startMs, trackEndMs, bodyEndMs}),
+        segments, fps, trackStartMs:startMs, trackEndMs, bodyEndMs, finalSegmentId: episodeEnding?.afterSegmentId}),
       fadeInFrames,
-      fadeOutFrames: Math.round(BACKGROUND_MUSIC_RENDER_POLICY.fadeOutSeconds * fps)
+      fadeOutFrames: episodeEnding?.fadeFrames ?? Math.round(BACKGROUND_MUSIC_RENDER_POLICY.fadeOutSeconds * fps)
     }]
   };
 };

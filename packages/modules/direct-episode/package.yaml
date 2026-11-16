@@ -25,6 +25,8 @@
     "SKILL.md"
   ],
   "runtimeResources": [
+    "references/text-understanding-method.md",
+    "semantic-validation.mjs",
     "references/whole-album-method.md",
     "historical-context/README.md",
     "historical-context/research-method.md",
@@ -37,6 +39,7 @@
     "lock-boundaries.mjs",
     "inspect-authorability.mjs",
     "authorability.mjs",
+    "../render-video/runtime/transitions.mjs",
     "step-locks.mjs",
     "../../p3-task-view.mjs",
     "../../task-step-lock.mjs",

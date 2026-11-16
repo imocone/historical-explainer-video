@@ -1,3 +1,4 @@
+import { hashObject } from "../../program-utils.mjs";
 import { fullframeDesignItemsForCandidate } from "./camera/candidate-context.mjs";
 import {verifyAuthoredImage} from "../../authored-images.mjs";
 import {assertEffectAnchors} from "./effects/runtime.mjs";
@@ -222,6 +223,9 @@ const validateRequiredCueTiming = (errors, requests, context) => {
       label: "当前全画幅 Beat"
     });
     const isAB = JSON.stringify(frameIds) === JSON.stringify(["A", "B"]);
+    if (isAB && Object.hasOwn(context.templateContext ?? {}, "directedTransition")) {
+      errors.push("导演分镜的一镜只交一幅完整全画幅，新增主画面须回导演另分一镜");
+    }
     if (isAB && !inspection.allowsAB) {
       errors.push("当前真实字幕没有能让A/B各自保有可读时窗的边界");
     }
@@ -303,7 +307,11 @@ export function validateFullframeDesignSemantics({ result, context }) {
   validateContinuity(errors, result.continuity, context.previousTreatment);
   try {
     resolveNarrativeTransition(result.incomingTransition ?? null);
-    if (context.templateContext?.incomingTransitionSupported === true && result.incomingTransition == null) {
+    const directed = Object.hasOwn(context.templateContext ?? {}, "directedTransition");
+    if (directed && hashObject(result.incomingTransition ?? null) !== hashObject(context.templateContext.directedTransition)) {
+      errors.push("全画幅接法必须沿用导演分镜的 incomingTransition");
+    }
+    if (!directed && context.templateContext?.incomingTransitionSupported === true && result.incomingTransition == null) {
       errors.push("当前全画幅接缝必须按前后字幕语义显式设计叠化或闪黑；不能以null自动选择");
     }
     for (const [index, request] of requests.entries()) {
@@ -313,7 +321,7 @@ export function validateFullframeDesignSemantics({ result, context }) {
         resolveNarrativeTransition(request.incomingTransition);
       }
     }
-    if (context.templateContext?.incomingTransitionSupported === false && result.incomingTransition != null) {
+    if (!directed && context.templateContext?.incomingTransitionSupported === false && result.incomingTransition != null) {
       errors.push("当前首拍或讲解交界由对应模板拥有进出，incomingTransition须为null");
     }
   } catch (error) { errors.push(error.message); }

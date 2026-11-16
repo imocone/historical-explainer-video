@@ -39,9 +39,6 @@
   "templateSlotFromScope": true,
   "returnTo": [
     {
-      "primitive": "ai-understanding"
-    },
-    {
       "primitive": "ai-visual-director"
     }
   ]

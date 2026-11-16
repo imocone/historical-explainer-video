@@ -51,6 +51,7 @@ export function authoredImageJob({request, profile, sourceAssets = [], sourceIma
     prompt: [profile.stylePrompt,
       ...styleReferences.map((reference, index) => visualReferenceInstruction(reference, index + 1)),
       '画风参考只提供画法，不复制其中人物、地点、事件或构图。',
+      '【场面图纸】以下指定人物、动作、环境、构图、天气和剧情照明。整体用色、明暗处理、材质表现和笔触按上方视觉包执行。',
       ...request.production.groupRules, ...request.production.panel.lines,
       ...(continuity ? [`连续性参考只约束图纸已经出现的身份，不把对象名录追加进本图：${JSON.stringify({
         subjects:continuity.subjects, props:continuity.props,
@@ -59,7 +60,8 @@ export function authoredImageJob({request, profile, sourceAssets = [], sourceIma
       ...(sources.length ? [`已授权来源：${JSON.stringify(sources)}`] : []),
       ...sourceImages.map((_, index) => `参考图 ${styleReferences.length + index + 1} 为来源原图${imageSources[index]
         ? ` ${imageSources[index].id}；对应对象、时期和用途：${imageSources[index].usageNotes}` : ''}。只采用其有据且适用于当前图纸的部分；本人面貌、服装与环境分别对应，不混脸，不把画像中的礼服或背景自动沿用到其它场合。实际衣装、年龄与场景按图纸及已说明的来源限定处理。`),
-      ...(previousImage ? ['随后参考为实际前序画面，只继承当前设计明确要求延续的场景、人物和道具，不复制构图。'] : []),
+      ...(sourceImages.length ? ['来源原图提供上述用途限定的身份、面貌、衣装、器物与环境形制；所取特征全部按本Visual的线条、色面、明暗与纹理重新绘制。照片的摄影质感、原作画法，以及作为参考载体的陶土、石质、纸张和老化痕迹，不转成被表现人物或场景的画法。图纸明确表现原件本身时，其真实材质与保存状态只属于该物件。'] : []),
+      ...(previousImage ? ['随后参考为实际前序画面，只继承当前设计明确要求延续的场景、人物和道具，不复制构图。这些内容按当前Visual绘制，前图的色偏、笔触或纹理不作为画风依据。'] : []),
       ...(revision ? [`最后一张参考为待修正原图。具体修正：${revision.reason}。保留原图中符合当前设计的部分。`] : []),
       '只交付本次图纸对应的一张16:9成品。画内结构依图纸，不附带说明、备选图或其它请求的画面。'].join('\n\n'),
     ...(references.length || previousImage || revision ? {referenced_image_paths: [...references, ...(previousImage ? [previousImage] : []), ...(revision ? [revision.file] : [])]} : {}),

@@ -1,7 +1,7 @@
 import {videoIsEnabled} from './video-settings.mjs';
 import { pendingProgramCompletion } from "./program-execution.mjs";
 import { pendingAcceptance } from "./acceptance-commit.mjs";
-import { getEpisodePaths } from "../../packages/workspace-paths.mjs";
+import { getEpisodePaths, getProgramPaths } from "../../packages/workspace-paths.mjs";
 import { readData } from "../../packages/program-utils.mjs";
 import { classifyStageProgress } from ".././workflows.mjs";
 import { loadStageModel } from "./model.mjs";
@@ -9,6 +9,24 @@ import { resolveVideoCurrent } from "./state-video.mjs";
 import { resolveNarrationCurrent } from "./state-narration.mjs";
 import { resolveProgramCurrent } from "./state-program.mjs";
 import { hasProductionWork, readRetainedDelivery } from "../../packages/modules/render-video/runtime/cleanup.mjs";
+
+export const narrationDurationFeedback = async ({ workspaceRoot, episodeId }) => {
+  const paths = getEpisodePaths(workspaceRoot, episodeId);
+  const optional = file => readData(file).catch(error => { if (error.code === "ENOENT") return null; throw error; });
+  const [tts, delivery, script, program, brief] = await Promise.all([
+    optional(paths.ttsResult), optional(paths.narrationPackage), optional(paths.scriptPackage),
+    optional(getProgramPaths(workspaceRoot).programPlan), optional(paths.episodeBrief)
+  ]);
+  if (script && tts && String(script.narration).replace(/\s/gu, "") !== String(tts.ttsInput?.text).replace(/\s/gu, "")) return null;
+  const currentDelivery = delivery && (!tts || delivery.evidence?.audioProcessing?.rawAudioSha256 === tts.rawAudio?.sha256);
+  const durationMs = currentDelivery ? delivery.durationMs : tts?.durationMs;
+  if (!Number.isFinite(durationMs) || durationMs <= 0) return null;
+  const maxDurationSeconds = program?.maxDurationSeconds ?? brief?.maxDurationSeconds;
+  const bodyDurationSeconds = durationMs / 1000;
+  return { bodyDurationSeconds, includesOpener: false, source: currentDelivery ? "measured-delivery" : "tts-provider",
+    ...(Number.isFinite(maxDurationSeconds) && maxDurationSeconds > 0 ? { maxDurationSeconds,
+      remainingSeconds: maxDurationSeconds - bodyDurationSeconds, exceedsLimit: bodyDurationSeconds > maxDurationSeconds } : {}) };
+};
 const requireStageId = (stageId, operation) => {
   if (typeof stageId !== "string" || !stageId) {
     throw new Error(`${operation} 必须提供 stageId`);
@@ -62,8 +80,16 @@ const resolveStageCurrent = async ({
   const programCompletion = await pendingProgramCompletion({ workspaceRoot, episodeId, stageId });
   if (programCompletion) return { kind: "recovery-required", subject, workflowId: model.workflowRecord.id, stageId,
     reason: "程序已写出成果；运行同参 next 补完下游待办与请求清理" };
-  if (stageId !== "p0" && await readRetainedDelivery({ workspaceRoot, episodeId })
-    && !await hasProductionWork({ workspaceRoot, episodeId, stageId })) return {
+  let retainedDelivery = null;
+  if (stageId !== "p0") {
+    try {
+      retainedDelivery = await readRetainedDelivery({ workspaceRoot, episodeId });
+    } catch (error) {
+      const activeP2Work = stageId === "p2" && await hasProductionWork({ workspaceRoot, episodeId, stageId });
+      if (error.code !== "retained-video-unavailable" || (stageId !== "p3" && !activeP2Work)) throw error;
+    }
+  }
+  if (retainedDelivery && !await hasProductionWork({ workspaceRoot, episodeId, stageId })) return {
     kind: stageId === "p4" ? "complete" : "stage-complete", subject,
     workflowId: model.workflowRecord.id, stageId, output: `${episodeId}/output/final.mp4`,
     mediaRetention: "documents-and-release", message: "成片已完成；正式文档与发布文件保留，制作素材按压片后清理规则收口"
@@ -294,7 +320,8 @@ async function deriveStatus({
       if (selected.reason) entry.reason = selected.reason;
     }
   }
-  if (current.kind !== "task") return { ...current, queue };
+  const durationFeedback = stageId === "p2" ? await narrationDurationFeedback({ workspaceRoot, episodeId }) : null;
+  if (current.kind !== "task") return { ...current, queue, ...(durationFeedback ? { durationFeedback } : {}) };
   const identity = taskIdentity(current);
   return {
     kind: statusKindForTask(current),
@@ -309,7 +336,8 @@ async function deriveStatus({
     ...(current.fingerprint ? { fingerprint: current.fingerprint } : {}),
     ...(current.authorSegments ? { authorSegments: current.authorSegments } : {}),
     ...(current.retryAfterMinutes ? { retryAfterMinutes: current.retryAfterMinutes } : {}),
-    queue
+    queue,
+    ...(durationFeedback ? { durationFeedback } : {})
   };
 }
 

@@ -19,6 +19,7 @@ export const projectRenderStoryboard = (storyboard, featureIds = []) => {
       id: beat.id,
       cueRange: withoutProducer(beat.cueRange),
       templateId: beat.templateId,
+      ...(Object.hasOwn(beat, "incomingTransition") ? { incomingTransition: withoutProducer(beat.incomingTransition) } : {}),
       treatment: renderTreatment(beat.treatment, beat.cueRange)
     })),
     templateRuns: (storyboard.templateRuns ?? []).filter(run => run.templateId !== "fullframe-narrative").map((run) => ({

@@ -116,7 +116,7 @@ export const episodeBriefBusiness = ({
   episode
 }) => ({
   schemaVersion: common.schemaVersion,
-  ...(common.referenceProgram ? {
+  ...(common.referenceProgram && episode.referenceVideoIds?.length ? {
     referenceProgram: structuredClone(common.referenceProgram),
     referenceVideoIds: [...episode.referenceVideoIds]
   } : {}),

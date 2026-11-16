@@ -23,11 +23,11 @@ export const EFFECT_STUDIES = [
 
 const imageViewing = {
   "winter-camp": { purpose: "保住脸、双手和电报，使攥着消息的停顿获得分量", landing: "军官的神情、双手与电报",
-    change: "电报仍攥在手里，人迟迟没有给出答复", end: { x: .20, y: .075, width: .75, height: .75 } },
+    change: "电报仍攥在手里，人迟迟没有给出答复", end: { x: .224, y: .084, width: .72, height: .72 } },
   office: { purpose: "沿来信、持信的手与思索的脸收紧，保留阅读关系", landing: "来信、持信的手与面部",
-    change: "看清正在读信和思索的姿态", end: { x: .24, y: .10, width: .75, height: .75 } },
+    change: "看清正在读信和思索的姿态", end: { x: .2688, y: .112, width: .72, height: .72 } },
   march: { purpose: "让前后马车和相连道路获得分量，保住队列关系", landing: "前后马车与延伸道路",
-    change: "沿道路读清车队的前后联系", end: { x: .23, y: .12, width: .75, height: .75 } }
+    change: "沿道路读清车队的前后联系", end: { x: .2576, y: .1344, width: .72, height: .72 } }
 };
 
 const baseRequest = ({ image, requestId = "AR001", frameId = "A" }) => ({

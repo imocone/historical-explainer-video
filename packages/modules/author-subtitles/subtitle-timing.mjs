@@ -38,7 +38,7 @@ export const nativeWordCues = (timing) => {
 };
 
 const narrationMap = (narration) => {
-  const visible = [...visibleText(narration)];
+  const visible = [...String(narration ?? "").replace(/[\r\n]/gu, "").trim()];
   const boundaries = [0];
   let count = 0;
   for (let i = 0; i < visible.length; i += 1) {
@@ -132,7 +132,7 @@ export const alignWordTimeline = ({ wordCues, narration, allowRecognitionDiffere
   const project = (start, end) => {
     const first = wordIndex(start); const after = wordIndex(end);
     if (after <= first) throw new Error("字幕没有对应的实际话语");
-    return { text: map.visible.slice(map.boundaries[start], map.boundaries[end]).join(""),
+    return { text: map.visible.slice(map.boundaries[start], map.boundaries[end]).join("").trim(),
       startMs: spoken[first].startMs, endMs: spoken[after - 1].endMs };
   };
   const projectPhrases = (start, end) => {
@@ -142,7 +142,16 @@ export const alignWordTimeline = ({ wordCues, narration, allowRecognitionDiffere
       .map(([offset]) => offset).sort((a, b) => a - b), end];
     return cuts.slice(1).map((after, index) => project(cuts[index], after));
   };
-  return { project, projectPhrases, differences: alignment.differences, contentCount: map.content.length };
+  const timedBreaks = [...alignment.boundaries]
+    .filter(([offset, target]) => offset > 0 && offset < map.content.length && wordBoundaries.has(target))
+    .filter(([, target]) => {
+      const index = wordBoundaries.get(target);
+      return index > 0 && index < spoken.length && spoken[index - 1].endMs <= spoken[index].startMs;
+    })
+    .map(([offset]) => offset).sort((a, b) => a - b);
+  const textSlice = (start, end) => map.visible.slice(map.boundaries[start], map.boundaries[end]).join("").trim();
+  return { project, projectPhrases, textSlice, timedBreaks,
+    differences: alignment.differences, contentCount: map.content.length };
 };
 
 // Preserve measured word boundaries; an ASR difference may form one indivisible phrase.

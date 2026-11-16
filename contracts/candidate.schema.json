@@ -23,6 +23,7 @@
   },
   "oneOf": [
     {"required": ["result"], "not": {"required": ["returnTo"]}},
-    {"required": ["returnTo"], "not": {"required": ["result"]}}
+    {"required": ["returnTo"], "not": {"required": ["result"]}},
+    {"required": ["returnTo", "result"], "properties": {"returnTo": {"properties": {"target": {"const": "director"}}}}}
   ]
 }

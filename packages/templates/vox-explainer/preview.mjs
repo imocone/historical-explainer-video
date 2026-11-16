@@ -1,21 +1,22 @@
 import path from 'node:path';
 import {fileURLToPath, pathToFileURL} from 'node:url';
 import {parseArgs} from 'node:util';
-import {mkdir, cp, writeFile} from 'node:fs/promises';
-import {readData, assertProjectPath, hashObject} from '../../program-utils.mjs';
+import {mkdir, cp, readFile, writeFile} from 'node:fs/promises';
+import {atomicWrite, readData, assertProjectPath, hashObject, sha256} from '../../program-utils.mjs';
 import {deriveAuthorWorkspaceRoot, validateTreatmentCandidate} from '../../modules/author-beat/candidate-validation.mjs';
 import {projectP3TaskView} from '../../p3-task-view.mjs';
 import {readP3Sources} from '../../p3-sources.mjs';
 import {loadProgramVisualPackage} from '../../visual-package.mjs';
 import {visualFontEntries, withVisualFontPaths} from '../../visual-fonts.mjs';
 import {assetFile} from '../../runtime-config.mjs';
-import {getEpisodePaths} from '../../workspace-paths.mjs';
 import {VIDEO_SPEC, frameForMs, frameSpanForMs} from '../../video-spec.mjs';
 import {resolveCueBindingsToFrames} from '../../cue-boundaries.mjs';
 import {compileComposition} from '../../modules/render-video/runtime/compile.mjs';
 import {scenePreviewProps} from '../../modules/render-video/runtime/scene-preview.mjs';
 import {previewFeatureResults, candidateEffectTracks, specifiedMusicForWindow, candidateAudioContext} from '../../modules/render-video/runtime/candidate-audio.mjs';
 import {launchComposition, snapshotComposition, renderComposition} from '../../modules/render-video/runtime/hyperframes.mjs';
+import {readAuthorNarration} from './author-context.mjs';
+import {buildEpisodeEnding, endingWindowForSegment} from '../../modules/render-video/runtime/ending.mjs';
 import {createRenderPolicy, renderData} from './render-plan.mjs';
 
 export const previewOutputDirectory = ({systemRoot, workspaceRoot, outputDirectory}) =>
@@ -33,10 +34,13 @@ export async function preview({workOrderPath, candidatePath, outputDirectory, va
   const implementations = workOrder.resolvedAssembly.slots.flatMap(slot => slot.implementations);
   const template = implementations.find(item => item.kind === 'template' && item.packageId === 'vox-explainer');
   if (!template) throw new Error('工作单未装配Vox模板');
-  const sourceAssets = await readP3Sources({workspaceRoot, workOrder});
+  const [{cues, episodeCues, audio, narrationDurationMs}, sourceAssets] = await Promise.all([
+    readAuthorNarration({workspaceRoot, workOrder}),
+    readP3Sources({workspaceRoot, workOrder})
+  ]);
   const {errors, treatment} = await validateTreatmentCandidate({
     candidateResult: candidate.result, context: {...workOrder.inputs,
-      sourceAssets, selectedTemplate: 'vox-explainer'},
+      cues, sourceAssets, selectedTemplate: 'vox-explainer'},
     systemRoot, workspaceRoot, ...(!draft ? {task: workOrder, episodeId: workOrder.subject.id} : {}),
     moduleValidatorSource: workOrder.validator.source, templateImplementation: template,
     // Picture previsualization precedes post-picture Features. Validate what
@@ -45,7 +49,7 @@ export async function preview({workOrderPath, candidatePath, outputDirectory, va
       && (workOrder.inputs.repairFeatureIds?.length || candidate.result.featureResults?.[item.packageId]))});
   if (errors.length) throw new Error(errors.join('；'));
   const {fps, width, height} = VIDEO_SPEC;
-  const cues = workOrder.inputs.cues, startMs = cues[0].startMs, endMs = cues.at(-1).endMs;
+  const {startMs, endMs} = audio;
   const durationInFrames = frameSpanForMs({startMs, endMs, fps});
   const featureResults = previewFeatureResults({inputs:workOrder.inputs, result:candidate.result});
   const actionTimings = resolveCueBindingsToFrames({bindingSet: featureResults['cue-sync'], cues,
@@ -56,11 +60,19 @@ export async function preview({workOrderPath, candidatePath, outputDirectory, va
       width: 800, height: 600, file: `draft-${request.requestId}.svg`, draft: true});
   if (!draft && assetRefs.some(asset => asset.draft)) throw new Error('正式预演缺少图片');
   const policy = createRenderPolicy({fps, width, height});
-  const rendered = renderData({treatment, actionTimings, assetRefs, durationInFrames, policy});
+  const rendered = renderData({treatment, actionTimings, assetRefs, durationInFrames, policy,
+    shots: workOrder.inputs.authorUnitBeats, cues, cueStartMs: startMs});
+  const sourceStartFrame = frameForMs({milliseconds: startMs, fps});
+  const originMs = sourceStartFrame / fps * 1000;
+  const ending = cues.at(-1).id === episodeCues.at(-1).id ? buildEpisodeEnding({bodyOffsetMs: 0, narrationDurationMs,
+    lastCueEndMs: endMs, afterSegmentId: workOrder.inputs.authorUnit.id, afterSegmentType: 'body', fps}) : null;
+  if (ending) rendered.voxExplainer.ending = endingWindowForSegment({ending,
+    startFrame:sourceStartFrame, anchorMs:0, fps});
   if (validateOnly) return {message: 'Author/Cue/RenderData OK', moments: treatment.moments.length};
-  const paths = getEpisodePaths(workspaceRoot, workOrder.subject.id);
-  const [visual, narration] = await Promise.all([
-    loadProgramVisualPackage(systemRoot, workspaceRoot, {roles: ['render']}), readData(paths.narrationPackage)]);
+  const [visual, narrationBytes] = await Promise.all([
+    loadProgramVisualPackage(systemRoot, workspaceRoot, {roles: ['render']}), readFile(audio.file)]);
+  if (sha256(narrationBytes) !== audio.sha256) throw new Error('预演旁白文件与P2交接摘要不一致');
+  const narrationFile = 'narration' + path.extname(audio.file);
   const visualStyle = withVisualFontPaths(visual.renderTokens, visual.id);
   const font = visual.renderTokens.p4.subtitle.font;
   visualStyle.p4.subtitle = {...visualStyle.p4.subtitle, fontName: font.family,
@@ -88,38 +100,45 @@ export async function preview({workOrderPath, candidatePath, outputDirectory, va
   for (const [, entry] of visualFontEntries(visual.renderTokens))
     await copy(assetFile(path.join(visual.directory, entry.file), {root: systemRoot}), `visuals/${visual.id}/${entry.file}`);
   await copy(assetFile(path.join(visual.directory, font.file), {root: systemRoot}), `visuals/${visual.id}/${font.file}`);
-  const audio = path.resolve(paths.p2, narration.files.audio.path);
-  await assertProjectPath({root: paths.p2, file: audio, label: '正式旁白'});
-  await copy(audio, 'narration' + path.extname(audio));
+  const narrationTarget = path.join(projectDirectory, narrationFile);
+  await assertProjectPath({root: projectDirectory, file: narrationTarget, label: '预演旁白'});
+  await atomicWrite(narrationTarget, narrationBytes);
   const segment = {id: name, templateId: 'vox-explainer', visualStyle, durationInFrames, actionTimings, startMs: 0,
     entranceLeadFrames: 0, runtimeTiming: {semanticFrameOffset: 0}, assetRefs, renderData: rendered};
   const audioContext = await candidateAudioContext({workspaceRoot,workOrder,sourceAssets});
   const audioTracks = muteEffects ? [] : await candidateEffectTracks({workOrder, result:candidate.result, segment, fps, audioContext,
-    durationMs:durationInFrames / fps * 1000});
+    durationMs:ending ? ending.fadeEndMs - originMs : durationInFrames / fps * 1000});
   audioTracks.push(...specifiedMusicForWindow({sourceAssetId:bgmSourceAssetId, sourceAssets,
     workOrder, result:candidate.result, segment, muteEffects, audioContext,
     episodeId:workOrder.subject.id, fromFrame:frameForMs({milliseconds:startMs,fps}),
-    toFrame:frameForMs({milliseconds:endMs,fps}), fps, bodyEndMs:narration.durationMs ?? endMs}));
+    toFrame:frameForMs({milliseconds:ending?.fadeEndMs ?? endMs,fps}), fps,
+    bodyStartMs:episodeCues[0].startMs, bodyEndMs:episodeCues.at(-1).endMs, episodeEnding:ending}));
   for (const track of audioTracks) await copy(path.resolve(track.file.startsWith('packages/') || track.file.startsWith('local-media/background-music/') || track.file.startsWith('local-media/private-assets/') ? systemRoot : workspaceRoot, track.file), track.file);
-  const originMs = frameForMs({milliseconds: startMs, fps}) * 1000 / fps;
-  const props = scenePreviewProps({segment, captions: cues.map(cue => ({...cue,
+  const tail = ending?.motionTailFrames ?? 0;
+  const props = scenePreviewProps({segment, tail, captions: cues.map(cue => ({...cue,
     startMs: cue.startMs - originMs, endMs: cue.endMs - originMs})),
-    audioFile: 'narration' + path.extname(audio), audioStartFrame: frameForMs({milliseconds: startMs, fps}),
+    audioFile: narrationFile, audioStartFrame: frameForMs({milliseconds: startMs, fps}),
     audioTracks,
     previewNotice: draft ? '草图预演 · 占位图不代表成品' : null});
+  if (ending) {
+    props.ending = { ...ending, afterSegmentId: segment.id,
+      startMs: ending.startMs - originMs, fadeEndMs: ending.fadeEndMs - originMs, endMs: ending.endMs - originMs };
+    props.durationMs = props.ending.endMs;
+    props.audioTracks.find(track => track.id === 'preview-narration').endMs = props.ending.startMs;
+  }
   await compileComposition({props, projectDirectory});
   let output;
   if (stills) {
     const frames = (at.length ? at.map(seconds => Math.round(seconds * fps))
       : actionTimings.map(item => Math.min(durationInFrames - 1, item.frame + fps)));
-    if (frames.some(frame => !Number.isInteger(frame) || frame < 0 || frame >= durationInFrames)) throw new Error('取帧时刻超出本段');
+    if (frames.some(frame => !Number.isInteger(frame) || frame < 0 || frame >= durationInFrames + tail)) throw new Error('取帧时刻超出本段');
     output = path.join(outputRoot, name + '-stills');
     await snapshotComposition({projectDirectory, frames, outputDirectory: output});
   } else if (exportVideo) {
     output = path.join(outputRoot, name + '.mp4');
     await renderComposition({projectDirectory, output});
   } else await launchComposition(projectDirectory, {open});
-  return {projectDirectory, output, durationSeconds: durationInFrames / fps};
+  return {projectDirectory, output, durationSeconds: props.durationMs / 1000};
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {

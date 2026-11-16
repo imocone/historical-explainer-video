@@ -15,7 +15,7 @@ const directory = path.dirname(fileURLToPath(import.meta.url));
 const systemRoot = path.resolve(directory, "../../../../..");
 const output = path.resolve(process.argv[2] ?? path.join(directory, "output"));
 const mode = process.argv[3] ?? "preview";
-const visualStyle = withVisualFontPaths(JSON.parse(await readFile(path.join(systemRoot, "visuals/modern-editorial/render/tokens.json"))), "modern-editorial");
+const visualStyle = withVisualFontPaths(JSON.parse(await readFile(path.join(systemRoot, "visuals/wet-watercolor/render/tokens.json"))), "wet-watercolor");
 const schema = JSON.parse(await readFile(path.join(systemRoot, "contracts/fullframe-treatment.schema.json")));
 // Teaching images are local rendering inputs, not episode image-production receipts.
 schema.$defs.fullframeRequest.required = schema.$defs.fullframeRequest.required.filter(key => key !== "asset");

@@ -1,3 +1,4 @@
+import { projectBeatSemantics } from "../../packages/modules/author-beat/projection.mjs";
 import path from "node:path";
 import { hashObject, withoutProducer } from "../../packages/program-utils.mjs";
 import { isExplainerTemplateId } from "../../packages/explainer-template-selection.mjs";
@@ -32,12 +33,21 @@ const initialFeatureStateForModel = ({ model }) => {
 };
 
 const directorResultSlice = (storyboard) => ({
+  ...(storyboard.understanding ? { understanding: businessContent(storyboard.understanding) } : {}),
   albumPlan: businessContent(storyboard.albumPlan),
   beats: businessContent(storyboard.beats ?? []).map(({ treatment: _treatment, ...beat }) => beat),
   templateRuns: businessContent(storyboard.templateRuns ?? []).map(
     ({ treatment: _treatment, ...run }) => run
   )
 });
+
+// Pre-merge revision requests bound the visual section separately from the
+// semantic section. A saved work order still compares its actual semantic input.
+const matchesDirectorRevisionBaseline = (plan, digest) => {
+  if (hashObject(plan) === digest) return true;
+  const { understanding, ...visualPlan } = plan ?? {};
+  return Boolean(understanding && hashObject(visualPlan) === digest);
+};
 
 const staticBodyBeat = (value) => {
   const { treatment: _treatment, ...beat } = businessContent(value);
@@ -120,7 +130,8 @@ const directorBeat = (beat) => {
     cueRange: business.cueRange,
     viewerOutcome: business.viewerOutcome,
     directorBrief: business.directorBrief,
-    templateId: business.templateId
+    templateId: business.templateId,
+    ...(Object.hasOwn(business, "incomingTransition") ? { incomingTransition: business.incomingTransition } : {})
   };
 };
 
@@ -187,7 +198,12 @@ const authorUnitsForStoryboard = (storyboard) => {
   return units;
 };
 
-const changedDirectorBeatIds = (existing, result) => {
+const changedDirectorBeatIds = (existing, result, { cues, previousCues = cues } = {}) => {
+  const semanticsChanged = (previous, next) => {
+    if (!existing.understanding || !result.understanding || !cues?.length) return false;
+    return hashObject(projectBeatSemantics({ understanding: existing.understanding, beat: previous, cues: previousCues }))
+      !== hashObject(projectBeatSemantics({ understanding: result.understanding, beat: next, cues }));
+  };
   const oldBeats = new Map((existing?.beats ?? []).map((beat) => [beat.id, beat]));
   const newBeats = new Map((result?.beats ?? []).map((beat) => [beat.id, beat]));
   const oldMembership = templateRunMembership(existing);
@@ -204,6 +220,7 @@ const changedDirectorBeatIds = (existing, result) => {
         !previous ||
         !next ||
         hashObject(directorBeat(previous)) !== hashObject(directorBeat(next)) ||
+        semanticsChanged(previous, next) ||
         (next?.templateId !== "fullframe-narrative" && hashObject(oldMembership.get(beatId) ?? null) !==
           hashObject(newMembership.get(beatId) ?? null)) ||
         hashObject(recurringElementsForBeat(existing?.albumPlan, beatId)) !==
@@ -267,15 +284,17 @@ const mergeDirectorResult = ({
   existing,
   result,
   directorProducer,
+  understandingProducer,
   changedBeatIds = [],
-  changedRunIds = []
+  changedRunIds = [],
+  retainedTreatmentIds = new Set()
 }) => {
   const oldBeats = new Map((existing?.beats ?? []).map((beat) => [beat.id, beat]));
   const changed = new Set(changedBeatIds);
   const beats = result.beats.map((beat) => {
     const previous = oldBeats.get(beat.id);
     if (isExplainerTemplateId(beat.templateId)) return { ...beat, treatment: null };
-    if (!previous || changed.has(beat.id)) return { ...beat, treatment: null };
+    if (!previous || (changed.has(beat.id) && !retainedTreatmentIds.has(beat.id))) return { ...beat, treatment: null };
     return { ...beat, treatment: previous.treatment ?? null };
   });
   const oldRuns = new Map((existing?.templateRuns ?? []).map((run) => [run.id, run]));
@@ -284,12 +303,12 @@ const mergeDirectorResult = ({
     const previous = oldRuns.get(run.id);
     return {
       ...businessContent(run),
-      treatment: previous && !changedRuns.has(run.id) ? (previous.treatment ?? null) : null
+      treatment: previous && (!changedRuns.has(run.id) || retainedTreatmentIds.has(run.id)) ? (previous.treatment ?? null) : null
     };
   });
   const features = existing?.features ?? initialFeatureStateForModel({ model });
   return {
-    ...(existing?.understanding ? { understanding: existing.understanding } : {}),
+    understanding: { ...result.understanding, _producer: understandingProducer },
     ...(existing?.authorQuotes ? { authorQuotes: existing.authorQuotes } : {}),
     albumPlan: businessContent(result.albumPlan),
     features,
@@ -315,7 +334,7 @@ export const assertP3DirectorRevisionRequest = (request, visualPlan) => {
       (digest) => digest != null && !/^[a-f0-9]{64}$/u.test(digest))) {
     throw new Error("P3导演局部修订请求无效");
   }
-  if (visualPlan && hashObject(visualPlan) !== request.baselineVisualPlanSha256) {
+  if (visualPlan && !matchesDirectorRevisionBaseline(visualPlan, request.baselineVisualPlanSha256)) {
     throw new Error("导演局部修订的正式基线已变化，不能套用原修改范围");
   }
   return request;
@@ -353,8 +372,8 @@ const assertP3BodyRedesignRequest = (request) => {
   return request;
 };
 
-const assertP3BodyRedesignPreservesVisualPlan = ({ baselineSha256, candidateSha256 }) => {
-  if (baselineSha256 !== candidateSha256) {
+const assertP3BodyRedesignPreservesVisualPlan = ({ baselineSha256, candidateSha256, visualPlan }) => {
+  if (baselineSha256 !== candidateSha256 && (!visualPlan || !matchesDirectorRevisionBaseline(visualPlan, baselineSha256))) {
     throw new Error("P3正文设计返工候选改变了既有视觉导演计划、功能或片头边界");
   }
 };
@@ -374,6 +393,7 @@ export {
   completedBodySlice,
   directorAlbumDirection,
   directorResultSlice,
+  matchesDirectorRevisionBaseline,
   enabledFeatureIdsForNode,
   mergeDirectorResult,
   openerAlbumDirection,

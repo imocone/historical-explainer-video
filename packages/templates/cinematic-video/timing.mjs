@@ -1,6 +1,7 @@
 import { resolveCueRange } from "../../cue-boundaries.mjs";
 import { VIDEO_SPEC, frameForMs } from "../../video-spec.mjs";
 import { narrativeExitTailFrames, narrativeHandleFrames } from "../../modules/render-video/runtime/narrative-transition.mjs";
+import { episodeEndingReserveFrames } from "../../modules/render-video/runtime/ending.mjs";
 
 export const videoWindow = ({ span, storyboard, cues }) => {
   const beats = storyboard?.beats ?? [];
@@ -27,11 +28,12 @@ export const videoWindow = ({ span, storyboard, cues }) => {
     throw new Error(`${span.id} 只用一张首图；生成组须按剧情顺序覆盖每个完整镜头一次`);
   const frameAt = (ms) => frameForMs({ milliseconds: ms, fps: VIDEO_SPEC.fps });
   const nextBeat = beats[indexes.at(-1) + 1];
-  const nextStartMs = nextBeat?.templateId === "fullframe-narrative"
+  const nextStartMs = nextBeat && (nextBeat.templateId === "fullframe-narrative"
+    || Object.hasOwn(nextBeat, "incomingTransition"))
     ? resolveCueRange({ cueRange: nextBeat.cueRange, cues }).startMs : range.endMs;
-  const spanTailFrames = narrativeExitTailFrames({
+  const spanTailFrames = nextBeat ? narrativeExitTailFrames({
     previousEndFrame: frameAt(range.endMs), cutFrame: frameAt(nextStartMs)
-  });
+  }) : episodeEndingReserveFrames();
   let elapsedMs = 0;
   const parts = groups.map((group, index) => {
     if (!group.shotIds.length || !group.videoPrompt?.trim() || Object.hasOwn(group, "startFrame"))

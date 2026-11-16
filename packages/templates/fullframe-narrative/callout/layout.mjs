@@ -212,6 +212,46 @@ const stablePlacementIndex = ({ placementKey, candidateCount, label }) => {
   return Math.floor((hash >>> 0) / 0x100000000 * candidateCount);
 };
 
+const edgePlacementCandidates = ({ y, minX, maxX, layout, viewingPoints, excludedRectangles, policy }) => {
+  const { width, height } = layout;
+  const { collisionPadding, groupGap } = policy.callout;
+  const blocked = viewingPoints
+    .filter((point) => point.y >= y - collisionPadding && point.y <= y + height + collisionPadding)
+    .map((point) => [
+      Math.ceil(point.x - width - collisionPadding),
+      Math.floor(point.x + collisionPadding)
+    ]);
+  for (const rectangle of excludedRectangles) {
+    if (y + height + groupGap <= rectangle.y || rectangle.y + rectangle.height + groupGap <= y) continue;
+    // Exactly groupGap pixels between rectangles is allowed.
+    blocked.push([
+      Math.floor(rectangle.x - width - groupGap) + 1,
+      Math.ceil(rectangle.x + rectangle.width + groupGap) - 1
+    ]);
+  }
+  blocked.sort((left, right) => left[0] - right[0]);
+
+  // Try the ends of each available horizontal gap. This keeps the candidate set
+  // bounded by the blockers and leaves as much room as possible for other boxes.
+  const positions = [];
+  const addGap = (first, last) => {
+    if (first > last) return;
+    positions.push({ x: first, y, width, height });
+    if (last > first) positions.push({ x: last, y, width, height });
+  };
+  let nextX = Math.ceil(minX);
+  const lastX = Math.floor(maxX);
+  for (const [first, last] of blocked) {
+    if (last < nextX) continue;
+    if (first > lastX) break;
+    addGap(nextX, first - 1);
+    nextX = Math.max(nextX, last + 1);
+    if (nextX > lastX) break;
+  }
+  addGap(nextX, lastX);
+  return positions;
+};
+
 export const calloutPlacementCandidates = ({
   policy,
   layout,
@@ -220,6 +260,7 @@ export const calloutPlacementCandidates = ({
   excludedRectangles = [],
   preferFarFrom = null,
   preferredCorner = null,
+  allowEdgePositions = false,
   label = "全画幅解说框"
 }) => {
   if (!layout || !Number.isFinite(layout.width) || layout.width <= 0 || !Number.isFinite(layout.height) || layout.height <= 0) {
@@ -235,10 +276,10 @@ export const calloutPlacementCandidates = ({
   if (bottomY < topY) {
     throw new Error(`${label} 派生框高超出字幕外安全画面`);
   }
+  const minX = policy.safeMarginX;
+  const maxX = policy.width - policy.safeMarginX - layout.width;
   const rectangleFor = (side, vertical) => ({
-    x: side === "left"
-      ? policy.safeMarginX
-      : policy.width - policy.safeMarginX - layout.width,
+    x: side === "left" ? minX : maxX,
     y: vertical === "top" ? topY : bottomY,
     width: layout.width,
     height: layout.height
@@ -280,6 +321,14 @@ export const calloutPlacementCandidates = ({
     const first = stablePlacementIndex({ placementKey, candidateCount: preferred.length, label });
     ordered.push(...preferred.slice(first), ...preferred.slice(0, first));
     remaining = remaining.filter((candidate) => !preferred.includes(candidate));
+  }
+  if (allowEdgePositions) {
+    const edges = [...new Set([topY, bottomY])].flatMap((y) =>
+      edgePlacementCandidates({ y, minX, maxX, layout, viewingPoints, excludedRectangles, policy }))
+      .filter(({ x }) => x !== minX && x !== maxX);
+    if (preferFarFrom) edges.sort((left, right) =>
+      rectangleCenterDistanceSquared(right, preferFarFrom) - rectangleCenterDistanceSquared(left, preferFarFrom));
+    ordered.push(...edges);
   }
   return ordered;
 };

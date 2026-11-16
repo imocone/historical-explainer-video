@@ -1,5 +1,5 @@
 import { validate as validateSubtitles } from "../author-subtitles/validate.mjs";
-import { access, mkdir, mkdtemp, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
+import { access, copyFile, mkdir, mkdtemp, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { runMediaProcess, withMediaResources } from "../render-video/runtime/media-process.mjs";
 import {
@@ -10,7 +10,8 @@ import {
   hashObject,
   programProducer,
   readData,
-  sha256
+  sha256,
+  withoutProducer
 } from "../../program-utils.mjs";
 import { getEpisodePaths, getStageWorkPaths } from "../../workspace-paths.mjs";
 import {
@@ -323,6 +324,24 @@ const readDeliveryManifest = async ({ directory, paths }) => {
   return manifest;
 };
 
+const reusableAudio = async ({ paths, audioProcessing }) => {
+  if (!(await exists(paths.package))) return null;
+  try {
+    const manifest = await readData(paths.package);
+    if (manifest._producer?.moduleId !== "finalize-narration"
+      || manifest._producer.outputSha256 !== hashObject(withoutProducer(manifest))
+      || hashObject(manifest.evidence?.audioProcessing) !== hashObject(audioProcessing)
+      || manifest.files?.audio?.path !== "narration.mp3"
+      || !Number.isInteger(manifest.durationMs) || manifest.durationMs <= 0) return null;
+    const audioPath = path.join(paths.p2, "narration.mp3");
+    if (await fileSha256(audioPath) !== manifest.files.audio.sha256) return null;
+    return { audioPath, durationMs: manifest.durationMs };
+  } catch (error) {
+    if (["ENOENT", "EISDIR"].includes(error.code) || error instanceof SyntaxError) return null;
+    throw error;
+  }
+};
+
 export async function inspect({ root, episodeId, task = {} }) {
   const paths = pathsFor({ root, episodeId, task });
   if (await exists(transactionPath(paths))) return { valid: false, readyToRun: true, reason: "存在未完成的finalize事务，需要恢复" };
@@ -379,6 +398,7 @@ export async function run({ root, episodeId, task = {} }) {
   const narration = await verifyTtsResult({ paths, result: ttsResult });
   const correction = await correctionFromTask({ paths, task });
   const audioContract = await loadAudioContract();
+  const audioProcessing = { rawAudioSha256: ttsResult.rawAudio.sha256, contractSha256: hashObject(audioContract) };
   const subtitleContract = await loadSubtitleContract();
   const { cues, semantic, speechCues } = verifySubtitleCorrection({
     correction,
@@ -392,15 +412,22 @@ export async function run({ root, episodeId, task = {} }) {
   const stage = await mkdtemp(path.join(paths.work, ".finalize-narration-stage-"));
   try {
     const stagedAudio = path.join(stage, "narration.mp3");
-    await codec.encode({ inputPath: paths.raw, outputPath: stagedAudio, contract: structuredClone(audioContract) });
-    if (!(await stat(stagedAudio)).isFile()) throw new Error("音频编码器没有产生成品");
-    const rawMetrics = await codec.inspect({ audioPath: paths.raw });
-    const encodedMetrics = await codec.inspect({ audioPath: stagedAudio });
-    validateAudioMetrics(rawMetrics, "原始");
-    validateAudioMetrics(encodedMetrics, "成品");
-    const audioDelivery = audioDeliveryCheck({ raw: rawMetrics, encoded: encodedMetrics, contract: audioContract });
-    if (audioDelivery.status !== "pass") throw new Error(`音频技术门禁失败: ${audioDelivery.failures.join("；")}`);
-    const durationMs = Math.round(encodedMetrics.durationSeconds * 1000);
+    const reused = await reusableAudio({ paths, audioProcessing });
+    let durationMs;
+    if (reused) {
+      await copyFile(reused.audioPath, stagedAudio);
+      durationMs = reused.durationMs;
+    } else {
+      await codec.encode({ inputPath: paths.raw, outputPath: stagedAudio, contract: structuredClone(audioContract) });
+      if (!(await stat(stagedAudio)).isFile()) throw new Error("音频编码器没有产生成品");
+      const rawMetrics = await codec.inspect({ audioPath: paths.raw });
+      const encodedMetrics = await codec.inspect({ audioPath: stagedAudio });
+      validateAudioMetrics(rawMetrics, "原始");
+      validateAudioMetrics(encodedMetrics, "成品");
+      const audioDelivery = audioDeliveryCheck({ raw: rawMetrics, encoded: encodedMetrics, contract: audioContract });
+      if (audioDelivery.status !== "pass") throw new Error(`音频技术门禁失败: ${audioDelivery.failures.join("；")}`);
+      durationMs = Math.round(encodedMetrics.durationSeconds * 1000);
+    }
     verifySubtitleWindow({ cues, durationMs });
 
     const stagedNarration = path.join(stage, "narration.txt");
@@ -422,7 +449,7 @@ export async function run({ root, episodeId, task = {} }) {
       audio: { path: "narration.mp3", sha256: await fileSha256(stagedAudio) },
       subtitles: { path: "narration.srt", sha256: await fileSha256(stagedSubtitles) }
     };
-    const evidence = { subtitleQuality: { path: "subtitle-quality.yaml", sha256: await fileSha256(stagedSubtitleQuality) } };
+    const evidence = { subtitleQuality: { path: "subtitle-quality.yaml", sha256: await fileSha256(stagedSubtitleQuality) }, audioProcessing };
     const business = {
       schemaVersion: "1.1",
       episodeId: ttsResult.episodeId,

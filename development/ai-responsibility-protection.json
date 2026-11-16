@@ -44,7 +44,6 @@
     {"owner": "system-control", "path": "packages/workspace-paths.mjs"},
     {"owner": "system-control", "path": "contracts/module-controller.schema.json"},
     {"owner": "system-control", "path": "contracts/work-order.schema.json"},
-    {"owner": "understand-episode", "path": "packages/modules/understand-episode/"},
     {"owner": "direct-episode", "path": "packages/modules/direct-episode/"},
     {"owner": "author-beat", "path": "packages/modules/author-beat/"},
     {"owner": "author-bookend", "path": "packages/modules/author-bookend/"},

@@ -2,11 +2,12 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { copyFile, mkdtemp, readFile, rm, writeFile, stat } from "node:fs/promises";
+import { copyFile, mkdtemp, readFile, readdir, rm, writeFile, stat } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { compileComposition } from "./compile.mjs";
-import { resolveCrossBeatRuntimeTiming } from "./transitions.mjs";
+import { crossBeatTransitionPlan, resolveCrossBeatRuntimeTiming } from "./transitions.mjs";
+import { snapshotComposition } from "./hyperframes.mjs";
 import { runMediaProcess, withMediaResources } from "./media-process.mjs";
 import { mixCompositionAudio } from "./audio-mix.mjs";
 import { collectAuthoredMedia } from "../../../authored-media.mjs";
@@ -65,6 +66,50 @@ test("an opener's still reference does not require unrelated pictures or camera 
   assert.equal(media.items[0].file, asset.file);
 });
 
+test("compiled narrative dissolve blends sibling scenes without losing light", { timeout: 45000 }, async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "hy-narrative-blend-"));
+  try {
+    const visualStyle = { shared: { fonts: {} }, p4: { subtitle: {} } };
+    const segments = await Promise.all([72, 192, 192].map(async (value, index) => {
+      const file = `tone-${index}.svg`;
+      await writeFile(path.join(directory, file),
+        `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180"><rect width="320" height="180" fill="rgb(${value},${value},${value})"/></svg>`);
+      return {
+        id: `tone-${index}`, renderMode: "asset-media", templateId: "fullframe-narrative", segmentType: "body",
+        startFrame: index * 120, durationInFrames: 120, startMs: index * 2000, endMs: (index + 1) * 2000,
+        assetRefs: [{ file, mediaType: "image" }], renderData: {}, visualStyle,
+        ...(index > 0 ? { incomingTransition: {
+          type: index === 1 ? "dissolve" : "dip-to-black", durationMs: 700, reason: "Verify the compiled image blend"
+        } } : {})
+      };
+    }));
+    const props = {
+      episodeId: "narrative-blend", width: 320, height: 180, fps: 60, durationMs: 6000,
+      visualStyle, captions: [], audioTracks: [], overlays: [],
+      ...resolveCrossBeatRuntimeTiming({ segments, transitions: crossBeatTransitionPlan(segments) })
+    };
+    await compileComposition({ props, projectDirectory: directory, audio: false });
+    const outputDirectory = path.join(directory, "stills");
+    await snapshotComposition({ projectDirectory: directory, outputDirectory, frames: [120, 240] });
+    const frames = (await readdir(outputDirectory)).filter(file => file.endsWith(".png")).sort();
+    assert.equal(frames.length, 2);
+    const sample = async file => {
+      const { stdout } = await promisify(execFile)("ffmpeg", ["-v", "error", "-i", path.join(outputDirectory, file),
+        "-vf", "crop=2:2:158:88,scale=1:1", "-pix_fmt", "rgb24", "-f", "rawvideo", "-"], { encoding: "buffer" });
+      return stdout[0];
+    };
+    const dissolve = await sample(frames[0]);
+    const flash = await sample(frames[1]);
+    const weight = 21 / 41;
+    const incoming = weight * weight * (3 - 2 * weight);
+    const expected = Math.sqrt(72 ** 2 * (1 - incoming) + 192 ** 2 * incoming);
+    assert.ok(Math.abs(dissolve - expected) <= 4, `linear-light blend should be near ${expected}, got ${dissolve}`);
+    assert.ok(flash <= 2, `the flash-to-black must still have a black midpoint, got ${flash}`);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
 test("a partial opener mix bounds a delayed looping music track", { timeout: 15000 }, async () => {
   const directory = await mkdtemp(path.join(os.tmpdir(), "hy-opener-audio-"));
   try {
@@ -82,7 +127,7 @@ test("a partial opener mix bounds a delayed looping music track", { timeout: 150
   } finally { await rm(directory, { recursive: true, force: true }); }
 });
 
-test("video instances keep their own nodes and hold the requested final frame", { timeout: 120000 }, async () => {
+test("video instances keep their own nodes and play real footage through the ending", { timeout: 120000 }, async () => {
   const directory = await mkdtemp(path.join(os.tmpdir(), "hy-video-instances-"));
   try {
     await promisify(execFile)("ffmpeg", ["-hide_banner", "-loglevel", "error", "-y", "-f", "lavfi", "-i",
@@ -113,13 +158,17 @@ test("video instances keep their own nodes and hold the requested final frame", 
     assert.equal(bodyAsset.frozenStill, undefined, "the moving body must stay moving");
     assert.ok((await stat(path.join(directory, boundaryAsset.frozenStill))).size > 0, "the boundary holds a real source frame");
 
-    const endingProps = { ...props, ...resolveCrossBeatRuntimeTiming({ segments: [video] }),
-      ending: { afterSegmentId: "video", startMs: 2000, holdFrames: 30, fadeFrames: 30 } };
+    const endingProps = { ...props, durationMs: 4500, ...resolveCrossBeatRuntimeTiming({ segments: [video] }),
+      ending: { afterSegmentId: "video", startMs: 2000, fadeEndMs: 4000, endMs: 4500, fadeFrames: 120 } };
+    endingProps.segments[0].appliedExitTailFrames = 120;
     const ending = await compileComposition({ props: endingProps, projectDirectory: directory, audio: false });
     const scene = ending.timeline.scenes[0];
-    assert.equal(scene.segment.assetRefs[0].playback.endFrame, 119, "the ending must stop at the authored video window");
+    assert.equal(scene.endFrame, 240, "the real footage carries motion from the last Cue through the fade");
     const html = await readFile(path.join(directory, "compositions", scene.id + ".html"), "utf8");
-    assert.match(html, /<img class="clip"[^>]*data-start="2" data-duration="1"/, "HY owns the timed still after native video ends");
+    assert.match(html, /<video[^>]*data-start="0" data-duration="4"/, "HY plays the available tail");
+    assert.doesNotMatch(html, /<img class="clip"/, "the ending must not insert a freeze frame");
+    endingProps.segments[0].appliedExitTailFrames += 1;
+    await assert.rejects(compileComposition({ props: endingProps, projectDirectory: directory, audio: false }), /末镜视频活动余量不足/);
 
     // A first body video can begin at a fractional second after an opener.
     // HyperFrames aligns it to a frame and passes the resulting seek to FFprobe.

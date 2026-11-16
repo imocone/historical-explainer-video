@@ -362,8 +362,8 @@
         "safeEndViewport"
       ],
       "properties": {
-        "type": {"enum": ["push-in", "pull-out", "traverse"]},
-        "speedRatio": {"type": "number", "minimum": 1, "description": "作者选择的起始运动速度；原运动族基准为1，不设统一上限。省略speedChanges时保持此速度。"},
+        "type": {"enum": ["push-in", "pull-out", "traverse"], "description": "Ken Burns推近、拉远或平移，作者按原观看任务设计方向与取景，不为补行程改变Beat时长或用图。"},
+        "speedRatio": {"type": "number", "minimum": 1, "maximum": 3, "description": "作者按实际取景、观看任务与时窗在1—3范围内显式选择起始速度，没有默认值；规划边界或教材值不是默认答案，上下限在适合本图时均可选择。省略speedChanges时保持作者所选恒速，程序不按路长或时长改速。"},
         "speedChanges": {
           "type": "array",
           "minItems": 1,
@@ -373,7 +373,7 @@
             "required": ["timeMs", "speedRatio"],
             "properties": {
               "timeMs": {"type": "integer", "minimum": 1},
-              "speedRatio": {"type": "number", "minimum": 1}
+              "speedRatio": {"type": "number", "minimum": 1, "maximum": 3}
             }
           }
         },

@@ -31,13 +31,17 @@ if (props.previewNotice) {
     fontFamily: [].concat(props.visualStyle.shared.fontFamilies.sans).join(","), fontSize: "25px" });
   root.append(notice);
 }
-const ready = Promise.all([loadSceneFonts(props.visualStyle), ...[...new Set(timeline.scenes.map(scene => scene.segment.templateId).filter(Boolean))].map(async id => {
-  const { createRenderer } = await templateRendererLoaders[id]();
-  if (typeof createRenderer !== "function") throw new Error(`${id} 缺少正式 HY renderer`);
-  factories.set(id, createRenderer);
-})]);
 const scenes = timeline.scenes.map(scene => ({ ...scene, window: sceneSourceWindow(scene, timeline),
   host: document.getElementById(scene.id), renderer: null, rendering: false, releaseRequested: false })).filter(scene => scene.host);
+const ready = Promise.all([loadSceneFonts(props.visualStyle), ...[...new Set(scenes.map(scene => scene.segment.templateId).filter(Boolean))].map(async id => {
+  const { createRenderer, prepareFonts } = await templateRendererLoaders[id]();
+  if (typeof createRenderer !== "function") throw new Error(`${id} 缺少正式 HY renderer`);
+  factories.set(id, createRenderer);
+  // Load template fonts before live playback reaches the first push.
+  if (prepareFonts) await Promise.all(scenes
+    .filter(({ segment }) => segment.templateId === id)
+    .map(({ segment }) => prepareFonts(segment)));
+})]);
 const style = (element, value) => { if (element) { element.removeAttribute("style"); Object.assign(element.style, value); } };
 const basePresentation = (segment, frame) => {
   const transition = segment.appliedEntryTransition, duration = segment.appliedTransitionFrames;
@@ -50,6 +54,7 @@ const basePresentation = (segment, frame) => {
 };
 const boundaries = props.transitions.filter(item => item.mode === "narrative" || item.explainerPush);
 const bodyScenes = new Map(scenes.filter(scene => scene.role === "body").map(scene => [scene.segment.id, scene]));
+const finalScene = bodyScenes.get(props.ending?.afterSegmentId);
 const nativeHidden = host => host.hasAttribute("data-hf-clip-hidden") || host.closest("[data-hidden]") !== null;
 const releaseScene = scene => {
   scene.releaseRequested = true;
@@ -84,7 +89,8 @@ window.__hyperframes.registerFrameSource({ element: root, ready,
       scene.host.style.opacity = "0";
       if (nativeHidden(scene.host) || !preparingIncoming(scene)) releaseScene(scene);
     }
-    if (ending) ending.style.opacity = "0";
+    if (ending) ending.style.opacity = finalScene && frame >= timeline.endingEnd
+      && hasAuthoredWindow(finalScene.host.dataset, finalScene.window, timeline, props.fps) ? "1" : "0";
     const captionHost = document.getElementById("captions");
     if (captionHost && nativeHidden(captionHost)) releaseCaptions();
     window.__hfStudioManualEditsApply?.();
@@ -110,7 +116,11 @@ for (const scene of scenes) window.__hyperframes.registerFrameSource({ element: 
         : scene.role === "boundary" ? transitionPresentation({ frame: sourceFrameAtTime(time, props.fps, scene.window.startFrame - scene.fromFrame),
           durationInFrames: scene.transition.transitionFrames, transition: scene.transition.exitTransition ?? null })
         : scene.role === "body" ? basePresentation(segment, local) : {};
-      style(host.querySelector(".presentation"), projected);
+      // Scene hosts are separate stacking contexts. Blend the sibling hosts,
+      // while each host's presentation still owns its exposure and color filter.
+      const { mixBlendMode, ...contentPresentation } = projected;
+      host.style.mixBlendMode = mixBlendMode ?? "";
+      style(host.querySelector(".presentation"), contentPresentation);
       host.style.opacity = suppressed ? "0" : "1";
       host.style.zIndex = String(inBoundary ? (active.previousId === segment.id ? presentation.outgoing.zIndex ?? 0 : 0)
         : scene.role === "overlay" ? (segment.overlayLayer === "annotation" ? 3 : 2)
@@ -123,7 +133,7 @@ for (const scene of scenes) window.__hyperframes.registerFrameSource({ element: 
       await scene.renderer.seek(local);
       if (ending && scene.role === "body" && segment.id === props.ending?.afterSegmentId && !scene.releaseRequested) {
         const endingFrame = sourceFrameAtTime(time, props.fps, scene.window.startFrame) - timeline.endingStart;
-        ending.style.opacity = String(interpolate(endingFrame, [props.ending.holdFrames, timeline.endingEnd - timeline.endingStart - 1],
+        ending.style.opacity = String(interpolate(endingFrame, [-1, props.ending.fadeFrames - 1],
           [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }));
       }
       window.__hfStudioManualEditsApply?.();

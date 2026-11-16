@@ -28,6 +28,50 @@ const parkChangedWork = async ({ workspaceRoot, workPaths, saved, current }) => 
   await rm(workPaths.candidate, { force: true });
 };
 
+// Transfer the retired node's unchanged semantic draft into the current
+// director candidate. The original signature, draft and scratch stay intact.
+const carryUnderstandingDraft = async ({ workspaceRoot, workPaths, saved, current }) => {
+  const order = current.workOrder;
+  if (current.mode !== "visual-plan" || saved.stageId !== "p3"
+    || saved.nodeId !== "understand" || saved.moduleId !== "understand-episode"
+    || saved.resolvedAssembly?.node?.id !== saved.nodeId
+    || saved.resolvedAssembly?.node?.moduleId !== saved.moduleId
+    || saved.resolvedAssembly?.module?.id !== saved.moduleId
+    || saved.runner !== "ai" || saved.workflowId !== order.workflowId
+    || saved.taskId !== `${order.subject.id}/understand`
+    || hashObject(saved.subject) !== hashObject(order.subject)
+    || saved.candidatePath !== order.candidatePath
+    || saved.allowedWrite !== `${order.allowedWrite}#understanding`
+    || hashObject(saved.inputs.stageRestartId ?? null) !== hashObject(order.inputs.stageRestartId ?? null)
+    || hashObject(saved.inputs.narration) !== hashObject(order.inputs.narration)
+    || hashObject(saved.inputs.cues) !== hashObject(order.inputs.cues)
+    || hashObject(saved.inputs.returnRequest ?? null) !== hashObject(current.legacyUnderstandingRequest ?? null)
+    || !sourcesExtend(saved.inputs.sourceAssets, order.inputs.sourceAssets)
+    || !await exists(workPaths.candidate)) return false;
+  const candidate = await readData(workPaths.candidate);
+  if (candidate.taskDigest !== saved.taskDigest || candidate.returnTo
+    || !candidate.result?.understanding || Object.keys(candidate.result).length !== 1) return false;
+  await assertStageSettled(workspaceRoot, path.dirname(workPaths.work));
+  const held = path.join(workPaths.work, "held-work", `${saved.taskDigest}.json`);
+  await assertProjectPaths({ root: workspaceRoot, label: "保留合并前的理解候选", files: [held] });
+  await commitAcceptance({ workspaceRoot, workPaths, workflowWriteHeld: true,
+    writes: new Map([
+      [held, { workOrder: saved, candidate }],
+      [workPaths.workOrder, order],
+      [workPaths.candidate, { taskDigest: order.taskDigest, result: candidate.result }]
+    ]),
+    cleanup: [],
+    verify: async () => {
+      if (hashObject(await readData(workPaths.workOrder)) !== hashObject(saved)
+        || hashObject(await readData(workPaths.candidate)) !== hashObject(candidate)) {
+        throw new Error("共享理解交接期间原工作单或候选已变化，保留现场");
+      }
+    },
+    result: { kind: "work-restored" }
+  });
+  return true;
+};
+
 // An expanded chapter can continue its unchanged members' unfinished draft.
 // This is not acceptance: the author must add the new members and obtain current locks.
 const expandedFullframeCandidate = ({ workOrder: saved, candidate }, current) => {
@@ -341,7 +385,8 @@ const executeCurrentTask = async ({
         current.workOrder = saved;
         retainedWorkOrder = true;
       } catch {
-        await parkChangedWork({ workspaceRoot, workPaths, saved, current: current.workOrder });
+        if (await carryUnderstandingDraft({ workspaceRoot, workPaths, saved, current })) retainedWorkOrder = true;
+        else await parkChangedWork({ workspaceRoot, workPaths, saved, current: current.workOrder });
       }
     }
   }

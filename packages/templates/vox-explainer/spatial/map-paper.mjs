@@ -10,7 +10,13 @@ function paperEdge(w,h,s){
  return d+'L'+out.map(p=>p.map(v=>v.toFixed(2)).join(' ')).join('L')+'Z';
 }
 
-export function layoutMapPaper(root, width, height) {
+export function mapPaperSize(width, height) {
+  const pad = 15 + 9 * Math.max(0, Math.min(1, (width - 540) / 1060));
+  return {width: Math.max(1, Math.round(width - pad * 2)),
+    height: Math.max(1, Math.round(height - pad * 2)), pad};
+}
+
+export function layoutMapPaper(root, width, height, {width: innerWidth, height: innerHeight, pad}) {
   const $ = id => root.querySelector('#' + id);
   const s = Math.max(.55, Math.min(width / 1760, height / 828)), u = n => n * s;
   const d = paperEdge(width, height, s);
@@ -21,9 +27,6 @@ export function layoutMapPaper(root, width, height) {
   for (const [id, pos] of [['paper-fold-one', .32], ['paper-fold-two', .67]]) {
     $(id).setAttribute('x', width * pos - u(42)); $(id).setAttribute('width', u(84)); $(id).setAttribute('height', height);
   }
-  const pad = 15 + 9 * Math.max(0, Math.min(1, (width - 540) / 1060));
-  const innerWidth = Math.max(1, Math.round(width - pad * 2)), innerHeight = Math.max(1, Math.round(height - pad * 2));
   Object.assign($('map-aperture').style, {left: pad + 'px', top: pad + 'px', width: innerWidth + 'px', height: innerHeight + 'px'});
   $('geo-art').setAttribute('viewBox', `0 0 ${innerWidth} ${innerHeight}`);
-  return {width: innerWidth, height: innerHeight, pad};
 }

@@ -261,7 +261,7 @@ const projectAuthorInputs = async ({
   const unitCues = cueSlice(inspected.cues, authorUnitInput.cueRange);
   const featureContexts = await featureAuthorContextsFromAssembly({root, assembly, input:{
     episodeId, authorUnit:authorUnitInput, authorUnits, episodeCues:inspected.cues,
-    acceptedFeatures:storyboard.features, sourceAssets:inspected.sourceAssets
+    acceptedFeatures:storyboard.features, sourceAssets:inspected.sourceAssets, p3BodyRedesign:p3Revision
   }});
   const professionalContext = await templateAuthorContextFromAssembly({
     root,
@@ -280,8 +280,8 @@ const projectAuthorInputs = async ({
       beforeBeatId: firstBeat.id
     }
   });
-  const templateContext = authorUnit.templateId === "vox-explainer" ? professionalContext
-    : { ...professionalContext, visual: { ...authorVisualContext(visualPackage, authorUnit.templateId), ...professionalContext?.visual } };
+  const templateContext = { ...professionalContext,
+    visual: { ...authorVisualContext(visualPackage, authorUnit.templateId), ...professionalContext?.visual } };
   const beatInput =
     authorUnit.kind === "beat" ? projectAuthorBeat(businessContent(firstBeat)) : null;
   const templateRunInput =

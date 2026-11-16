@@ -1,13 +1,19 @@
 import assert from 'node:assert/strict';
+import {execFile} from 'node:child_process';
 import {mkdtemp, mkdir, readFile, rm, writeFile} from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
+import {promisify} from 'node:util';
 import {atomicWriteData, hashObject, readData} from '../../../program-utils.mjs';
 import {getEpisodePaths} from '../../../workspace-paths.mjs';
 import {publishHistoricalContext, bindHistoricalContext} from './handoff.mjs';
 
 const write = atomicWriteData;
+const cuesFor = texts => texts.map((text, index) => ({
+  id: index + 1, text, startMs: index * 2000, endMs: (index + 1) * 2000
+}));
+
 async function setup(t) {
   const root = await mkdtemp(path.join(os.tmpdir(), 'historical-context-'));
   t.after(() => rm(root, {recursive: true, force: true}));
@@ -17,10 +23,15 @@ async function setup(t) {
   const base = {stageId: 'p3', nodeId: 'director', moduleId: 'direct-episode', subject: {id: 'ep01'},
     candidatePath: path.relative(root, candidatePath), scratchPath: 'ep01/制作/p3/_work/scratch',
     resolvedAssembly: {node: {id: 'director', moduleId: 'direct-episode'}, module: {id: 'direct-episode'}},
-    inputs: {cues: [1, 2, 3].map(id => ({id, text: `测试场面${id}`})), sourceAssets: [],
+    inputs: {cues: cuesFor(['测试场面1', '测试场面2', '测试场面3']), sourceAssets: [],
       templates: [{id: 'fullframe-narrative'}, {id: 'vox-explainer'}]}};
   const task = {...base, taskDigest: hashObject(base)};
-  const result = {albumPlan: {intent: '测试', openingState: '进入', progression: '变化', endingState: '结束', recurringElements: []},
+  const result = {understanding: {
+    episodeQuestion: '如何辨认变化？', thesis: '比较场景', narrativeArc: {start: '观察', turn: '比较', end: '确认'},
+    facts: [], relations: [], evidence: [], uncertainties: [], mustNotInvent: ['不增加数量'],
+    semanticReading: {underlyingMeaning: '理解变化', audienceStartingPoint: '尚未比较', targetUnderstanding: '看见区别',
+      speakerStances: [], contextConstraints: [], rhetoricalReadings: [], humanStakes: []}
+  }, albumPlan: {intent: '测试', openingState: '进入', progression: '变化', endingState: '结束', recurringElements: []},
     beats: [[1, 2], [3, 3]].map((cueRange, i) => ({id: `B00${i+1}`, cueRange,
       templateId: i ? 'vox-explainer' : 'fullframe-narrative', viewerOutcome: '看清对象',
       directorBrief: {roleInAlbum: '推进', mustShow: `原观看内容${i+1}`, relationFromPrevious: i ? '承接' : null}})),
@@ -45,8 +56,23 @@ async function setup(t) {
   const researchPath = path.join(scratch, 'research.json');
   await write(researchPath, research);
   return {root, input, task, result, candidatePath, workOrderPath, researchPath, research,
+    sourceAssetsPath: getEpisodePaths(root, 'ep01').sourceAssets,
     publish: () => publishHistoricalContext({workOrderPath, researchPath}),
     bind: sourceId => bindHistoricalContext({workOrderPath, sourceId})};
+}
+
+async function reopen(f, {returnRequest, cues, cueRanges}) {
+  const candidate = await readData(f.candidatePath);
+  const {taskDigest: _, ...base} = structuredClone(f.task);
+  base.inputs.currentVisualPlan = structuredClone(candidate.result);
+  base.inputs.sourceAssets = (await readData(f.sourceAssetsPath)).assets;
+  base.inputs.returnRequest = returnRequest;
+  base.inputs.cues = cues;
+  const taskDigest = hashObject(base);
+  cueRanges?.forEach((range, index) => { candidate.result.beats[index].cueRange = range; });
+  await write(f.workOrderPath, {...base, taskDigest});
+  await write(f.candidatePath, {...candidate, taskDigest});
+  return taskDigest;
 }
 
 test('完整考据登记并按Cue分发，重复恢复与拆Beat不串时期、不改观看原文', async t => {
@@ -109,23 +135,24 @@ test('已选画像漏原件、坏引用、缺文件及原件变化在候选写�
 });
 
 test('局部导演返工限定研究与交接范围，复用已登记原件', async t => {
-  const f = await setup(t), published = await f.publish();
+  const f = await setup(t);
+  const scopedResearch = structuredClone(f.research);
+  scopedResearch.contexts[0].cueRange = [1, 3];
+  await write(f.researchPath, scopedResearch);
+  const published = await f.publish();
   await f.bind(published.source.id);
   const current = await readData(f.candidatePath);
-  const {taskDigest: _, ...base} = f.task;
-  base.inputs.currentVisualPlan = structuredClone(current.result);
-  base.inputs.sourceAssets = (await readData(getEpisodePaths(f.root,'ep01').sourceAssets)).assets;
-  base.inputs.cues[2].text = '范围外已更新的字幕不影响本次复用';
-  base.inputs.returnRequest = {revisionScope:'director-revision', selectedBeatIds:['B001'], cueRefs:[1,2], baselineVisualPlanSha256:hashObject(current.result)};
-  const task = {...base,taskDigest:hashObject(base)};
-  await write(f.workOrderPath, task); await write(f.candidatePath,{...current,taskDigest:task.taskDigest});
+  const cues = structuredClone(f.task.inputs.cues);
+  cues[2].text = '范围外已更新的字幕不影响本次复用';
+  const taskDigest = await reopen(f, {cues, returnRequest: {revisionScope:'director-revision',
+    selectedBeatIds:['B001'], cueRefs:[1,2], baselineVisualPlanSha256:hashObject(current.result)}});
   const outside = current.result.beats[1];
   const reused = await f.bind(published.source.id);
   assert.deepEqual(reused.bindings.map(item => item.beatId), ['B001']);
   assert.deepEqual((await readData(f.candidatePath)).result, current.result);
-  await write(f.researchPath,{...f.research,taskDigest:task.taskDigest});
+  await write(f.researchPath,{...f.research,taskDigest});
   await assert.rejects(f.publish(), /超出本次导演修订/u);
-  const research = {...f.research,taskDigest:task.taskDigest,contexts:[f.research.contexts[0]], materials:[
+  const research = {...f.research,taskDigest,contexts:[f.research.contexts[0]], materials:[
     {key:'portrait',sourceAssetId:'SA001'},{key:'note',sourceAssetId:'SA002'}]};
   research.contexts[0].people[0].clothing.features = '修改授权范围内衣装说明';
   await write(f.researchPath,research);
@@ -136,6 +163,69 @@ test('局部导演返工限定研究与交接范围，复用已登记原件', as
   assert.equal(result.beats[0].directorBrief.mustShow.split('【历史视觉依据').length,2);
   assert.ok(result.beats[0].directorBrief.mustShow.includes(revised.source.id));
   assert.equal((await readData(getEpisodePaths(f.root,'ep01').sourceAssets)).assets.length,4);
+
+  await reopen(f, {cues: f.task.inputs.cues, returnRequest: {target: 'director', reason: '整集重绑'}});
+  await f.bind(revised.source.id);
+  assert.deepEqual((await readData(f.candidatePath)).result, result);
+  await f.bind(published.source.id);
+  assert.deepEqual((await readData(f.candidatePath)).result, result);
+  await f.bind();
+  assert.deepEqual((await readData(f.candidatePath)).result, result);
+  assert.equal((await readData(f.sourceAssetsPath)).assets.length, 4);
+
+  const combined = cuesFor(['测试场面1', '测试场面2测试场面3']);
+  await reopen(f, {cues: combined, cueRanges: [[1, 1], [2, 2]],
+    returnRequest: {cueRebinding: {previousCues: f.task.inputs.cues}}});
+  await f.bind();
+  await reopen(f, {cues: f.task.inputs.cues, cueRanges: [[1, 2], [3, 3]],
+    returnRequest: {cueRebinding: {previousCues: combined}}});
+  await f.bind();
+  const {beats} = (await readData(f.candidatePath)).result;
+  assert.deepEqual(beats[0], result.beats[0], '再次拆分也不会把旧考据挂回修改过的章节');
+  assert.match(beats[1].directorBrief.mustShow, /木门/u);
+});
+
+test('原文不变时随字幕拆合移动考据，实际改字仍返回导演', async t => {
+  const f = await setup(t), original = await f.publish();
+  await f.bind(original.source.id);
+  const separate = cuesFor(['测试', '场面1', '测试场面2', '测试场面3']);
+  await reopen(f, {cues: separate, cueRanges: [[1, 3], [4, 4]],
+    returnRequest: {cueRebinding: {previousCues: f.task.inputs.cues}}});
+  const command = path.join(import.meta.dirname, 'handoff.mjs');
+  const {stdout} = await promisify(execFile)(process.execPath, [command, 'bind', f.workOrderPath]);
+  const separated = JSON.parse(stdout);
+  assert.deepEqual(separated.bindings.map(item => item.cueRanges), [[[1, 2]], [[4, 4]]]);
+  const sourceId = separated.bindings[0].sourceId;
+  const assets = (await readData(f.sourceAssetsPath)).assets;
+  const asset = assets.find(item => item.id === sourceId);
+  const dossier = await readData(path.join(f.input, asset.path));
+  assert.deepEqual(dossier.sources, original.sourceAssets);
+  const bound = await readData(f.candidatePath);
+  await f.bind();
+  assert.deepEqual(await readData(f.candidatePath), bound);
+  assert.equal((await readData(f.sourceAssetsPath)).assets.length, assets.length);
+
+  const joined = cuesFor(['测试', '场面1测试场面2测试场面3']);
+  await reopen(f, {cues: joined, cueRanges: [[1, 1], [2, 2]],
+    returnRequest: {cueRebinding: {previousCues: separate}}});
+  const combined = await f.bind();
+  assert.deepEqual(combined.bindings.map(item => item.cueRanges), [[[1, 2]], [[1, 2], [2, 2]]]);
+
+  await reopen(f, {cues: separate, cueRanges: [[1, 3], [4, 4]],
+    returnRequest: {cueRebinding: {previousCues: joined}}});
+  const splitAgain = await f.bind();
+  assert.deepEqual(splitAgain.bindings.map(item => item.cueRanges), [[[1, 2]], [[4, 4]]]);
+  const beats = (await readData(f.candidatePath)).result.beats;
+  assert.doesNotMatch(beats[0].directorBrief.mustShow, /测试后期/u);
+  assert.doesNotMatch(beats[1].directorBrief.mustShow, /测试前期/u);
+
+  await reopen(f, {cues: cuesFor(['测试', '场面甲', '测试场面2', '测试场面3']),
+    returnRequest: {cueRebinding: {previousCues: separate}}});
+  const before = await readData(f.candidatePath);
+  const beforeAssets = await readData(f.sourceAssetsPath);
+  await assert.rejects(f.bind(), /考据对应口播已改变/u);
+  assert.deepEqual(await readData(f.candidatePath), before);
+  assert.deepEqual(await readData(f.sourceAssetsPath), beforeAssets);
 });
 
 test('无历史对象的恢复输入不制造空来源；未知权利不把图当成可用原件', async t => {

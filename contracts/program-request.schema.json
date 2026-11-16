@@ -30,7 +30,7 @@
     },
     "idea": {"type": "string", "minLength": 1},
     "planningBasis": {
-      "description": "The planning starting point, independent of research tools. Explainers can combine public texts, local materials and NotebookLM; video-led retains the supplied reference programme as its basis.",
+      "description": "Initial user-supplied material, independent of research tools. All historical-explainer requests search for existing programmes first, prefer video-based synthesis with supporting literature, and use literature-led creation only when no suitable programme is found. topic-led may acquire videos during P0; book-led supplies a book without selecting a separate explainer workflow; video-led supplies a prepared local manifest whose video identities are retained when merging. Documentary planning-basis rules are unchanged.",
       "oneOf": [
         {
           "type": "object", "additionalProperties": false,

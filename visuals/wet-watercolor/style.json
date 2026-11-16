@@ -1,0 +1,103 @@
+{
+  "schemaVersion": "visual-style-v4",
+  "shared": {
+    "artDirection": [
+      "湿画法二维手绘动画。随附的收布样图示范大块清亮暖色与深墨青的关系；河埠样图示范远雨雾和湿地带色的深倒影与断续亮痕；摊前样图示范檐下成片暖光、背光木构的浓暗和檐外的凉色。",
+      "先按既定光线组织完整色面。以深青绿、墨蓝或带色暖褐托住清亮的金赭、朱橙或黄绿，让颜色自然落在当前的衣物、植被、受光木石、水面等合适对象上。阴雨也保留近中景的浓色和带色深暗，灰绿集中于远层空气、散射天光和局部反光。",
+      "以连贯的透明薄洗和大块积色表现形体、明暗和空间。浓洗保住大面的整体颜色，湿边才有颜料交融、沉积和回晕，远处边缘逐层融进空气。土、石、木、甲、布、水先读到整体形和颜色，材质只用少量笔触提示，保留安静而连续的色面。",
+      "人物保留自然的年龄体态和赭色肤色。干后在关键承重、眼神、手与物件接触处用清楚的细笔收边，其它位置靠同色深浅相接。薄洗只局部露纸纤维；雨景保留带色暗层和水面断光，灯下保留成片的琥珀暖色与周围浓暗。"
+    ],
+    "mediumFamilies": [
+      "animated-scene-illustration"
+    ],
+    "fill": "layered-matte-color",
+    "fillFinish": "subtle-painted-material",
+    "shading": "natural-cel-lighting",
+    "surfaceTreatment": "neutral-xuan-paper",
+    "linework": {
+      "contourWeight": "fine",
+      "contourCharacter": "light-responsive-colored",
+      "interiorDetail": "essential-only",
+      "finish": "dry-ink-edge-variation"
+    },
+    "palette": {
+      "whiteBalance": "neutral",
+      "baseColors": [
+        "#CBD5D0",
+        "#ABBE98",
+        "#879A56",
+        "#074D36",
+        "#182D2A",
+        "#625545",
+        "#EC8631",
+        "#E3A718"
+      ],
+      "accentColors": [
+        "#BD4324"
+      ],
+      "forbiddenCasts": [
+        "yellow-brown-wash",
+        "old-photo-sepia"
+      ]
+    },
+    "renderExclusions": [
+      "photorealism",
+      "moe-large-eyes",
+      "high-gloss-3d-rendering",
+      "plastic-gloss-rendering"
+    ]
+  },
+  "profiles": {
+    "fullframe-image": {
+      "characterRendering": {
+        "proportion": "adult-natural",
+        "faceTreatment": "mature-animated-illustration",
+        "colorTreatment": "cel-lit-matte",
+        "lineTreatment": "shared-linework"
+      },
+      "environmentRendering": {
+        "shapeLanguage": "cinematic-everyday-scene",
+        "finish": "shared-matte"
+      },
+      "typographyRendering": {
+        "glyphStyle": "modern-sans",
+        "weight": "regular",
+        "finish": "flat-ink"
+      }
+    },
+    "bookend-image": {
+      "characterRendering": {
+        "proportion": "adult-natural",
+        "faceTreatment": "mature-animated-illustration",
+        "colorTreatment": "cel-lit-matte",
+        "lineTreatment": "shared-linework"
+      },
+      "environmentRendering": {
+        "shapeLanguage": "cinematic-everyday-scene",
+        "finish": "shared-matte"
+      },
+      "typographyRendering": {
+        "glyphStyle": "modern-sans",
+        "weight": "regular",
+        "finish": "flat-ink"
+      }
+    },
+    "cover-image": {
+      "characterRendering": {
+        "proportion": "adult-natural",
+        "faceTreatment": "mature-animated-illustration",
+        "colorTreatment": "cel-lit-matte",
+        "lineTreatment": "shared-linework"
+      },
+      "environmentRendering": {
+        "shapeLanguage": "cinematic-everyday-scene",
+        "finish": "shared-matte"
+      },
+      "typographyRendering": {
+        "glyphStyle": "plain-print",
+        "weight": "heavy",
+        "finish": "flat-ink"
+      }
+    }
+  }
+}

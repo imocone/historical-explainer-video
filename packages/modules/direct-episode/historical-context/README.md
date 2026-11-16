@@ -23,7 +23,7 @@
 node packages/modules/direct-episode/historical-context/handoff.mjs publish <workOrderPath> <scratchPath>/historical-context/research.json
 ```
 
-返回`source`是本次完整资料的SA、路径和摘要；`contexts`与`sourceAssets`为实际登记结果，材料key已被解析成SA。程序在原scratch写出`registered-context.json`供来源登记读取，正式消费者只读取原来源库中的那一份；它不成为另一份节目真源。重放同一研究输入复用原件和资料SA，中断时保留已登记项继续，不再次下载或生成。
+返回`source`是本次完整资料的SA、路径和摘要；`contexts`与`sourceAssets`为实际登记结果，材料key已被解析成SA。程序从当前scratch登记资料，供正式消费者读取的原件和资料都在本集来源库。重放同一研究输入复用原件和资料SA，中断时沿已登记项继续。
 
 接着绑定同一导演候选：
 
@@ -32,7 +32,9 @@ node packages/modules/direct-episode/historical-context/handoff.mjs bind <workOr
 node packages/p3-task-view.mjs <workOrderPath>
 ```
 
-`bind`以该完整研究快照替换可写范围内`mustShow`中由组件生成的`【历史视觉依据 SA…】`行，保留导演原文、其它字段与身份；按Cue交集分配context，多个时期同处一条B时分别标注适用Cue。全画幅拆Beat后再绑定同一资料，分配随实际Cue更新，不重搜史料。该行是读取提示，完整历史判断仍在资料正文，不能用行中对象名替代阅读。
+`bind <工作单> <新资料SA>`将本次完整资料分配到工作单可写范围。已分配过资料的导演候选，在拆合镜头、调整范围或恢复时，保留涉及的`【历史视觉依据 SA…】`行，运行`bind <工作单>`。程序沿候选已分配的所有有效资料重算Cue交集，不因某个章节用了新资料而清掉其它章的依据。提示中的「适用Cue」用来找到资料里对应的context，分配只覆盖其中一部分时另标「分配Cue」。作者按实际分配范围读取资料正文和原件。
+
+有正式字幕重分任务时，程序对照旧、新字幕的正文位置。正文相同就重算Cue范围，复用原件，并按需登记更新了范围的资料。多个语境合进同一条字幕后，资料保留各自对应的文字位置，后续再次拆分仍能分开。文字确实改动时，导演核对受影响的依据，再交接新的研究结果。
 
 局部返工的publish只接受工作单`returnRequest.cueRefs`内的新研究；bind可复用已有整集资料，只读取与可写Cue相交的context及其依据，只更新可写Beat，保留其它页面及其既有依据。修改研究时重新publish，再用新SA绑定；旧来源保留，不覆盖已有图片或其它章的资料。候选变化后原规划与封存按既有摘要合同失效，由导演根在原步骤重算；本组件不操作锁、不取得封存或接纳权。
 
@@ -51,6 +53,6 @@ node packages/p3-task-view.mjs <workOrderPath>
 
 ## 恢复与失败
 
-有研究输入而尚无资料SA时重放publish；已有适用资料SA时直接bind。原件缺失、内容或元数据变化由原来源责任方恢复；输入或范围不符回导演根核对。资料有误只修实际缺口，再publish、bind，保留有效原件与范围外依据。图纸正确而成图失真交原作者定点修图。
+有研究输入而尚无资料SA时重放publish。新资料已登记且尚未分配时带该SA运行bind，已经分配时按候选提示复用。原件缺失、内容或元数据变化由原来源责任方恢复；输入或范围不符回导演根核对。资料有误只修实际缺口，再publish、bind，保留有效原件与范围外依据。图纸正确而成图失真交原作者定点修图。
 
 检索、读史料、看原图与适用性判断由AI完成；程序只保真登记和分配，不自记质量通过、不抓网页或调用付费服务。下游按[作者使用方法](../references/period-appearance-method.md)落实图纸、实际传图并对照成图。

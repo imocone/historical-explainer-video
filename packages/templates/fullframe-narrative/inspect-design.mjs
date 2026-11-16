@@ -125,12 +125,14 @@ export const inspectFullframeDesign = async ({ workOrderPath, candidatePath, cli
     }));
   } else candidate.result = completeFullframeRepresentation(candidate.result);
   const views = await fullframeAuthorViews({ workspaceRoot, workOrder, candidate, beatIds: selected });
+  const batch = clipRequestId && workOrder.inputs.authorBatch
+    ? { members: workOrder.inputs.authorBatch.members, items: candidate.result.items } : null;
   const results = [];
   for (const view of views) {
     const selectedClip = view.item
       ? clipRequestId?.startsWith(`${view.item.beatId}/`) ? clipRequestId.split("/")[1] : null : clipRequestId;
     const feedback = await inspectDesignView({ workspaceRoot, workOrder: view.workOrder,
-      candidate: view.candidate, clipRequestId: selectedClip, bgmSourceAssetId, muteEffects });
+      candidate: view.candidate, clipRequestId: selectedClip, bgmSourceAssetId, muteEffects, batch });
     if (view.item) Object.assign(view.item, view.candidate.result);
     if (feedback.ok) await atomicWriteData(resolvedCandidatePath, candidate);
     results.push({ ...(view.item ? { beatId: view.item.beatId } : {}), ...feedback });
@@ -147,7 +149,7 @@ export const inspectFullframeDesign = async ({ workOrderPath, candidatePath, cli
     reviewAction: "read-complete-beat-feedback", beats: results.map(({ beatId, ok, failures }) => ({ beatId, ok, ...(failures ? { failures } : {}) })) };
 };
 
-const inspectDesignView = async ({ workspaceRoot, workOrder, candidate, clipRequestId, bgmSourceAssetId, muteEffects }) => {
+const inspectDesignView = async ({ workspaceRoot, workOrder, candidate, clipRequestId, bgmSourceAssetId, muteEffects, batch }) => {
   candidate.result = completeFullframeRepresentation(candidate.result);
   try {
     assertFullframeDesignStage(candidate.result);
@@ -191,7 +193,7 @@ const inspectDesignView = async ({ workspaceRoot, workOrder, candidate, clipRequ
   if (imagesReady) try {
     feedback.realImages = await renderCandidateCamera({workspaceRoot,
       systemRoot:path.resolve(path.dirname(fileURLToPath(import.meta.url)),"../../.."),workOrder,candidate,clipRequestId,
-      bgmSourceAssetId, muteEffects});
+      bgmSourceAssetId, muteEffects, batch});
   } catch (error) {
     if (!error.audioPlaybackFailure) await clearDesignLocks({workspaceRoot,workOrder});
     throw error;

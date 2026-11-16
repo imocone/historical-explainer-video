@@ -59,11 +59,11 @@ test('固定音轨使用实际母版，落定重音与5.38秒口播容量闭合'
 test('独立前景在首次图片交付拒绝不透明文件，不进入合成',async t=>{
   const workspaceRoot=await mkdtemp(path.join(os.tmpdir(),'crossfire-alpha-'));
   t.after(()=>rm(workspaceRoot,{recursive:true,force:true}));
-  const visual=JSON.parse(await readFile(path.join(root,'visuals/modern-editorial/visual-package.json'),'utf8'));
+  const visual=JSON.parse(await readFile(path.join(root,'visuals/wet-watercolor/visual-package.json'),'utf8'));
   const r=structuredClone(sample);r.flashbackShots[1].foreground={visualBrief:structuredClone(r.flashbackShots[1].visualBrief)};
   const {request}=buildImageRequests({treatment:r})[3],profile={stylePrompt:'测试画风',references:[]};
   await assert.rejects(importAuthoredImage({workspaceRoot,episodeId:'ep01',stageId:'p4',unitId:'opener',request,profile,
-    sourceFile:path.join(root,'visuals/modern-editorial',visual.masterReference.path),job:authoredImageJob({request,profile})}),/实际带透明区域/);
+    sourceFile:path.join(root,'visuals/wet-watercolor',visual.masterReference.path),job:authoredImageJob({request,profile})}),/实际带透明区域/);
 });
 
 test('三种片头沿原接纳器区分旁白，不跳过第三模板的正式音频证据',async t=>{

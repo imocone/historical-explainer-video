@@ -10,7 +10,7 @@ import {audioTracksForWindow, scenePreviewProps} from '../../modules/render-vide
 import {mixCompositionAudio} from '../../modules/render-video/runtime/audio-mix.mjs';
 import {assertAudioTracks} from '../../modules/render-video/runtime/render-contracts.mjs';
 import {resolveSceneEvents} from '../../templates/vox-explainer/scene.mjs';
-import {fullframeBoundaryFieldsFor} from '../../templates/fullframe-narrative/camera/author-transition-handoff.mjs';
+import {bodyTransitionFieldsFor} from '../../modules/render-video/runtime/transitions.mjs';
 import {musicEnvelopesForSegments} from '../background-music/dynamics.mjs';
 
 const fps = 60;
@@ -51,7 +51,7 @@ test('局部预览的转场占位不解析声音，实际场景和已接纳声�
   const actual = segment('TR002', 'vox-explainer');
   const placeholder = {id:'TR003', templateId:'vox-explainer', segmentType:'body',
     startMs:8000, endMs:14000, durationInFrames:360, assetRefs:[],
-    ...fullframeBoundaryFieldsFor('vox-explainer')};
+    ...bodyTransitionFieldsFor('vox-explainer')};
   const sound = {...result('M001', 'advance-explainer'), musicGestures:[{id:'G001',
     points:[{eventId:'E001', gain:.3}, {eventId:'E002', gain:1}]}]};
   actual.renderData.eventTimings.push({id:'E002', frame:120});
@@ -90,6 +90,9 @@ test('Lemo声音的有效落点、截取和声像实际通过PCM混音，预演�
   assert.deepEqual(pcm(partial),pcm(full).subarray(55*800*4,120*800*4),'跳转和最终封装读取同一声音片段');
   let left=0,right=0;
   const data=pcm(full);
+  const soundEnd = Math.round(tracks[0].endMs * fps / 1000);
+  assert.ok(data.subarray((soundEnd-1)*800*4,soundEnd*800*4).some(value => value !== 0),
+    '完整音效的最后一帧保留原素材余韵');
   for(let i=0;i<data.length;i+=4){left+=data.readInt16LE(i)**2;right+=data.readInt16LE(i+2)**2;}
   assert.ok(left > right*4,'声像实际进入混音');
   const windowed = audioTracksForWindow({tracks,fromFrame:55,toFrame:120,fps});
@@ -109,11 +112,13 @@ test('余韵跨Beat保留，并在原节目结尾收口', () => {
   const natural = soundTracksForSegment({segment:full,result:data,fps,durationMs:6000})[0];
   assert.equal(natural.startMs,1900);
   assert.equal(natural.endMs,3500);
+  assert.equal(natural.fadeOutFrames,0);
   const closed = soundTracksForSegment({segment:full,result:data,fps,durationMs:3000})[0];
   assert.equal(closed.endMs,3000);
+  assert.equal(closed.fadeOutFrames,2);
   const body = {...full,endMs:2000};
   assert.doesNotThrow(()=>assertAudioTracks({audioTracks:[closed],segments:[body],durationMs:3000,fps,
-    ending:{afterSegmentType:'body',afterSegmentId:body.id,startMs:2000,durationMs:1000}}));
+    ending:{afterSegmentType:'body',afterSegmentId:body.id,fadeEndMs:3000}}));
 });
 
 test('共享浮点混音限制真峰值，热信号裁窗与完整母线一致', async t => {
@@ -178,6 +183,63 @@ test('有旁白的完整母线按Lemo两遍响度整理，指定音乐在旁白�
   assert.ok(rms(2,2.6)<rms(.2,.8)*.7,'同一音乐频带在旁白段实际降低');
 });
 
+test('正文音效在对白下让位，停顿中的音效不压低音乐，跨对白结尾的尾声保留', async t => {
+  const {runMediaProcess} = await import('../../modules/render-video/runtime/media-process.mjs');
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'body-effects-mix-'));
+  t.after(() => rm(directory, {recursive:true, force:true}));
+  const tone = async (file, frequency, amplitude, duration) => {
+    await runMediaProcess('ffmpeg', ['-v','error','-f','lavfi','-i',
+      `aevalsrc=${amplitude}*sin(2*PI*${frequency}*t):s=48000:d=${duration}`,
+      '-ac','2','-c:a','pcm_f32le',path.join(directory,file)]);
+  };
+  await runMediaProcess('ffmpeg', ['-v','error','-f','lavfi','-i',
+    "aevalsrc=if(lt(t\\,2)\\,0.23\\,if(between(t\\,5\\,5.5)\\,0.027\\,0))*sin(2*PI*1000*t):s=48000:d=6",
+    '-ac','2','-c:a','pcm_f32le',path.join(directory,'voice.wav')]);
+  await tone('music.wav', 240, .09, 6);
+  await tone('effect.wav', 3200, .28, 1.5);
+  const track = (id, file, kind, startMs, endMs) => ({id, file, kind, segmentType:'body', startMs, endMs, volume:1});
+  const props = {fps, durationMs:6000, audioTracks:[
+    track('voice','voice.wav','narration',0,6000),
+    track('music','music.wav','background-music',0,6000),
+    track('under-voice','effect.wav','sound-effect',1000,2500),
+    track('in-pause','effect.wav','sound-effect',3500,4500),
+    track('under-quiet-voice','effect.wav','sound-effect',4700,6000)
+  ]};
+  const mix = (fromFrame, toFrame) => mixCompositionAudio({projectDirectory:directory, props,
+    timeline:{anchorMs:0, fromFrame, toFrame}});
+  const pcm = bytes => bytes.subarray(bytes.indexOf(Buffer.from('data')) + 8);
+  const full = pcm(await readFile(await mix(0,360)));
+  // The probes occupy separate frequencies. Measure only the intended stem
+  // on each interval, with identical finishing gain on all windows.
+  const amplitude = (frequency, from, to) => {
+    let sin = 0, cos = 0;
+    for (let sample = Math.round(from * 48000); sample < Math.round(to * 48000); sample++) {
+      const angle = sample * 2 * Math.PI * frequency / 48000;
+      const value = full.readInt16LE(sample * 4);
+      sin += value * Math.sin(angle);
+      cos += value * Math.cos(angle);
+    }
+    return Math.hypot(sin, cos) / ((to - from) * 48000);
+  };
+  const pausedEffect = amplitude(3200,3.75,4.25);
+  assert.ok(pausedEffect > 2000, '对白结束后仍播放正文音效');
+  assert.ok(amplitude(3200,2.25,2.5) > 2000, '正在播放的音效可自然跨过对白结尾');
+  const overlapRatio = amplitude(3200,1.25,1.75) / pausedEffect;
+  assert.ok(overlapRatio > .55 && overlapRatio < .85, `对白下的音效相对电平 ${overlapRatio}`);
+  const musicRatio = amplitude(240,3.75,4.25) / amplitude(240,3,3.25);
+  assert.ok(Math.abs(musicRatio - 1) < .04, `正文音效期间的配乐相对电平 ${musicRatio}`);
+  for (const [from,to] of [[5,5.025],[5.15,5.4]]) {
+    const quietRatio = amplitude(3200,from,to) / amplitude(1000,from,to);
+    assert.ok(quietRatio > .35 && quietRatio < .95, `轻声开口及持续发声时，音效保留且低于旁白 ${quietRatio}`);
+  }
+  const endingRatio = amplitude(3200,5.98,6) / pausedEffect;
+  assert.ok(endingRatio > .8, `控制信号的前探不会截断节目末尾的声源：${endingRatio}`);
+  const endingMusicRatio = amplitude(240,5.98,6) / amplitude(240,3.75,4.25);
+  assert.ok(endingMusicRatio > .8, `旁白让位处理不会截断节目末尾的配乐：${endingMusicRatio}`);
+  const window = pcm(await readFile(await mix(70,300)));
+  assert.deepEqual(window, full.subarray(70 * 800 * 4,300 * 800 * 4), '裁窗保留相同的对白检测和混音状态');
+});
+
 test('音乐意图由背景音乐包解析，撤出与回归实际进入PCM，裁窗不重启包络或音乐', async t => {
   const {contribute:music} = await import('../background-music/render-entry.mjs');
   const {resolveMusicGestures} = await import('../background-music/dynamics.mjs');
@@ -203,7 +265,7 @@ test('音乐意图由背景音乐包解析，撤出与回归实际进入PCM，�
     assert.deepEqual(tracks[0].gainEnvelopes[0], [{frame:150,gain:1},{frame:180,gain:0},{frame:240,gain:0},{frame:300,gain:1}]);
     const order={inputs:{cues:[{startMs:2000}]},resolvedAssembly:{slots:[{implementations:[{packageId:'sound-effects'}]}]}};
     const preview=specifiedMusicForWindow({sourceAssetId:'SA001',sourceAssets,episodeId:'ep01',fromFrame:165,toFrame:330,
-      fps,bodyEndMs:8000,workOrder:order,result:{featureResults:{'sound-effects':design}},segment:{...scene,startMs:0}});
+      fps,bodyStartMs:0,bodyEndMs:8000,workOrder:order,result:{featureResults:{'sound-effects':design}},segment:{...scene,startMs:0}});
     assert.deepEqual(preview,audioTracksForWindow({tracks,fromFrame:165,toFrame:330,fps}),'候选与正式交付投影相同');
     assert.deepEqual(music({...args,storyboard:{features:{'sound-effects':{...storyboard.features['sound-effects'],enabled:false}}}}).audioTracks[0].gainEnvelopes,[]);
     assert.deepEqual(music({...args,segments:[{...scene,templateId:'cinematic-video'}]}).audioTracks[0].gainEnvelopes,[]);
@@ -223,6 +285,54 @@ test('音乐意图由背景音乐包解析，撤出与回归实际进入PCM，�
   }
 });
 
+test('本集登记实录可直接配声，保留出处和原卡点，拒绝权利未知或已改变的录音', async t => {
+  const {writeFile} = await import('node:fs/promises');
+  const {hashObject} = await import('../../program-utils.mjs');
+  const {getEpisodePaths} = await import('../../workspace-paths.mjs');
+  const {registerP3Source} = await import('../../p3-sources.mjs');
+  const {runMediaProcess} = await import('../../modules/render-video/runtime/media-process.mjs');
+  const {generateSound} = await import('./generate.mjs');
+  const {validateRuntime} = await import('./validate.mjs');
+  const root = await mkdtemp(path.join(os.tmpdir(), 'recorded-sound-'));
+  t.after(() => rm(root, {recursive:true, force:true}));
+  const episodeId = 'ep01';
+  const paths = getEpisodePaths(root, episodeId);
+  const orderDir = path.join(paths.p3, '_work/author/TR001');
+  const scratch = path.join(orderDir, 'attempt');
+  await mkdir(scratch, {recursive:true});
+  await mkdir(paths.input, {recursive:true});
+  await writeFile(paths.sourceAssets, JSON.stringify({schemaVersion:'1.0', assets:[]}));
+  const base = {stageId:'p3', moduleId:'author-beat', subject:{id:episodeId},
+    candidatePath:path.relative(root, path.join(orderDir, 'candidate.yaml')), scratchPath:path.relative(root, scratch),
+    resolvedAssembly:{slots:[{implementations:[{packageId:'sound-effects'}]}]},
+    inputs:{sourceAssets:[], authorUnit:{templateId:'fullframe-narrative'}}};
+  const workOrderPath = path.join(orderDir, 'work-order.yaml');
+  await writeFile(workOrderPath, JSON.stringify({...base, taskDigest:hashObject(base)}));
+  const file = path.join(scratch, 'source.wav');
+  await runMediaProcess('ffmpeg', ['-v','error','-f','lavfi','-i','sine=frequency=410:sample_rate=44100:duration=1',file]);
+  const source = {file, mediaType:'audio', rightsStatus:'public-domain', creator:null, date:null,
+    sourceCitation:'离线测试录音', usageNotes:'用于验证录音裁切和卡点'};
+  const registered = await registerP3Source({workOrderPath, source});
+  const restricted = await registerP3Source({workOrderPath, source:{...source, rightsStatus:'unknown'}});
+  const recipePath = path.join(scratch, 'recipe.json');
+  const recipeFor = sourceAssetId => writeFile(recipePath, JSON.stringify({syncSeconds:0.1, layers:[
+    {generator:'recording', parameters:{sourceAssetId, startSeconds:0.25, endSeconds:0.65}}]}));
+  await recipeFor(registered.id);
+  const asset = await generateSound({workOrderPath, recipePath});
+  assert.equal(asset.durationSeconds, 0.4);
+  assert.equal(asset.syncSeconds, 0.1);
+  assert.deepEqual(await validateRuntime({result:{events:[{asset}]}, services:{workspaceRoot:root, episodeId}}), []);
+  const snapshot = JSON.parse(await readFile(path.join(root, asset.file.replace(/\.wav$/, '.json')), 'utf8'));
+  assert.deepEqual(snapshot.recordingSources, [registered]);
+  const pcm = await readFile(path.join(root, asset.file));
+  assert.ok(pcm.subarray(pcm.indexOf(Buffer.from('data')) + 8).some(value => value !== 0));
+  await recipeFor(restricted.id);
+  await assert.rejects(() => generateSound({workOrderPath, recipePath}), /权利状态不可用于外部生产/);
+  await recipeFor(registered.id);
+  await writeFile(path.join(paths.input, registered.path), '被替换的实录');
+  await assert.rejects(() => generateSound({workOrderPath, recipePath}), /与登记文件不一致/);
+});
+
 test('专用制声保存实际源码、参数与PCM，源码改变形成新资产，坏输出不交付', async t => {
   const {writeFile,readdir} = await import('node:fs/promises');
   const {hashObject} = await import('../../program-utils.mjs');
@@ -236,7 +346,13 @@ test('专用制声保存实际源码、参数与PCM，源码改变形成新资�
   await writeFile(work,JSON.stringify({...base,taskDigest:hashObject(base)}));
   const recipe=path.join(scratch,'sound.json'),source=path.join(scratch,'sound.py');
   await writeFile(recipe,JSON.stringify({seed:23,sourceFile:'sound.py',syncSeconds:.2,parameters:{d:.4}}));
-  const code='import numpy as np\ndef render(*, sr, rng, d):\n    t=np.arange(round(sr*d))/sr\n    return rng.standard_normal(len(t))*.01*np.sin(np.pi*t/d)\n';
+  const code=`import numpy as np
+def render(*, sr, rng, d):
+    t = np.arange(round(sr * d)) / sr
+    quiet = rng.standard_normal(len(t)) * .01 * np.sin(np.pi * t / d)
+    peak_before_cut = .8 * ((t >= .02) & (t < .03))
+    return quiet + peak_before_cut
+`;
   await writeFile(source,code);
   const a=await generateSound({workOrderPath:work,recipePath:recipe});
   const again=await generateSound({workOrderPath:work,recipePath:recipe});
@@ -245,7 +361,48 @@ test('专用制声保存实际源码、参数与PCM，源码改变形成新资�
   const stored=path.join(dir,a.file);
   assert.equal(await readFile(stored.replace(/\.wav$/,'.py'),'utf8'),code);
   assert.equal(JSON.parse(await readFile(stored.replace(/\.wav$/,'.json'))).parameters.d,.4);
-  await writeFile(source,code.replace('*.01','*.02'));
+  const uncutRecipe=JSON.parse(await readFile(recipe,'utf8'));
+  const clip={startSeconds:.05,endSeconds:.3,fadeInSeconds:.025,fadeOutSeconds:.08};
+  await writeFile(recipe,JSON.stringify({...uncutRecipe,clip}));
+  const clipped=await generateSound({workOrderPath:work,recipePath:recipe});
+  assert.equal(clipped.durationSeconds,.25);
+  assert.ok(Math.abs(clipped.syncSeconds-.15)<1e-12);
+  const pcm = bytes => bytes.subarray(bytes.indexOf(Buffer.from('data'))+8);
+  const originalPcm=pcm(await readFile(stored));
+  const clippedPcm=pcm(await readFile(path.join(dir,clipped.file)));
+  const bytesAt=seconds=>Math.round(seconds*48000)*6;
+  assert.deepEqual(clippedPcm.subarray(bytesAt(.05),bytesAt(.15)),
+    originalPcm.subarray(bytesAt(.1),bytesAt(.2)),'裁掉峰值后，窗口中间仍保持原电平');
+  assert.notDeepEqual(clippedPcm.subarray(bytesAt(.2),bytesAt(.24)),
+    originalPcm.subarray(bytesAt(.25),bytesAt(.29)),'淡出发生在指定的窗口内');
+  assert.deepEqual(clippedPcm.subarray(-6),Buffer.alloc(6));
+  const gainEnvelope=[
+    {atSeconds:0,gain:0},{atSeconds:.05,gain:0},{atSeconds:.08,gain:1},
+    {atSeconds:.2,gain:1},{atSeconds:.3,gain:0}
+  ];
+  await writeFile(recipe,JSON.stringify({...uncutRecipe,gainEnvelope}));
+  const shaped=await generateSound({workOrderPath:work,recipePath:recipe});
+  const shapedPcm=pcm(await readFile(path.join(dir,shaped.file)));
+  assert.equal(shaped.syncSeconds,a.syncSeconds);
+  assert.equal(shaped.durationSeconds,a.durationSeconds);
+  assert.deepEqual(shapedPcm.subarray(bytesAt(.1),bytesAt(.2)),
+    originalPcm.subarray(bytesAt(.1),bytesAt(.2)),'曲线压掉原峰，未改的窗口仍保持原电平');
+  assert.deepEqual(shapedPcm.subarray(0,bytesAt(.05)),Buffer.alloc(bytesAt(.05)));
+  assert.deepEqual(shapedPcm.subarray(bytesAt(.3)),Buffer.alloc(bytesAt(.1)));
+  const scene=segment('B001','fullframe-narrative');
+  const [track]=contribute({phase:'audio-tracks',segments:[scene],fps,featureData:{units:{B001:{events:[{
+    id:'S001',purpose:'声音作用结束后给口播留空间',asset:clipped,
+    anchor:{target:'AR001',action:'start-frame-motion',offsetSeconds:1}
+  }]}}}}).audioTracks;
+  assert.equal(track.startMs,2850);
+  assert.equal(track.endMs,3100);
+  await writeFile(recipe,JSON.stringify({...uncutRecipe,clip,syncSeconds:.299999}));
+  const nearEnd=await generateSound({workOrderPath:work,recipePath:recipe});
+  assert.ok(Math.abs(nearEnd.syncSeconds-.249999)<1e-12,'窗口内贴近末尾的卡点仍有效');
+  await writeFile(recipe,JSON.stringify({...uncutRecipe,clip:{...clip,endSeconds:.15}}));
+  await assert.rejects(()=>generateSound({workOrderPath:work,recipePath:recipe}),/保留syncSeconds/);
+  await writeFile(recipe,JSON.stringify(uncutRecipe));
+  await writeFile(source,code.replace('* .01','* .02'));
   const b=await generateSound({workOrderPath:work,recipePath:recipe});
   assert.notEqual(a.file,b.file);assert.notEqual(a.sha256,b.sha256);
   const before=await readdir(path.dirname(stored));
@@ -270,7 +427,7 @@ test('音乐可安静结束、相邻单位低电平接续，完整PCM与末尾�
   const units={B001:gesture([[0,1],[1,.3]]),B002:gesture([[0,.3],[1,.3],[2,0],[5,0]])};
   const args={phase:'audio-tracks',featureData:{sourceAssetId:'SA001'},episodeId:'ep01',fps,
     sourceAssets:[{id:'SA001',mediaType:'audio',path:'music.wav',sha256:'a'.repeat(64),rightsStatus:'public-domain'}],
-    bodyOffsetMs:0,bodyEndMs:8000,episodeEnding:{afterSegmentType:'body',startMs:8000,durationMs:1000},
+    bodyOffsetMs:0,bodyEndMs:8000,episodeEnding:{afterSegmentType:'body',fadeEndMs:9000,fadeFrames:120},
     segments:[one,two],storyboard:{features:{'sound-effects':{units}}}};
   const tracks=music(args).audioTracks;
   assert.equal(tracks[0].gainEnvelopes[0].at(-1).frame,180,'本单位保持到结束，不能压制后续独立章节');
@@ -305,6 +462,21 @@ test('声音作者读取同章已有声音与实际音乐，局部预览保留�
   assert.deepEqual(context.acceptedUnits.map(u=>u.unitId),['B001'],'只投递同章已有声音，不依赖其它章');
   assert.deepEqual(context.acceptedUnits[0].result,prior);
   assert.deepEqual(context.music,{enabled:false});
+  const rebinding = {episodeId:'ep01',authorUnit:{id:'B002'},
+    authorUnits:[unit(1),unit(2),{...unit(3),paragraph:{id:'TR001'},beats:[{cueRange:[4,4]}]}],
+    episodeCues:[cues[0],cues[1],{...cues[2],id:4}],acceptedFeatures,sourceAssets:[],
+    p3BodyRedesign:{cueRebinding:{previousCues:cues},pendingAuthorUnitIds:['B002','B003']}};
+  const baseline = structuredClone(rebinding);
+  assert.deepEqual(projectAuthorContext(rebinding).acceptedUnits,context.acceptedUnits,
+    '待重新绑定的同章声音不进入当前时序，未受影响参考完整保留');
+  assert.deepEqual(rebinding,baseline,'上下文投影不清空原设计或功能');
+  assert.throws(() => projectAuthorContext({...rebinding,p3BodyRedesign:null}),/cueId 必须唯一存在: 3/u,
+    '没有待修身份的坏绑定仍须报告，不能吞错放行');
+  const repaired = structuredClone(rebinding);
+  repaired.acceptedFeatures['cue-sync'].bindings.B003.items[0].cueId = 4;
+  repaired.p3BodyRedesign.pendingAuthorUnitIds = ['B002'];
+  assert.deepEqual(projectAuthorContext(repaired).acceptedUnits.map(unit => unit.unitId),['B001','B003'],
+    '完成重新绑定的单位重新提供声音参考');
   const order={inputs:{authorUnit:{id:'B002'},cues:[cues[1]]},resolvedAssembly:{slots:[{implementations:[{kind:'feature',packageId:'sound-effects'}]}]}};
   const current={...segment('B002','fullframe-narrative'),startMs:0,endMs:2000,durationInFrames:120};
   const tracks=await candidateEffectTracks({workOrder:order,result:{featureResults:{'sound-effects':{events:[]}}},
@@ -312,13 +484,13 @@ test('声音作者读取同章已有声音与实际音乐，局部预览保留�
   assert.equal(tracks[0].startMs,0);
   assert.equal(tracks[0].sourceStartFrame,6);
   assert.equal(tracks[0].endMs,1500,'前一Beat余韵实际进入本Beat预览，不重启音效');
-  const args={sourceAssets:[],episodeId:'ep01',fromFrame:120,toFrame:240,fps,bodyEndMs:6000,
+  const args={sourceAssets:[],episodeId:'ep01',fromFrame:120,toFrame:240,fps,bodyStartMs:0,bodyEndMs:6000,
     workOrder:order,result:{featureResults:{'sound-effects':{events:[]}}},segment:current,audioContext:context};
   assert.deepEqual(specifiedMusicForWindow(args),[]);
   const {['background-music']: _music, ...unselectedFeatures} = acceptedFeatures;
   const unselectedContext=projectAuthorContext({episodeId:'ep01',authorUnit:{id:'B002'},authorUnits:[unit(1),unit(2),unit(3)],
     episodeCues:cues,acceptedFeatures:unselectedFeatures,sourceAssets:[]});
-  assert.deepEqual(unselectedContext.music,{enabled:false},'未选择音乐不能补成默认曲目');
+  assert.deepEqual(unselectedContext.music,{enabled:false},'未配置个人音乐时，缺少节目选择仍保持无配乐');
   assert.deepEqual(specifiedMusicForWindow({...args,audioContext:unselectedContext}),[]);
   const defaultContext=projectAuthorContext({episodeId:'ep01',authorUnit:{id:'B002'},authorUnits:[unit(1),unit(2),unit(3)],
     episodeCues:cues,acceptedFeatures:{...acceptedFeatures,'background-music':{}},sourceAssets:[]});

@@ -18,6 +18,7 @@ import {
   assertCoverRegenerationRequest,
   assertPublicationRevisionHasNoRemoteActivity,
   assertPublicationRevisionRequest,
+  canReviseRetainedPlatformCopy,
   sealedPublicationBusinessForRevision
 } from "./publication-requests.mjs";
 import { resolveStageCurrent } from "./status.mjs";
@@ -259,12 +260,14 @@ const preparePublicationRevision = async ({
       }
       await mkdir(workPaths.work, { recursive: true });
       const script = await readData(paths.scriptPackage);
-      const reusedNarrationMaterials = await resolveReusableNarrationMaterials({ workspaceRoot, episodeId,
+      const retainedCopy = await canReviseRetainedPlatformCopy({ workspaceRoot, episodeId,
+        request: { revisionScope, publicationFields } });
+      const reusedNarrationMaterials = retainedCopy ? null : await resolveReusableNarrationMaterials({ workspaceRoot, episodeId,
         episodeBrief, materialExecutionId: script._producer?.materialExecutionId });
       await atomicWriteData(requestPath, {
         target: authorNodeId,
         revisionRequestId: randomUUID(),
-        reusedNarrationMaterials,
+        ...(reusedNarrationMaterials ? { reusedNarrationMaterials } : {}),
         reason: revisionReason ?? (adoptCoverImages
           ? "用户明确指定横竖成图；保留正文、片头和平台文案，只将封面可见文字和场面说明忠实对齐所选原图，直接采用原图，不重新构思或生图"
           : adoptCoverExamples

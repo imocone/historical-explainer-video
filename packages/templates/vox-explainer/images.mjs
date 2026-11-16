@@ -1,11 +1,12 @@
 import path from 'node:path';
-import {pathToFileURL} from 'node:url';
+import {fileURLToPath, pathToFileURL} from 'node:url';
 import {mkdir, readFile, copyFile, readdir} from 'node:fs/promises';
 import {pythonCommand, runtimeEnvironment} from '../../runtime-config.mjs';
 import {isGeneratedImage, imageGenerationMetadata} from '../../image-provenance.mjs';
 import {assertProjectPath, atomicWriteData, hashObject, readData, sha256, stableStringify} from '../../program-utils.mjs';
 import {readP3Sources} from '../../p3-sources.mjs';
-import {imageProfileFor,imageAppearanceDigest,imageRolePalette} from './image-style.mjs';
+import {imageProfileFor,imageRolePalette,programDrawingFor,recordedProgramDrawingFor} from './image-style.mjs';
+import {loadProgramVisualPackage} from '../../visual-package.mjs';
 import {getEpisodePaths} from '../../workspace-paths.mjs';
 import {validateExplainerPlacement} from './image-geometry.mjs';
 import {projectRhetoricalBoundaries} from '../../modules/author-beat/projection.mjs';
@@ -44,8 +45,10 @@ export function imageJob({request, treatment, profile, referenceImages = []}) {
   const transparentBackground = request.transparentBackground !== false;
   const style = profile.styles[request.visualBrief.styleReference ?? 'general'];
   if (!style) throw new Error('图片参考用途须为general或terrain');
+  const colors = imageRolePalette(profile.palette, request.visualBrief);
   return {
     prompt: [style.stylePrompt,
+      `图文角色色：${JSON.stringify(colors)}；仅用于本件蓝图引用的角色和图形，实物材质保留本色。模板底板颜色不作为物体配色，也不画入透明图件。`,
       '画风参考提供画法，内容与构图以本件图片设计为准。',
       ...referenceImages.map(({kind, source}, index) => `第${style.references.length + index + 1}张参考图是${kind === 'revision'
         ? '本件待修改的原图。只按当前蓝图和修正意见改变所需部分，保留其余有效形象、结构与画法。'
@@ -106,11 +109,33 @@ function matchesDrawingPrompt(job, request, treatment, {reuse = false} = {}) {
   } catch { return false; }
 }
 
-function matchesPromptPalette(prompt, palette) {
-  const colors = prompt?.match(/^图文角色色：(\{[^\n]+\})；/mu);
-  if (!colors) return false;
-  try { return hashObject(imageRolePalette(JSON.parse(colors[1]))) === hashObject(imageRolePalette(palette)); }
-  catch { return false; }
+const paletteLine = /^图文角色色：(\{[^\n]*\})；[^\n]+$/mu;
+
+function readPromptPalette(prompt) {
+  const instructions = prompt?.split(/^本段解释目标：/mu, 1)[0];
+  const record = instructions?.match(paletteLine);
+  if (!record) return null;
+  try {
+    const palette = JSON.parse(record[1]);
+    return palette && typeof palette === 'object' && !Array.isArray(palette) ? palette : null;
+  } catch { return null; }
+}
+
+function matchesPromptPalette(prompt, requiredColors, {exact = false} = {}) {
+  const savedColors = readPromptPalette(prompt);
+  if (!savedColors || (exact && Object.keys(savedColors).length !== Object.keys(requiredColors).length)) return false;
+  return Object.entries(requiredColors).every(([role, color]) =>
+    Object.hasOwn(savedColors, role) && typeof savedColors[role] === 'string' && savedColors[role].toLowerCase() === color);
+}
+
+function sameCompletedDrawingCall(saved, expected) {
+  if (saved.provider !== 'openai-images' || typeof saved.job?.prompt !== 'string'
+    || hashObject(saved.job) !== saved.jobDigest) return false;
+  const requiredColors = readPromptPalette(expected.prompt);
+  if (requiredColors === null || !matchesPromptPalette(saved.job.prompt, requiredColors)) return false;
+  const withoutPalette = job => ({...job, prompt: job.prompt.replace(
+    /\n{1,2}图文角色色：\{[^\n]*\}；[^\n]+\n\n/u, '\n\n')});
+  return hashObject(withoutPalette(saved.job)) === hashObject(withoutPalette(expected));
 }
 
 async function matchesImageDrawing(asset, request, treatment, workspace) {
@@ -119,11 +144,13 @@ async function matchesImageDrawing(asset, request, treatment, workspace) {
 
 // A provenance digest may include typesetting. The saved tool prompt remains
 // the evidence of the image's actual colors; never rewrite it to match a layout.
-async function matchesImageAppearance(asset, profile, workspace = {}) {
+async function matchesImageAppearance(asset, request, profile, workspace = {}) {
   if(!workspace.workspaceRoot||!workspace.episodeId||!workspace.unitId||!asset.promptFile
     || ['source','art','tone'].some(key=>asset.appearance?.[key]!==profile[key]))return false;
   const {prompt}=await readImagePrompt(asset,workspace);
-  return matchesPromptPalette(prompt, profile.palette);
+  const savedVisualId = prompt?.match(/^节目画风：([^\n]+)$/mu)?.[1];
+  if (profile.visualPackageId && savedVisualId && profile.visualPackageId !== savedVisualId) return false;
+  return matchesPromptPalette(prompt, imageRolePalette(profile.palette, request.visualBrief));
 }
 
 const savedIdentityReference = (job, original) => {
@@ -142,15 +169,18 @@ const savedIdentityReference = (job, original) => {
   return typeof reference === 'string' && reference ? reference : null;
 };
 
+const cyclicImageReference = (id, chain) =>
+  new Error(`讲解图片不能循环引用：${[...chain.slice(chain.indexOf(id)), id].join(' → ')}`);
+
 function imageFreshness({treatment, profile, ...workspace}) {
   const known = new Map();
   return async function current(request, ancestors = new Set()) {
     if (known.has(request.requestId)) return known.get(request.requestId);
-    if (ancestors.has(request.requestId)) throw new Error('讲解图片不能循环引用');
+    if (ancestors.has(request.requestId)) throw cyclicImageReference(request.requestId, [...ancestors]);
     const {asset} = request;
     let fresh = Boolean(asset) && (Boolean(request.sourceAssetId)
       || (isGeneratedImage(asset) && await matchesImageDrawing(asset, request, treatment, workspace)
-        && await matchesImageAppearance(asset, profile, workspace)));
+        && await matchesImageAppearance(asset, request, profile, workspace)));
     if (fresh && request.referenceImageId) {
       const original = treatment.assetRequests.find(item => item.requestId === request.referenceImageId);
       if (!original || original.requestId === request.requestId || request.sourceAssetId)
@@ -183,25 +213,39 @@ export async function imageJobs({treatment, profile, semanticContext, cues, ...w
     if(!await current(request))pending.push(request);
   }
   const pendingIds = new Set(pending.map(request => request.requestId));
-  const jobs = [], waiting = [];
+  const jobs = [], waiting = new Map();
   for (const request of pending) {
     if (request.referenceImageId) {
       const original = treatment.assetRequests.find(item => item.requestId === request.referenceImageId);
-      if (!original || original.requestId === request.requestId) throw new Error(`${request.requestId} 须引用本段另一张图片`);
+      if (!original) throw new Error(`${request.requestId} 找不到引用原图 ${request.referenceImageId}`);
+      if (original.requestId === request.requestId) throw cyclicImageReference(request.requestId, [request.requestId]);
       if (!original.asset || pendingIds.has(original.requestId)) {
-        waiting.push(`${request.requestId} 等待 ${original.requestId}`);
+        waiting.set(request.requestId, original.requestId);
         continue;
       }
     }
     const referenceImages = await imageReferences({request, treatment, ...workspace});
     jobs.push({requestId: request.requestId, job: imageJob({request, treatment, profile, referenceImages})});
   }
-  if (!jobs.length && waiting.length) throw new Error(`先完成引用原图，不能循环引用：${waiting.join('；')}`);
+  if (!jobs.length && waiting.size) {
+    const originals = new Set();
+    for (const start of waiting.keys()) {
+      const chain = [];
+      let id = start;
+      while (waiting.has(id)) {
+        if (chain.includes(id)) throw cyclicImageReference(id, chain);
+        chain.push(id);
+        id = waiting.get(id);
+      }
+      originals.add(id);
+    }
+    throw new Error(`先用 import-source 导入登记原件 ${[...originals].join('、')}，再运行 prepare`);
+  }
   return jobs;
 }
 
 // Old API results can be imported, but cannot silently become new native calls.
-export async function prepareImageCalls({jobs, workspaceRoot, scratchPath}) {
+export async function prepareImageCalls({jobs, workspaceRoot, scratchPath, legacyContextFor}) {
   const scratch = path.resolve(workspaceRoot, scratchPath);
   await assertProjectPath({root:workspaceRoot,file:scratch,label:'讲解图片工作目录'});
   const prepared = [];
@@ -224,9 +268,30 @@ export async function prepareImageCalls({jobs, workspaceRoot, scratchPath}) {
     const unresolved = generations.filter(({saved}) => saved.state !== 'completed');
     if (unresolved.length)
       throw new Error(`${item.requestId} 原图片API失败或结果未知；保留原调用，不改请求、目录或服务重投`);
-    const original = generations.find(({saved}) => saved.jobDigest === digest);
+    let original = generations.find(({saved}) => saved.jobDigest === digest);
+    if (!original && generations.length) {
+      original = generations.find(({saved}) => sameCompletedDrawingCall(saved, item.job));
+    }
+    if (!original && generations.length && legacyContextFor) {
+      const context = await legacyContextFor(item.requestId);
+      if (context.recordedProfile) {
+        const recordedJob = imageJob({...context, profile:context.recordedProfile});
+        original = generations.find(({saved}) => sameCompletedDrawingCall(saved, recordedJob));
+      }
+      if (!original) {
+        const referencePaths = JSON.stringify(imageJob(context).referenced_image_paths);
+        original = generations.find(({saved: {provider, job, jobDigest}}) =>
+          provider === 'openai-images'
+          && typeof job?.prompt === 'string' && !/^节目画风：/mu.test(job.prompt)
+          && hashObject(job) === jobDigest
+          && JSON.stringify(job.referenced_image_paths) === referencePaths
+          && matchesDrawingPrompt(job, context.request, context.treatment)
+          && matchesPromptPalette(job.prompt, imageRolePalette(context.profile.palette, context.request.visualBrief)));
+      }
+    }
     if (original) {
-      prepared.push({...item,recovery:{sourceFile:path.join(original.directory,'image.png'),receiptPath:original.receiptPath}});
+      const job = original.saved.jobDigest === digest ? item.job : original.saved.job;
+      prepared.push({...item,job,recovery:{sourceFile:path.join(original.directory,'image.png'),receiptPath:original.receiptPath}});
       continue;
     }
     prepared.push(item);
@@ -267,12 +332,12 @@ export async function verifyAuthoredImage({asset, request, treatment, appearance
     if (!isGeneratedImage(asset) || !await matchesImageDrawing(asset, request, treatment,
       {workspaceRoot, episodeId, unitId}))
       throw new Error(`${request.requestId} 图片与当前图片设计不一致`);
-    if(appearance&&!await matchesImageAppearance(asset,{...appearance,digest:imageAppearanceDigest(appearance)},
-      {workspaceRoot,episodeId,unitId})) throw new Error(`${request.requestId}图片与当前讲解样式不一致`);
+    if (appearance && !await matchesImageAppearance(asset, request, appearance, {workspaceRoot, episodeId, unitId}))
+      throw new Error(`${request.requestId}图片与当前讲解样式不一致`);
   }
   await verifyImageFiles({asset, workspaceRoot, episodeId, unitId});
   if (request.referenceImageId) {
-    const current = imageFreshness({treatment, profile: await loadImageProfile(appearance), workspaceRoot, episodeId, unitId});
+    const current = imageFreshness({treatment, profile: appearance, workspaceRoot, episodeId, unitId});
     if (!await current(request)) throw new Error(`${request.requestId} 引用原图已变化，沿原图片入口修正`);
   }
   return asset;
@@ -298,13 +363,15 @@ export async function importAuthoredImage({workspaceRoot, episodeId, unitId, req
   if (!job || typeof job.prompt !== 'string' || !job.prompt.trim() || job.transparent_background !== transparentBackground)
     throw new Error('导入须带本次自带生图实际使用的完整参数JSON');
   const referenceImages = await imageReferences({request, treatment, workspaceRoot, episodeId, unitId, sourceAssets});
-  const expected = imageJob({request, treatment, profile, referenceImages}).referenced_image_paths;
-  if (JSON.stringify(job.referenced_image_paths) !== JSON.stringify(expected))
+  const expected = imageJob({request, treatment, profile, referenceImages});
+  if (JSON.stringify(job.referenced_image_paths) !== JSON.stringify(expected.referenced_image_paths))
     throw new Error('生图调用须原样携带画风参考与所选原图；缺失或变更时不能导入');
   if (!matchesDrawingPrompt(job, request, treatment))
     throw new Error(`${request.requestId} 实际生图参数与当前绘图输入不一致，沿原图片入口修正`);
-  if (!matchesPromptPalette(job.prompt, profile.palette))
+  if (!matchesPromptPalette(job.prompt, imageRolePalette(profile.palette, request.visualBrief), {exact: !generationReceipt}))
     throw new Error(`${request.requestId} 实际生图配色与当前讲解样式不一致，沿原图片入口修正`);
+  if (profile.visualPackageId && !job.prompt.startsWith(profile.styles[request.visualBrief.styleReference ?? 'general'].stylePrompt + '\n\n'))
+    throw new Error(`${request.requestId} 实际生图参数未沿用当前节目画风`);
   const image = await readFile(sourceFile);
   const generation = await imageGenerationMetadata({job, sourceFile, receipt:generationReceipt});
   if (image.subarray(0, 8).toString('hex') !== '89504e470d0a1a0a') throw new Error('自带生图结果须为PNG原图');
@@ -362,24 +429,52 @@ async function main() {
     || candidate.taskDigest !== task.taskDigest || candidate.returnTo) throw new Error('需要当前图片讲解作者工作单及同一候选');
   const treatment = candidate.result.treatment;
   const sourceAssets = await readP3Sources({workspaceRoot, workOrder: task});
+  const systemRoot = fileURLToPath(new URL('../../../', import.meta.url));
+  const drawingProfiles = async () => {
+    const visualPackage = await loadProgramVisualPackage(systemRoot, workspaceRoot,
+      {roles: ['productionProfiles'], profileKinds: ['fullframe-image']});
+    const drawing = programDrawingFor(visualPackage);
+    const recorded = task.inputs.templateContext?.visual;
+    const recordedDrawing = recorded?.stylePrompt === drawing.stylePrompt
+      ? null : recordedProgramDrawingFor(visualPackage, recorded);
+    return {
+      current: await loadImageProfile(treatment.appearance, drawing),
+      recorded: recordedDrawing ? await loadImageProfile(treatment.appearance, recordedDrawing) : null
+    };
+  };
   if (command === 'prepare') {
-    const profile = await loadImageProfile(treatment.appearance);
+    const {current:profile, recorded:recordedProfile} = await drawingProfiles();
     const {semanticContext, cues} = task.inputs;
-    const jobs = await imageJobs({treatment,profile,semanticContext,cues,sourceAssets,
-      workspaceRoot,episodeId:task.subject.id,unitId:task.inputs.authorUnit.id});
-    console.log(JSON.stringify(await prepareImageCalls({jobs,workspaceRoot,scratchPath:task.scratchPath}),null,2));
+    const workspace = {sourceAssets, workspaceRoot, episodeId: task.subject.id, unitId: task.inputs.authorUnit.id};
+    const jobs = await imageJobs({treatment,profile,semanticContext,cues,...workspace});
+    const legacyContextFor = async requestId => {
+      const projected = projectRhetoricalBoundaries(treatment, {semanticContext, cues});
+      const request = projected.assetRequests.find(item => item.requestId === requestId);
+      return {request, treatment: projected, recordedProfile, profile: await loadImageProfile(treatment.appearance),
+        referenceImages: await imageReferences({request, treatment: projected, ...workspace})};
+    };
+    console.log(JSON.stringify(await prepareImageCalls({jobs,workspaceRoot,scratchPath:task.scratchPath,legacyContextFor}),null,2));
     return;
   }
   const request = treatment.assetRequests.find(item => item.requestId === requestId);
   if (!request) throw new Error(`候选没有图片请求 ${requestId}`);
   const common = {workspaceRoot, episodeId: task.subject.id, unitId: task.inputs.authorUnit.id, request};
   const call = command === 'import' ? await readData(path.resolve(jobFile)) : null;
+  const profileForImport = async () => {
+    const prompt = (call.job ?? call).prompt;
+    if (call.provider === 'openai-images' && !/^节目画风：/mu.test(prompt))
+      return loadImageProfile(treatment.appearance);
+    const {current, recorded} = await drawingProfiles();
+    const oldStyle = recorded?.styles[request.visualBrief.styleReference ?? 'general'];
+    return oldStyle && typeof prompt === 'string' && prompt.startsWith(oldStyle.stylePrompt + '\n\n')
+      ? recorded : current;
+  };
   request.asset = command === 'import-source'
     ? await importSourceImage({...common, sourceAssets,
       anchors: sourceFile ? await readData(path.resolve(sourceFile)) : {}})
     : await importAuthoredImage({...common, treatment, sourceAssets,
       semanticContext: task.inputs.semanticContext, cues: task.inputs.cues,
-      profile: await loadImageProfile(treatment.appearance),
+      profile: await profileForImport(),
       sourceFile: path.resolve(sourceFile), job:call.job ?? call,
       generationReceipt:call.provider === 'openai-images' ? call : undefined,
       anchors: anchorsFile ? await readData(path.resolve(anchorsFile)) : {}});

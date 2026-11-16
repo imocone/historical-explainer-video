@@ -23,5 +23,6 @@ export async function readReferenceVideos(descriptor, ids = null) {
 export async function episodeReferenceVideos(plan, episodeId) {
   if (!plan?.referenceProgram) return undefined;
   const episode = plan.episodes.find(item => item.episodeId === episodeId);
+  if (!episode?.referenceVideoIds?.length) return undefined;
   return readReferenceVideos(plan.referenceProgram, episode.referenceVideoIds);
 }

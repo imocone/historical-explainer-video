@@ -44,7 +44,7 @@ const fixture = async t => {
   const workspaceRoot = await mkdtemp(path.join(os.tmpdir(), 'camera-queue-'));
   t.after(() => rm(workspaceRoot, {recursive: true, force: true}));
   const systemRoot = fileURLToPath(new URL('../../../../', import.meta.url));
-  const visual = path.join(systemRoot, 'visuals/modern-editorial');
+  const visual = path.join(systemRoot, 'visuals/wet-watercolor');
   const manifest = JSON.parse(await readFile(path.join(visual, 'visual-package.json'), 'utf8'));
   await cp(path.join(visual, manifest.masterReference.path), path.join(workspaceRoot, 'source.png'));
   const motion = {type: 'push-in', speedRatio: 1, startViewport: {x: 0, y: 0, width: 1, height: 1},

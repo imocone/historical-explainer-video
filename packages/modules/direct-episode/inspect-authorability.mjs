@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 
 import path from "node:path";
+import { readP3Sources } from "../../p3-sources.mjs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { atomicWriteData, readData } from "../../program-utils.mjs";
 import {
-  directorAuthorabilityErrors,
+  directorOpenerTemplate,
   inspectDirectorAuthorability
 } from "./authorability.mjs";
 import { renumberDirectorResult, validate as validateDirectorCandidate } from "./validate.mjs";
@@ -45,7 +46,7 @@ export const inspectCurrentDirectorCandidate = async ({ workOrderPath, candidate
     result: candidate.result,
     context: {
       ...workOrder.inputs,
-      understanding: workOrder.inputs?.understanding?.content
+      sourceAssets: await readP3Sources({ workspaceRoot, workOrder })
     }
   });
   if (validationErrors.length) {
@@ -55,20 +56,20 @@ export const inspectCurrentDirectorCandidate = async ({ workOrderPath, candidate
   const allowedTemplateIds = new Set((workOrder.inputs?.templates ?? []).flatMap((template) => (
     isPackageId(template?.id) ? [template.id] : []
   )));
-  const inspections = await inspectDirectorAuthorability({
+  const inspection = await inspectDirectorAuthorability({
     result: candidate.result,
     cues: workOrder.inputs?.cues ?? [],
+    openerTemplate: await directorOpenerTemplate({ workspaceRoot, context: workOrder.inputs }),
     includePlanning: true,
     loadCuePolicy: (templateId) => loadCuePolicyFromCatalog({ templateId, allowedTemplateIds })
   });
-  const errors = directorAuthorabilityErrors(inspections);
-  if (errors.length) return { authorable: false, units: inspections, errors, renumbered: numbered.changes };
+  if (inspection.errors.length) return { authorable: false, ...inspection, renumbered: numbered.changes };
   await writeDirectorAuthorabilityLock({
     workspaceRoot,
     task: workOrder,
     result: candidate.result
   });
-  return { authorable: true, units: inspections, renumbered: numbered.changes };
+  return { authorable: true, ...inspection, renumbered: numbered.changes };
 };
 
 const main = async () => {
@@ -87,15 +88,19 @@ export const projectDirectorInspection = (inspection) => ({
   ...inspection,
   units: inspection.units.map((unit) => ({
     ...unit,
-    ...(unit.planning ? {
+    ...(unit.planning?.options ? {
       planning: {
         ...unit.planning,
-        options: unit.planning.options.map(({ binding, frames }) => ({
+        options: unit.planning.options.map(({ binding, frames, ...option }) => ({
+          ...option,
           binding,
-          frames: frames.map(({ frameId, visibleDurationMs, readableDurationMs }) => ({
+          frames: frames.map(({ frameId, visibleDurationMs, readableDurationMs, runtimeDurationMs,
+            cameraPrerollFrames, exitTailFrames, runtimeTravelRange, pureZoomConstantSpeedRange }) => ({
             frameId,
             visibleDurationMs,
-            readableDurationMs
+            readableDurationMs,
+            ...(runtimeDurationMs === undefined ? {} : { runtimeDurationMs, cameraPrerollFrames, exitTailFrames,
+              runtimeTravelRange, pureZoomConstantSpeedRange })
           }))
         }))
       }

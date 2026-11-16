@@ -29,6 +29,13 @@
       }
     },
     "remoteTaskId": {"type": ["string", "null"]},
+    "durationMs": {"type": "integer", "minimum": 1},
+    "pronunciations": {
+      "type": "array", "items": {
+        "type": "object", "additionalProperties": false, "required": ["text", "reading"],
+        "properties": {"text": {"type": "string", "minLength": 1}, "reading": {"type": "string", "minLength": 1}}
+      }
+    },
     "nativeTiming": {
       "oneOf": [
         {"type": "null"},

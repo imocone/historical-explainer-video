@@ -13,90 +13,8 @@ import { aiTask, programTask } from "./tasks.mjs";
 import { catalogsFromAssembly } from "./implementations.mjs";
 import { sourceAssetsDigest, videoVisualContext } from "./visual-inputs.mjs";
 import { controllerInputs } from "./author-tasks.mjs";
-const buildUnderstandingTask = async ({
-  node,
-  assembly,
-  model,
-  inspected,
-  workspaceRoot,
-  returnRequests,
-  root,
-  episodeId,
-  paths
-}) => {
-  const record = model.packages.get(node.moduleId);
-  const narrationPackageProjection = {
-    episodeId: inspected.narrationPackage.episodeId,
-    language: inspected.narrationPackage.language,
-    durationMs: inspected.narrationPackage.durationMs,
-    narrationSha256: inspected.narrationPackage.files.narration.sha256,
-    subtitlesSha256: inspected.narrationPackage.files.subtitles.sha256
-  };
-  const projected = controllerInputs({
-    record,
-    projections: {
-      "narration-package": {
-        inputs: {
-          narrationPackage: {
-            source: `${relative(workspaceRoot, inspected.narrationPackagePath)}#semantic-inputs`,
-            sha256: hashObject(narrationPackageProjection),
-            content: narrationPackageProjection
-          },
-          narration: {
-            source: relative(workspaceRoot, inspected.filePaths.narration),
-            sha256: inspected.narrationPackage.files.narration.sha256,
-            content: inspected.narration
-          },
-          cues: inspected.cues
-        },
-        context: { cues: inspected.cues },
-        inputHashes: [
-          hashObject(narrationPackageProjection),
-          inspected.narrationPackage.files.narration.sha256,
-          inspected.narrationPackage.files.subtitles.sha256
-        ]
-      },
-      "source-assets": {
-        inputs: { sourceAssets: inspected.sourceAssets },
-        context: { sourceAssets: inspected.sourceAssets },
-        inputHashes: [sourceAssetsDigest(inspected)],
-        producerInputHashes: []
-      }
-    },
-    controlInputs: {
-      ...(returnRequests.get(node.id) ? { returnRequest: returnRequests.get(node.id) } : {})
-    },
-    controlInputHashes: [
-      ...(returnRequests.get(node.id)
-        ? [hashObject(businessContent(returnRequests.get(node.id)))]
-        : [])
-    ]
-  });
-  const task = await aiTask({
-    root,
-    model,
-    workspaceRoot,
-    episodeId,
-    node,
-    record,
-    assembly,
-    ...projected,
-    producerInputHashesForResult: (result) =>
-      producerInputsWithSelectedSources({
-        base: projected.producerInputHashes,
-        result,
-        sourceAssets: inspected.sourceAssets
-      }),
-    outputPath: paths.storyboard,
-    allowedWrite: `${relative(workspaceRoot, paths.storyboard)}#understanding`,
-    taskId: `${episodeId}/${node.id}`,
-    mode: "understanding",
-    context: projected.context
-  });
-  return task;
-};
-
 const buildVisualDirectorTask = async ({
+  programPlan,
   node,
   assembly,
   model,
@@ -109,14 +27,19 @@ const buildVisualDirectorTask = async ({
   episodeId
 }) => {
   const record = model.packages.get(node.moduleId);
-  const understanding = storyboard.understanding;
-  const understandingInput = businessContent(understanding);
   const returnRequest = returnRequests.get(node.id) ?? null;
-  const currentVisualPlan = storyboard.albumPlan ? directorResultSlice(storyboard) : null;
+  const currentVisualPlan = storyboard?.albumPlan ? directorResultSlice(storyboard) : null;
+  const currentUnderstanding = !currentVisualPlan && storyboard?.understanding
+    ? businessContent(storyboard.understanding) : null;
   const availableTemplateCatalogs = catalogsFromAssembly(assembly, "template");
   const projected = controllerInputs({
     record,
     projections: {
+      "program-plan": {
+        inputs: { openerTemplate: programPlan.openerTemplate },
+        context: { openerTemplate: programPlan.openerTemplate },
+        inputHashes: [hashObject(programPlan.openerTemplate)], producerInputHashes: []
+      },
       "source-assets": {
         inputs: { sourceAssets: inspected.sourceAssets },
         context: { sourceAssets: inspected.sourceAssets },
@@ -138,17 +61,6 @@ const buildVisualDirectorTask = async ({
           inspected.narrationPackage.files.subtitles.sha256
         ]
       },
-      "storyboard-understanding-section": {
-        inputs: {
-          understanding: {
-            source: `${relative(workspaceRoot, paths.storyboard)}#understanding`,
-            sha256: hashObject(understandingInput),
-            content: understandingInput
-          }
-        },
-        context: { understanding: understandingInput },
-        inputHashes: [hashObject(understandingInput)]
-      },
       "template-catalog": {
         inputs: {
           templates: availableTemplateCatalogs.map((item) => item.content)
@@ -161,6 +73,7 @@ const buildVisualDirectorTask = async ({
       }
     },
     controlInputs: {
+      ...(currentUnderstanding ? { currentUnderstanding } : {}),
       ...(currentVisualPlan ? { currentVisualPlan } : {}),
       ...(returnRequest ? { returnRequest } : {})
     },
@@ -169,6 +82,7 @@ const buildVisualDirectorTask = async ({
       ...(returnRequest ? { returnRequest } : {})
     },
     controlInputHashes: [
+      ...(currentUnderstanding ? [hashObject(currentUnderstanding)] : []),
       ...(currentVisualPlan
         ? [hashObject(currentVisualPlan), requireDirectorAcceptanceDigest(storyboard)]
         : []),
@@ -185,6 +99,10 @@ const buildVisualDirectorTask = async ({
     record,
     assembly,
     ...projected,
+    producerInputHashesForResult: (result) =>
+      producerInputsWithSelectedSources({
+        base: projected.producerInputHashes, result, sourceAssets: inspected.sourceAssets
+      }),
     outputPath: paths.storyboard,
     allowedWrite: relative(workspaceRoot, paths.storyboard),
     taskId: `${episodeId}/${node.id}`,
@@ -255,4 +173,4 @@ const buildVideoTask = async ({ root, model, workspaceRoot, episodeId, paths, no
   });
 };
 
-export { buildUnderstandingTask, buildVisualDirectorTask, buildVideoTask };
+export { buildVisualDirectorTask, buildVideoTask };

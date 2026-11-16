@@ -62,11 +62,37 @@ test("仍可行的稳定首选及双框远距安排保持原结果", () => {
     { x: 1224, y: 572, width: 600, height: 224 }]);
 });
 
-test("真正无四角组合时仍失败，不交付部分排位或删除框", () => {
+test("四角只能摆两张人物牌时，第三张沿安全区边缘选位", () => {
+  const [segment] = segments();
+  const original = segment.renderData.fullframe[0].motion;
+  segment.renderData.fullframe = [
+    { x: 1 / 3, y: 0, width: 2 / 3, height: 2 / 3 },
+    { x: 0, y: 1 / 3, width: 2 / 3, height: 2 / 3 }
+  ].map((viewport, index) => {
+    const motion = { ...original, semanticEndViewport: viewport, safeEndViewport: viewport,
+      startFrame: index * 10, endFrame: index * 10 + 9, runtimeEndFrame: index * 10 + 9 };
+    return { requestId: `AR00${index + 1}`, motion: {
+      ...motion, ...deriveMotionCameras({ motion, fps: 60, motionPolicy: FULLFRAME_RENDER_POLICY.motion })
+    } };
+  });
+  const layout = { width: 600, height: 285 };
+  const input = [overlay("person", 0, 20, [layout]), overlay("pair", 0, 20, [layout, layout])];
+  for (const item of input) {
+    for (const callout of item.renderData.calloutOverlayGroup.callouts) callout.kind = "person-intro";
+  }
+  placeCalloutOverlays({ overlays: input, segments: [segment], policy: { ...policy, width: 2160 } });
+  const [left, middle, right] = rectangles(input).sort((a, b) => a.x - b.x);
+  assert.deepEqual([left.x, left.y, right.x, right.y], [96, 64, 1464, 511]);
+  assert.equal(middle.y, 64);
+  assert.ok(middle.x > left.x && middle.x < right.x);
+  assert.equal(overlaps(left, middle) || overlaps(left, right) || overlaps(middle, right), false);
+});
+
+test("安全区无法容纳全部框时仍失败，不交付部分排位或删除框", () => {
   const input = Array.from({ length: 5 }, (_, index) => overlay(`crowded-${index}`, 0, 100,
     [{ width: 600, height: 224 }]));
   const before = structuredClone(input);
-  assert.throws(() => placeCalloutOverlays({ overlays: input, segments: segments(), policy }), /四角.*冲突/);
+  assert.throws(() => placeCalloutOverlays({ overlays: input, segments: segments(), policy }), /候选位置.*冲突/);
   assert.deepEqual(input, before);
 });
 
@@ -92,6 +118,6 @@ test("历史引文按稳定位置覆盖观看区域，人物和术语仍避让�
   placeCalloutOverlays({ overlays: original, segments: segments(), policy });
   assert.deepEqual(rectangles(quote), rectangles(original), "相机观看区域不改变引文的稳定选位");
   for (const kind of ["person-intro", "term-gloss"]) {
-    assert.throws(() => placeCalloutOverlays({ overlays: inputFor(kind), segments: covered, policy }), /四角.*冲突/);
+    assert.throws(() => placeCalloutOverlays({ overlays: inputFor(kind), segments: covered, policy }), /候选位置.*冲突/);
   }
 });

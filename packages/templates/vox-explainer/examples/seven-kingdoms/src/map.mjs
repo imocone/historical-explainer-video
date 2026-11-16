@@ -1,4 +1,4 @@
-import {C,N,g,at,P,R,L,E,T,U} from './drawing.mjs';
+import {C,N,g,at,P,R,L,E,T,U} from '../../../artwork/drawing.mjs';
 import {MAP_PALETTE as M} from '../../../spatial/map-style.mjs';
 // Keep the approved paper-map palette. Geometry and its presentation stay SVG.
 const merc=lat=>Math.log(Math.tan(Math.PI/4+lat*Math.PI/360));
@@ -13,8 +13,7 @@ function geoPath(v){
  if(v.type==='LineString')return line(v.coordinates,false);
  if(v.type==='MultiLineString')return v.coordinates.map(r=>line(r,false)).join('');return '';
 }
-// Shape grammar retained from the template's map-paper: a thin irregular edge,
-// two light vertical folds, and a small lifted corner. No rectangular UI card.
+// Paper edge, folds and lifted corner from this finished example's original layout.
 function paperEdge(w,h,s){
  const points=[[4,7],[w*.32,3.5],[w*.67,5],[w-7,4],[w-3,h-54*s]],out=[];
  const edge=(a,b,n,seed)=>{const dx=b[0]-a[0],dy=b[1]-a[1],len=Math.hypot(dx,dy);for(let i=0;i<n;i++){const t=i/n,rough=Math.sin(Math.PI*t)*(.65*Math.sin(i*1.71+seed)+.28*Math.sin(i*.59+seed));out.push([a[0]+dx*t-dy/len*rough,a[1]+dy*t+dx/len*rough]);}};

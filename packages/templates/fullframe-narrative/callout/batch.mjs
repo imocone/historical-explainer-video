@@ -229,21 +229,22 @@ export const validateAcceptance = async ({ result, context, services }) => {
 };
 
 // Read-only downstream view. Original body and cue-sync producers remain intact.
-export const projectResolvedQuotes = (storyboard, context) => {
+export const projectResolvedQuotes = (storyboard, context, { allowPending = false } = {}) => {
   const requests = collectQuoteRequests(storyboard);
   if (!requests.length) return storyboard;
   const resolutions = resolveQuoteDecisions(storyboard, context);
   const projected = structuredClone(storyboard);
   for (const request of requests) {
     const resolution = resolutions.get(request.id)?.item;
-    if (!resolution || !Object.hasOwn(resolution, "quote")) throw new Error(`${request.id} 引文尚未收口`);
+    const resolved = resolution && Object.hasOwn(resolution, "quote");
+    if (!allowPending && !resolved) throw new Error(`${request.id} 引文尚未收口`);
     const beat = projected.beats.find((entry) => entry.id === request.beatId);
     const asset = beat.treatment.assetRequests.find((entry) => entry.requestId === request.requestId);
-    if (resolution.quote !== null) {
+    if (resolved && resolution.quote !== null) {
       asset.callouts[request.calloutIndex] = { ...structuredClone(resolution.quote), anchorFocus: request.anchorFocus };
       beat.treatment.calloutGate["historical-quote"] = "required";
     } else {
-      if (request.calloutIndex !== asset.callouts.length - 1) throw new Error(`${request.id} 取消会改变其它框身份`);
+      if (request.calloutIndex !== asset.callouts.length - 1) throw new Error(`${request.id} 移除引文框会改变其它框身份`);
       asset.callouts.splice(request.calloutIndex, 1);
       if (!asset.callouts.length) delete asset.callouts;
       beat.treatment.calloutGate["historical-quote"] = "deferred-no-source";

@@ -260,6 +260,40 @@ test("P1一项横版及两项竖版原文同批交给自带工具，不补系列
   } finally { await rm(root, { recursive: true, force: true }); }
 });
 
+test("整阶段重跑收口后定点修订竖封面，后续检查仍采用新图", async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), "native-covers-restart-revision-"));
+  try {
+    const task = await makeTask(root);
+    const stageRestartId = "finished-restart";
+    task.context.stageRestartId = stageRestartId;
+    task.inputHashes.push(hashObject({ stageRestart: stageRestartId }));
+    const { receipt: original } = await nativeBatch(root, task);
+
+    const revision = structuredClone(task);
+    revision.context.coverRegeneration = {
+      target: "produce-covers",
+      revisionScope: "cover-visual",
+      regenerationRequestId: "vertical-revision",
+      variants: ["vertical"],
+      reason: "把竖版文字移到画面下段"
+    };
+    const updatedSource = png(900, 1200, "0x775533");
+    const { batch, receipt: updated } = await nativeBatch(root, revision, { vertical: updatedSource });
+    assert.deepEqual(batch.requests.map(({ variant }) => variant), ["vertical"]);
+    assert.deepEqual(updated.files.youtube, original.files.youtube);
+    assert.equal(updated.generation.vertical.sourceSha256, sha256(updatedSource));
+
+    const afterCloseout = await inspect({ root, episodeId: "ep01", targetId: "release-main", task });
+    assert.equal(afterCloseout.valid, true);
+    assert.deepEqual(afterCloseout.result.generation.vertical, updated.generation.vertical);
+
+    const nextRestart = structuredClone(task);
+    nextRestart.context.stageRestartId = "new-restart";
+    nextRestart.inputHashes = [hashObject({ stageRestart: "new-restart" })];
+    assert.equal((await inspect({ root, episodeId: "ep01", targetId: "release-main", task: nextRestart })).readyToRun, true);
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
+
 test("多张画风共用一张参考板，每个画幅只再带一张标准封面", async () => {
   const root = await mkdtemp(path.join(os.tmpdir(), "native-covers-two-references-"));
   try {

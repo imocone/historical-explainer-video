@@ -1,12 +1,13 @@
 # 全画幅转场执行说明
 
-选择依据只见[语义方法](narrative-transitions.md)。作者交付选择，程序计算并执行；缺少选择返回作者，不自动补叠化。
+接法按[语义方法](narrative-transitions.md)设计。导演在全画幅分镜中确定相邻镜头的接法，作者按实际构图与运动落实两侧显露，程序按交付值计算和执行。
 
 ## 写入位置
 
-| 作者 | 唯一结果 |
+| 环节 | 正式结果 |
 |---|---|
-| P3全画幅 | 相邻全画幅的Beat入场写`treatment.incomingTransition`；同Beat B入场写该请求的`incomingTransition`。首Beat及讲解后的Beat顶层写`null`，由对应模板拥有进出。 |
+| P3导演分镜 | 相邻全画幅的接法写在进入的Beat的`incomingTransition`。正文首镜及紧接讲解的全画幅写`null`，由对应模板负责进出。 |
+| P3全画幅作者 | 新分镜沿导演交接写入`treatment.incomingTransition`。既有同Beat A/B画面的接法沿B请求的`incomingTransition`。 |
 | P4剧情视频 | `candidate.result.incomingTransitions`，以进入片段B／V编号保存视频替换后改变的全画幅媒体外侧接缝；片头、讲解交界及被覆盖成员内部不登记，不回写P3。 |
 
 两种效果都只交`type / durationMs / reason`，不带方向。技术容量至少2帧、至多1800毫秒；规划预算可保留未设计边界，正式全画幅接缝不能用空值代替选择。

@@ -1,6 +1,7 @@
-import { access, mkdir, readFile } from "node:fs/promises";
+import { access, mkdir, readFile, rm } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import Ajv2020 from "ajv/dist/2020.js";
 import {
   assertProjectMutationTree,
@@ -11,10 +12,9 @@ import {
   programProducer,
   readData,
   sha256,
-  withProjectLock,
-  withoutProducer
+  withProjectLock
 } from "../../program-utils.mjs";
-import { createMiniMaxTtsService, miniMaxPayload } from "./minimax.mjs";
+import { createMiniMaxTtsService, miniMaxPayload, validatePronunciations } from "./minimax.mjs";
 import { getEpisodePaths, getStageWorkPaths } from "../../workspace-paths.mjs";
 import { ttsVoice } from '../../runtime-config.mjs';
 
@@ -84,6 +84,8 @@ const pathsFor = ({ root, episodeId, task = {} }) => {
     raw: path.join(p2, "raw-narration.flac"),
     result: resultPath,
     intent: path.join(work, "tts-intent.yaml"),
+    response: path.join(work, "tts-response.json"),
+    readings: path.join(p2, "tts-readings.json"),
     lock: path.join(work, ".tts-synthesis.lock")
   };
 };
@@ -163,11 +165,9 @@ export const validatePreparedNarration = (text) => {
   if ([...text].length > MAX_TTS_CHARACTERS) {
     throw new Error("P2 口播稿超过同步 TTS 小于 10000 字符的供应商上限，必须退回 P1 缩短");
   }
-  if (text.includes("\n\n") || horizontalWhitespace.test(text)) {
-    horizontalWhitespace.lastIndex = 0;
-    throw new Error("P2 清洗结果只能以单个自然段换行分隔，不能保留横向空白");
+  if (text.includes("\n\n")) {
+    throw new Error("P2 清洗结果只能以单个自然段换行分隔");
   }
-  horizontalWhitespace.lastIndex = 0;
   for (const [index, paragraph] of text.split("\n").entries()) {
     if (!PARAGRAPH_END.test(paragraph)) {
       throw new Error(`第 ${index + 1} 个自然段缺少句末标点，必须退回 P1 修正`);
@@ -180,7 +180,7 @@ export const prepareNarrationText = (source) => {
   const canonical = source.replace(/\r\n?/gu, "\n");
   const sourceParagraphs = canonical
     .split(/\n[\p{Zs}\t\v\f\u00a0]*\n+/gu)
-    .map((paragraph) => paragraph.replace(/[\n\r\p{Zs}\t\v\f\u00a0]/gu, ""))
+    .map((paragraph) => paragraph.replace(/\n/gu, "").replace(horizontalWhitespace, " ").replace(/^ +| +$/gu, ""))
     .filter(Boolean);
   const paragraphs = mergeSingleSentenceParagraphs(sourceParagraphs);
   const text = paragraphs.join("\n");
@@ -215,14 +215,26 @@ const paidAuthorized = (task) => task?.context?.paidTtsAuthorized === true
   || task?.authorization?.paidTts === true;
 
 const contractSha256 = (contract) => hashObject(contract);
+const intentBusiness = ({ _producer, ...business }) => business;
 
-const synthesisFingerprint = ({ text, contract, restartId }) => {
+const synthesisFingerprint = ({ text, contract, pronunciations, restartId }) => {
   validateTtsContract(contract);
   return hashObject({
     provider: contract.provider,
-    request: miniMaxPayload({ text, contract }),
+    request: miniMaxPayload({ text, contract, pronunciations }),
     ...(restartId ? { restartId } : {})
   });
+};
+
+const readingsFromPaths = async (paths) => validatePronunciations(
+  await exists(paths.readings) ? await readData(paths.readings) : []);
+
+export const savePronunciations = async ({ root, episodeId, pronunciations }) => {
+  const paths = pathsFor({ root, episodeId });
+  await assertProjectMutationTree({ root, file: paths.p2, label: "本集读音输入" });
+  const value = validatePronunciations(pronunciations);
+  await atomicWriteData(paths.readings, value);
+  return { path: paths.readings, count: value.length };
 };
 
 const validateDocumentSchema = async ({ schema, value, label }) => {
@@ -238,7 +250,7 @@ const validateDocumentSchema = async ({ schema, value, label }) => {
 
 const assertStoredProducer = ({ artifact, label }) => {
   const producer = artifact?._producer;
-  const business = withoutProducer(artifact);
+  const business = intentBusiness(artifact);
   if (producer?.moduleId !== "synthesize-narration"
     || producer?.nodeId !== "synthesize-narration"
     || producer?.outputSha256 !== hashObject(business)) {
@@ -266,6 +278,8 @@ const readStoredIntent = async (file) => {
     label: "TTS 提交意图"
   });
   assertStoredProducer({ artifact: intent, label: "TTS 提交意图" });
+  for (let previous = intent.previousAttempt; previous; previous = previous.previousAttempt)
+    assertStoredProducer({ artifact: previous, label: "TTS 原未知提交意图" });
   if (intent.status === "succeeded" && !intent.rawAudioSha256) {
     throw new Error("TTS 提交意图 succeeded 状态缺少原始音频摘要");
   }
@@ -274,6 +288,41 @@ const readStoredIntent = async (file) => {
   }
   return intent;
 };
+
+const attemptFingerprint = async ({ paths, text, contract, pronunciations, task }) => {
+  const request = synthesisFingerprint({ text, contract, pronunciations, restartId: task.context?.stageRestartId });
+  const intent = await exists(paths.intent) ? await readStoredIntent(paths.intent) : null;
+  return intent?.previousAttempt && intent.ttsInputSha256 === sha256(text)
+    && intent.contractSha256 === contractSha256(contract)
+    ? hashObject({ request, replacesFingerprint: intent.previousAttempt.fingerprint }) : request;
+};
+
+// An explicit replacement preserves the unknown request exactly; repeats resume the same attempt.
+export async function replaceUnknown({ root, episodeId, task = {}, fingerprint }) {
+  if (!paidAuthorized(task)) throw new AuthorizationRequiredError();
+  if (!/^[a-f0-9]{64}$/u.test(fingerprint ?? "")) throw new Error("TTS替换必须点名原提交摘要");
+  const paths = pathsFor({ root, episodeId, task });
+  await assertProjectMutationTree({ root, file: paths.p2, label: "P2 TTS替换写入树" });
+  return withProjectLock({ root, lock: paths.lock, label: "当前 TTS 合成", execute: async () => {
+    const previous = await readStoredIntent(paths.intent);
+    const text = await textFromTask({ paths, task });
+    const contract = await loadTtsContract();
+    const pronunciations = await readingsFromPaths(paths);
+    if (previous.ttsInputSha256 !== sha256(text) || previous.contractSha256 !== contractSha256(contract))
+      throw new Error("TTS替换不能改变原正文或配音合同");
+    if (previous.previousAttempt?.fingerprint === fingerprint) return;
+    if (previous.fingerprint !== fingerprint || !["submitting", "unknown"].includes(previous.status))
+      throw new Error("TTS替换与当前未知提交不符，保留现场");
+    const result = await exists(paths.result) ? await readStoredResult(paths.result) : null;
+    if (result?.fingerprint === fingerprint && (result.remoteTaskId || await exists(paths.raw)))
+      throw new Error("已有远端编号或原音频，只能恢复原对象");
+    const request = synthesisFingerprint({ text, contract, pronunciations, restartId: task.context?.stageRestartId });
+    await writeIntent({ paths, task, business: { schemaVersion: "1.0",
+      fingerprint: hashObject({ request, replacesFingerprint: fingerprint }),
+      ttsInputSha256: sha256(text), contractSha256: contractSha256(contract),
+      status: "not-created", previousAttempt: previous } });
+  } });
+}
 
 const currentSuccessfulResult = async ({
   paths,
@@ -336,6 +385,61 @@ const metadataMatches = (result, metadata) => result.episodeId === metadata.epis
   && result.seriesTitle === metadata.seriesTitle
   && result.language === metadata.language;
 
+// A successful remote response is recoverable before any formal delivery is replaced.
+// Keep the bytes with their receipt so a failed raw/result write never requires synthesis.
+const pendingResponse = async (paths, replayFingerprint) => {
+  if (!(await exists(paths.response))) return null;
+  const pending = await readData(paths.response);
+  const result = pending.result;
+  const delivered = pending.delivered === true;
+  if (delivered && !replayFingerprint) return null;
+  if (replayFingerprint && (!delivered || result?.fingerprint !== replayFingerprint
+    || !pending.nativeTimingSource || typeof pending.downloadedSubtitle !== "string")) {
+    throw new Error("没有与当前配音匹配的原始词级文件，不能重读");
+  }
+  await validateDocumentSchema({ schema: resultSchemaUrl, value: result, label: "待交付TTS结果" });
+  assertStoredProducer({ artifact: result, label: "待交付TTS结果" });
+  const intent = await readStoredIntent(paths.intent);
+  if (intent.fingerprint !== result.fingerprint || intent.ttsInputSha256 !== result.ttsInput.sha256
+    || intent.contractSha256 !== result.contractSha256) throw new Error("TTS成功响应不属于原提交，保留现场");
+  const audio = delivered ? await readFile(paths.raw) : Buffer.from(pending.audioBase64 ?? "", "base64");
+  if (!audio.length || sha256(audio) !== result.rawAudio.sha256) throw new Error("TTS成功响应音频不完整，保留现场");
+  return { result, audio, intent, delivered, nativeTimingSource: pending.nativeTimingSource,
+    downloadedSubtitle: pending.downloadedSubtitle };
+};
+
+const deliverResponse = async ({ paths, pending, task }) => {
+  const { nativeTimingSource } = pending;
+  let { downloadedSubtitle } = pending;
+  if (nativeTimingSource) {
+    const service = task?.context?.ttsService ?? createMiniMaxTtsService();
+    const nativeTiming = await service.readNativeTiming(nativeTimingSource, {
+      sourceText: pending.result.ttsInput.text,
+      downloadedSubtitle,
+      onDownloadedSubtitle: async (value) => {
+        downloadedSubtitle = value;
+        await atomicWriteData(paths.response, { result: pending.result, audioBase64: pending.audio.toString("base64"),
+          nativeTimingSource, downloadedSubtitle });
+      }
+    });
+    if (pending.delivered && !nativeTiming) throw new Error("重读原始词级文件仍失败，保留现有配音回执");
+    const business = { ...intentBusiness(pending.result), nativeTiming };
+    pending.result = { ...business, _producer: producerFor({ task, business }) };
+    await validateDocumentSchema({ schema: resultSchemaUrl, value: pending.result, label: "TTS 结果" });
+  }
+  if (!pending.delivered) await atomicWrite(paths.raw, pending.audio);
+  await atomicWriteData(paths.result, pending.result);
+  await writeIntent({ paths, task, business: { ...intentBusiness(pending.intent),
+    status: "succeeded", rawAudioSha256: pending.result.rawAudio.sha256 } });
+  if (nativeTimingSource) {
+    // Retain the provider's exact subtitle text, bound to the audio by the delivery receipt.
+    await atomicWriteData(paths.response, { delivered: true, result: pending.result, nativeTimingSource, downloadedSubtitle });
+  } else {
+    await rm(paths.response, { force: true });
+  }
+  return pending.result;
+};
+
 const reuseOrRefreshResult = async ({
   existing,
   metadata,
@@ -362,7 +466,7 @@ const reuseOrRefreshResult = async ({
         paths,
         task,
         business: {
-          ...withoutProducer(intent),
+          ...intentBusiness(intent),
           status: "succeeded",
           rawAudioSha256: refreshed.rawAudio.sha256
         }
@@ -377,7 +481,10 @@ export async function inspect({ root, episodeId, task = {} }) {
   const text = await textFromTask({ paths, task });
   const metadata = metadataFromTask({ episodeId, task });
   const contract = await loadTtsContract();
-  const fingerprint = synthesisFingerprint({ text, contract, restartId: task.context?.stageRestartId });
+  const pronunciations = await readingsFromPaths(paths);
+  const fingerprint = await attemptFingerprint({ paths, text, contract, pronunciations, task });
+  if (await pendingResponse(paths)) return { valid: false, paidCallRequired: false,
+    reason: "TTS已成功，待恢复原响应的本地音频与回执交付" };
   if (!(await exists(paths.result)) || !(await exists(paths.raw))) {
     if (await priorUnresolvedIntent({ paths, fingerprint })) {
       return {
@@ -436,9 +543,23 @@ export async function run({ root, episodeId, task = {} }) {
   const metadata = metadataFromTask({ episodeId, task });
   await atomicWrite(paths.input, `${text}\n`);
   const contract = await loadTtsContract();
+  const pronunciations = await readingsFromPaths(paths);
   const textSha256 = sha256(text);
   const currentContractSha256 = contractSha256(contract);
-  const fingerprint = synthesisFingerprint({ text, contract, restartId: task.context?.stageRestartId });
+  const fingerprint = await attemptFingerprint({ paths, text, contract, pronunciations, task });
+  if (task.context?.replayRetainedNativeTiming) {
+    return withProjectLock({ root, lock: paths.lock, label: "当前 TTS 合成", execute: async () => {
+      const retained = await pendingResponse(paths, fingerprint);
+      if (!retained) throw new Error("没有可重读的原始词级文件");
+      return deliverResponse({ paths, pending: retained, task });
+    } });
+  }
+  if (await pendingResponse(paths)) {
+    await withProjectLock({ root, lock: paths.lock, label: "当前 TTS 合成", execute: async () => {
+      const pending = await pendingResponse(paths);
+      if (pending) await deliverResponse({ paths, pending, task });
+    } });
+  }
   const currentResult = () => currentSuccessfulResult({
     paths,
     fingerprint,
@@ -481,6 +602,7 @@ export async function run({ root, episodeId, task = {} }) {
       });
     }
     if (await priorUnresolvedIntent({ paths, fingerprint })) throw new UnknownRemoteResultError();
+    const prior = await exists(paths.intent) ? await readStoredIntent(paths.intent) : null;
     const request = await writeIntent({
       paths,
       task,
@@ -489,25 +611,26 @@ export async function run({ root, episodeId, task = {} }) {
       fingerprint,
       ttsInputSha256: textSha256,
       contractSha256: currentContractSha256,
-      status: "submitting"
+      status: "submitting",
+      ...(prior?.fingerprint === fingerprint && prior.previousAttempt ? { previousAttempt: prior.previousAttempt } : {})
       }
     });
     let response;
     try {
-      response = await service.synthesize({ text, contract: structuredClone(contract), fingerprint });
+      response = await service.synthesize({ text, contract: structuredClone(contract), pronunciations, fingerprint });
     } catch (error) {
       if (error?.definitiveNoRemoteTask === true) {
         await writeIntent({
           paths,
           task,
-          business: { ...withoutProducer(request), status: "not-created" }
+          business: { ...intentBusiness(request), status: "not-created" }
         });
         throw new RemoteTaskNotCreatedError(error.message);
       }
       await writeIntent({
         paths,
         task,
-        business: { ...withoutProducer(request), status: "unknown" }
+        business: { ...intentBusiness(request), status: "unknown" }
       });
       throw new UnknownRemoteResultError();
     }
@@ -516,20 +639,21 @@ export async function run({ root, episodeId, task = {} }) {
       await writeIntent({
         paths,
         task,
-        business: { ...withoutProducer(request), status: "unknown" }
+        business: { ...intentBusiness(request), status: "unknown" }
       });
       throw new UnknownRemoteResultError();
     }
-    await atomicWrite(paths.raw, audio);
     const business = {
       schemaVersion: "1.0",
       ...metadata,
       fingerprint,
       ttsInput: { text, sha256: textSha256 },
       contractSha256: currentContractSha256,
-      rawAudio: { path: "raw-narration.flac", sha256: await fileSha256(paths.raw) },
+      rawAudio: { path: "raw-narration.flac", sha256: sha256(audio) },
       remoteTaskId: typeof response.remoteTaskId === "string" ? response.remoteTaskId : null,
-      nativeTiming: response?.nativeTiming ?? null
+      nativeTiming: response?.nativeTiming ?? null,
+      ...(pronunciations.length ? { pronunciations } : {}),
+      ...(Number.isInteger(response?.durationMs) && response.durationMs > 0 ? { durationMs: response.durationMs } : {})
     };
     const result = { ...business, _producer: producerFor({ task, business }) };
     await validateDocumentSchema({
@@ -537,16 +661,18 @@ export async function run({ root, episodeId, task = {} }) {
       value: result,
       label: "TTS 结果"
     });
-    await atomicWriteData(paths.result, result);
-    await writeIntent({
-      paths,
-      task,
-      business: {
-        ...withoutProducer(request),
-        status: "succeeded",
-        rawAudioSha256: business.rawAudio.sha256
-      }
-    });
-    return result;
+    const nativeTimingSource = response.nativeTimingSource;
+    await atomicWriteData(paths.response, { result, audioBase64: Buffer.from(audio).toString("base64"),
+      ...(nativeTimingSource ? { nativeTimingSource } : {}) });
+    return deliverResponse({ paths, pending: { result, audio: Buffer.from(audio), intent: request, nativeTimingSource }, task });
   }});
+}
+
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const [command, root, episodeId, source] = process.argv.slice(2);
+  (async () => {
+    if (command !== "readings" || !root || !episodeId || !source) throw new Error("用法: node run.mjs readings <workspace> <epNN> <读音JSON路径>");
+    if (!/^ep[0-9]{2,}$/u.test(episodeId)) throw new Error("无效剧集编号");
+    return savePronunciations({ root: path.resolve(root), episodeId, pronunciations: await readData(path.resolve(source)) });
+  })().then(value => console.log(JSON.stringify(value))).catch(error => { console.error(error.message); process.exitCode = 1; });
 }

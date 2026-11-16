@@ -76,7 +76,7 @@ The video gallery below uses landscape covers. Each episode also delivers a port
 |---|---|
 | P0 — Planning | Program direction, sources and episode plan |
 | P1 — Writing | Narration, opener copy, platform copy and landscape/portrait covers |
-| P2 — Audio | Narration and subtitles, including pronunciation handling for proper names |
+| P2 — Audio | Narration audio and subtitles |
 | P3 — Main visuals | Storyboards, full-frame scenes, explanatory animation and camera design |
 | P4 — Opener and final render | Opener and the episode’s `output/final.mp4` |
 

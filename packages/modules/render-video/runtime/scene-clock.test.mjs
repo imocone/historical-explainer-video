@@ -105,7 +105,7 @@ test("Studio move and trim drive native scene, caption and video clocks", { time
     { id: "scene-b", role: "body", fromFrame: 66, endFrame: 240, freezeAt: 59, segment: segment("b") }];
   const metadata = { props: { fps: 60, visualStyle,
     transitions: [{ mode: "narrative", previousId: "a", nextId: "b", startFrame: 120, durationInFrames: 0 }],
-    ending: { afterSegmentId: "b", holdFrames: 15 },
+    ending: { afterSegmentId: "b", fadeFrames: 60 },
     captions: [{ startMs: 400, endMs: 600, text: "原轴字幕" }, { startMs: 900, endMs: 1100, text: "裁剪字幕" }] },
     timeline: { fromFrame: 0, toFrame: 240, endingStart: 180, endingEnd: 240, scenes } };
   const host = (id, start) => `<div class="scene" id="scene-${id}" data-composition-id="${id}" data-no-timeline data-start="${start}" data-duration="${id === "a" ? 3 : 2.9}"><div class="presentation"><div class="scene-content"></div></div><div class="media-parking">${id === "a" ? '<video id="clock-video" muted data-has-audio="false" data-start="0" data-duration="3" data-playback-start="0.25"></video>' : ""}</div></div>`;
@@ -133,10 +133,12 @@ test("Studio move and trim drive native scene, caption and video clocks", { time
         opacityB: document.getElementById("scene-b").style.opacity,
         ending: Number(document.getElementById("ending").style.opacity) };
     }, time);
+    // HyperFrames nudges currentTime off the exact frame boundary by 10 µs.
+    const videoFrame = result => sourceFrameAtTime(result.videoTime, metadata.props.fps);
     let result = await seek(0.5);
     assert.equal(result.frames["scene-a"], 30);
     assert.equal(result.caption, "原轴字幕");
-    assert.equal(result.videoTime, 0.75);
+    assert.equal(videoFrame(result), 45);
     assert.equal(result.created.includes("scene-b"), false, "hidden scenes must not create renderers");
     result = await seek(1.5);
     assert.ok(result.created.includes("scene-b"), "the incoming fullframe must prepare inside its existing hidden lead");
@@ -158,7 +160,7 @@ test("Studio move and trim drive native scene, caption and video clocks", { time
     await page.evaluate(() => { document.getElementById("scene-a").dataset.start = "1"; });
     result = await seek(1.5);
     assert.equal(result.frames["scene-a"], 30, "moving a scene must restart its original content at the new host start");
-    assert.equal(result.videoTime, 0.75);
+    assert.equal(videoFrame(result), 45);
     result = await seek(2.5);
     assert.equal(result.frames["scene-a"], 90);
     assert.equal(result.opacityA, "1", "the old authored cut must not hide a moved host");
@@ -169,7 +171,7 @@ test("Studio move and trim drive native scene, caption and video clocks", { time
     result = await seek(2);
     assert.equal(result.frames["scene-a"], 60, "start trim must include the native source offset once");
     assert.equal(result.caption, "裁剪字幕");
-    assert.equal(result.videoTime, 1.25, "the view and native video must consume the same trimmed source time");
+    assert.equal(videoFrame(result), 75, "the view and native video must consume the same trimmed source frame");
     result = await seek(3.5);
     assert.equal(result.frames["scene-b"], 59);
     assert.ok(result.disposed.includes("scene-a"));
@@ -190,7 +192,7 @@ test("Studio move and trim drive native scene, caption and video clocks", { time
     result = await seek(0.5);
     assert.equal(result.frames["scene-a"], 30);
     assert.equal(result.caption, "原轴字幕");
-    assert.equal(result.videoTime, 0.75);
+    assert.equal(videoFrame(result), 45);
     assert.deepEqual(errors, []);
   });
 });

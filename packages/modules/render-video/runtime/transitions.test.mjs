@@ -2,8 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {readFile} from "node:fs/promises";
 import {compileSchema} from "../../../../engine/runtime/schema.mjs";
-import {resolveCrossBeatRuntimeTiming, explainerHandoffContext, explainerPushPresentation} from "./transitions.mjs";
-import {fullframeBoundaryFieldsFor} from "../../../templates/fullframe-narrative/camera/author-transition-handoff.mjs";
+import {bodyTransitionFieldsFor, resolveCrossBeatRuntimeTiming, explainerHandoffContext, explainerPushPresentation} from "./transitions.mjs";
 import {VOX_EXPLAINER_TIMING} from "../../../templates/vox-explainer/cue-policy.mjs";
 import {resolveNarrativeTransition, narrativeVisibility, narrativeTransitionExposure, narrativeHandleFrames} from "./narrative-transition.mjs";
 import {narrativePresentation} from "./narrative-presentation.mjs";
@@ -16,13 +15,16 @@ import {fullframeFramingFor} from "../../../templates/fullframe-narrative/camera
 import {createRenderPolicy, renderData} from "../../../templates/fullframe-narrative/render-plan.mjs";
 import {FULLFRAME_RENDER_POLICY} from "../../../templates/fullframe-narrative/render-policy.mjs";
 import {measureCameraDesign} from "../../../templates/fullframe-narrative/camera/inspect-design.mjs";
+import {projectRenderStoryboard} from "./projection.mjs";
+import {bodySegmentDescriptorsFor} from "./body-segments.mjs";
+import {renderData as renderVox} from "../../../templates/vox-explainer/render-plan.mjs";
 import {videoWindow} from "../../../templates/cinematic-video/timing.mjs";
 import {videoTransitionBoundaries, validateVideoTransitions} from "../../../templates/cinematic-video/boundary-transitions.mjs";
 
 const design = type => ({type, durationMs: 800, reason: type === "dissolve"
   ? "前句货物到港，后句继续进入市场，保持同一观察" : "前句事件落定，留白后建立后句的新处境"});
 const segment = (id, templateId, startFrame) => ({id, templateId, segmentType: "body", startFrame,
-  startMs: startFrame / 60 * 1000, endMs: (startFrame + 600) / 60 * 1000, durationInFrames: 600, ...fullframeBoundaryFieldsFor(templateId)});
+  startMs: startFrame / 60 * 1000, endMs: (startFrame + 600) / 60 * 1000, durationInFrames: 600, ...bodyTransitionFieldsFor(templateId)});
 
 test("全画幅作者合同仅接纳叠化与闪黑，旧效果、方向和零时长不能继续执行", async () => {
   const schemas = await Promise.all(["fullframe-treatment", "cinematic-video-plan", "vox-explainer-treatment"].map(async name =>
@@ -65,6 +67,46 @@ test("四种全画幅媒体邻接均执行原作者选择，保留Cue间隙和�
         const timeline = compositionTimeline({...resolveCrossBeatRuntimeTiming({segments: input}), fps: 60, durationMs: 21000});
         assert.ok(timeline.scenes[0].endFrame >= transitions[0].startFrame + 48, "视频与其它前景都保留到转场结束");
       }
+});
+
+test("正文导演接法不能覆盖讲解原推移，既有章内事件仍按原Cue", () => {
+  const full = "fullframe-narrative", vox = "vox-explainer";
+  const storyboard = {beats: [
+    {id: "B001", cueRange: [1, 1], templateId: full, treatment: {templateId: full}, incomingTransition: null},
+    {id: "B002", cueRange: [2, 2], templateId: vox, treatment: null, incomingTransition: design("dissolve")},
+    {id: "B003", cueRange: [3, 3], templateId: vox, treatment: null, incomingTransition: null},
+    {id: "B004", cueRange: [4, 4], templateId: full, treatment: {templateId: full}, incomingTransition: design("dip-to-black")},
+    {id: "B005", cueRange: [5, 5], templateId: vox, treatment: null, incomingTransition: null}
+  ], templateRuns: [
+    {id: "TR002", templateId: vox, beatIds: ["B002", "B003"], treatment: {templateId: vox, assetRequests: []}},
+    {id: "TR004", templateId: vox, beatIds: ["B005"], treatment: {templateId: vox, assetRequests: []}}
+  ]};
+  const descriptors = bodySegmentDescriptorsFor(projectRenderStoryboard(storyboard));
+  assert.deepEqual(descriptors.map(item => item.id), ["B001", "TR002", "B004", "TR004"]);
+  const input = descriptors.map(({id, templateId, incomingTransition}, i) =>
+    ({...segment(id, templateId, i * 660), incomingTransition}));
+  const {transitions} = resolveCrossBeatRuntimeTiming({segments: input});
+  assert.deepEqual(transitions.map(item => [item.mode, item.durationInFrames, item.explainerPush]),
+    Array.from({length: 3}, () => ["pre-entry", 30, true]));
+  assert.deepEqual(transitions.map(item => item.startFrame), [630, 1290, 1950]);
+  const cues = [{id: 2, startMs: 11007}, {id: 3, startMs: 15357}];
+  const result = renderVox({treatment: {scene: {}, appearance: {fonts: {}}, moments: [], assetRequests: []},
+    actionTimings: [], assetRefs: [], durationInFrames: 600, policy: {fps: 60},
+    shots: descriptors[1].shots, cues, cueStartMs: cues[0].startMs});
+  assert.deepEqual(result.eventTimings, [{id: "B003", frame: 261}]);
+});
+
+test("正式渲染沿导演时间拒绝交叠的叠化和讲解推移", () => {
+  const full = "fullframe-narrative";
+  const second = { ...segment("b", full, 120), durationInFrames: 66,
+    incomingTransition: { ...design("dissolve"), durationMs: 1600 } };
+  const segments = [{ ...segment("a", full, 0), durationInFrames: 120 }, second,
+    segment("c", "vox-explainer", 186)];
+  assert.throws(() => resolveCrossBeatRuntimeTiming({ segments }), /a->b 和 b->c 的转场重叠 12 帧/);
+  second.incomingTransition.durationMs = 600;
+  const resolved = resolveCrossBeatRuntimeTiming({ segments });
+  assert.deepEqual(resolved.transitions.map(edit => [edit.startFrame, edit.durationInFrames]), [[102, 36], [156, 30]]);
+  assert.deepEqual(resolved.segments.map(item => item.startFrame), [0, 120, 186]);
 });
 
 test("闪黑有连续黑位且不共显；叠化保持共显权重，测量和呈现使用同一曲线", () => {
@@ -193,7 +235,8 @@ test("讲解专用进出在有无Cue间隙时都保留前画面到推移结束",
   for (const [first, next] of [["fullframe-narrative", "vox-explainer"], ["cinematic-video", "vox-explainer"],
     ["vox-explainer", "fullframe-narrative"], ["vox-explainer", "cinematic-video"], ["vox-explainer", "vox-explainer"]]) {
     for (const gap of [0, 20, 60]) {
-      const timed = resolveCrossBeatRuntimeTiming({segments: [segment("a", first, 0), segment("b", next, 600 + gap)]});
+      const timed = resolveCrossBeatRuntimeTiming({segments: [segment("a", first, 0),
+        {...segment("b", next, 600 + gap), incomingTransition: gap ? design("dissolve") : null}]});
       const boundary = timed.transitions[0];
       const timeline = compositionTimeline({...timed, fps: 60, durationMs: 22000});
       assert.equal(boundary.explainerPush, true);

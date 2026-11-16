@@ -62,7 +62,7 @@ const styleValueLabels = Object.freeze({
   "restrained-ink-wash": "克制墨彩明暗",
   none: "无纸张、画布或旧介质纹理",
   "washi-woodblock-grain": "冷白和纸纤维、细密低对比木版浮纹与轻微套色边缘；所有画面保持相同纸色与纹理尺度，不得随场景改变成高对比颗粒、污渍或破损裂纹",
-  "neutral-xuan-paper": "中性灰白宣纸纤维、吸墨毛边与克制水痕；禁止暖黄纸底、旧纸污渍和破损裂纹",
+  "neutral-xuan-paper": "仅在局部薄洗和湿边隐约可见的中性宣纸纤维与吸墨水痕；浓洗色面保持完整，避免通幅纸纹、灰白罩染、旧纸污渍和破损裂纹",
   medium: "粗细适中",
   fine: "细而清楚",
   "medium-bold": "中等偏粗",
@@ -121,6 +121,12 @@ const styleValueLabels = Object.freeze({
   bold: "粗体",
   heavy: "特粗体",
   "flat-ink": "平面墨色质感"
+});
+
+const artworkStyleLabels = Object.freeze({
+  "washi-woodblock-grain": "和纸纤维、细密低对比木版浮纹与轻微套色边缘",
+  "neutral-xuan-paper": "局部薄洗与湿边隐现宣纸纤维和吸墨水痕，浓洗色面保持完整",
+  "xuan-paper-ink-wash-scene": "细线淡彩水墨画法；用清透而密实的哑光色面表现人物与承重环境，远层可用淡墨概括，环境保持有据的透视、遮挡和空间层次"
 });
 
 const formatAjvErrors = (errors = []) => errors
@@ -235,7 +241,8 @@ const colorList = (colors) => colors
 
 export const compileVisualStylePrompt = ({ shared, profile }, {
   includeTypography = true,
-  includeBoundaries = true
+  includeBoundaries = true,
+  artworkOnly = false
 } = {}) => {
   if (
     !Array.isArray(shared.artDirection)
@@ -260,7 +267,7 @@ export const compileVisualStylePrompt = ({ shared, profile }, {
     : "环境绘制";
   const surfaceTreatmentLabel = foregroundProfile
     ? "前景部件表面质感"
-    : "画面基底";
+    : artworkOnly ? "具象图件表面质感" : "画面基底";
   const surfaceTreatmentBoundary = foregroundProfile
     ? "；只作用于人物、器物、准确文字载体和局部环境部件本身，不生成画布底、纸张底板、卡片底板或场景背景"
     : "";
@@ -270,8 +277,12 @@ export const compileVisualStylePrompt = ({ shared, profile }, {
   )
     ? "与人物共享干净哑光块面，水墨彩只用于随讲解主体收口的局部环境笔触"
     : styleLabel(environment.finish, "environmentRendering.finish");
+  const drawingLabel = (value, label) => (artworkOnly && artworkStyleLabels[value]) || styleLabel(value, label);
   const prompt = [
-    ...(includeBoundaries ? ["以下只决定既定内容的绘制外观；不得新增、删除、移动、合并或改写人物、物件、环境、文字与事实，也不得改变画面组织、镜头、光线方向或版式。"] : []),
+    ...(includeBoundaries ? [
+      `【视觉包】规定成图的${artworkOnly ? "画法" : "画法与用色"}。按图纸保留人物、物件、环境、文字、事实、画面组织、镜头、光线方向和版式。`
+    ] : []),
+    ...(artworkOnly ? ["讲解画法：参考线条、造型、分面和材质。原指导中的色名、用色限制、纸色或光色是画法示例，只取其中的上色和材质表现手法。当前实物（包括文书纸色）、局部环境和光线按本题设计；底板、字样和图解由讲解模板安排。"] : []),
     "包内艺术指导：",
     ...shared.artDirection.map((line, index) => `${index + 1}. ${line}`),
     ...(foregroundProfile ? [
@@ -284,15 +295,17 @@ export const compileVisualStylePrompt = ({ shared, profile }, {
     `轮廓线：${styleLabel(shared.linework.contourWeight, "contourWeight")}、${styleLabel(shared.linework.contourCharacter, "contourCharacter")}`,
     `内部线：${styleLabel(shared.linework.interiorDetail, "interiorDetail")}`,
     `线条收束：${styleLabel(shared.linework.finish, "linework.finish")}`,
-    `${surfaceTreatmentLabel}：${styleLabel(shared.surfaceTreatment, "surfaceTreatment")}${surfaceTreatmentBoundary}`,
-    `白平衡：${styleLabel(shared.palette.whiteBalance, "whiteBalance")}`,
-    `基础色：${colorList(shared.palette.baseColors)}`,
-    `强调色：${colorList(shared.palette.accentColors)}；只能局部点缀，不得作为背景底色或全局调色`,
-    `禁止色偏：${styleList(shared.palette.forbiddenCasts, "forbiddenCasts")}`,
-    "上述白平衡只约束内容没有明确指定综合色调的画面；不得覆盖P3明确要求的黄昏、烛光或其它有叙事依据的局部光色。",
+    `${surfaceTreatmentLabel}：${drawingLabel(shared.surfaceTreatment, "surfaceTreatment")}${surfaceTreatmentBoundary}`,
+    ...(!artworkOnly ? [
+      `白平衡：${styleLabel(shared.palette.whiteBalance, "whiteBalance")}`,
+      `基础色：${colorList(shared.palette.baseColors)}`,
+      `强调色：${colorList(shared.palette.accentColors)}；只能局部点缀，不得作为背景底色或全局调色`,
+      `禁止色偏：${styleList(shared.palette.forbiddenCasts, "forbiddenCasts")}`,
+      "整幅白平衡、冷暖、浓淡和明暗层次由本视觉包确定。保留图纸的时段、天气、光源、光向与叙事所需的准确物色和局部光色，并用本视觉包的画法表现。"
+    ] : []),
     `人物绘制：${styleLabel(character.proportion, "characterRendering.proportion")}、${styleLabel(character.faceTreatment, "characterRendering.faceTreatment")}、${styleLabel(character.colorTreatment, "characterRendering.colorTreatment")}、${styleLabel(character.lineTreatment, "characterRendering.lineTreatment")}`,
     "同一画面中，不同且清晰可辨的人物应具有自然、可辨认的面部差异，不能只靠服装、发型或表情区分。差异应符合既定年龄、身份和人物设定；同一人物跨画面保持身份一致。画风统一不等于脸型与五官模板相同。",
-    `${environmentLabel}：${styleLabel(environment.shapeLanguage, "environmentRendering.shapeLanguage")}、${environmentFinish}`,
+    `${environmentLabel}：${drawingLabel(environment.shapeLanguage, "environmentRendering.shapeLanguage")}、${environmentFinish}`,
     ...(includeTypography ? [
       `文字外观：只绘制任务明确提供的准确文字；${styleLabel(typography.glyphStyle, "typographyRendering.glyphStyle")}、${styleLabel(typography.weight, "typographyRendering.weight")}、${styleLabel(typography.finish, "typographyRendering.finish")}`
     ] : []),
@@ -305,12 +318,12 @@ export const compileVisualStylePrompt = ({ shared, profile }, {
   return prompt;
 };
 
-export const visualReferenceInstruction = (reference, index) => {
+export const visualReferenceInstruction = (reference, index, { artworkOnly = false } = {}) => {
   if (!reference || !Array.isArray(reference.styleScopes) || reference.styleScopes.length === 0) {
     throw new Error(`视觉参考图 ${reference?.id ?? "unknown"} 缺少 styleScopes`);
   }
   const scopes = reference.styleScopes.map((scope) => {
-    const label = styleScopeLabels[scope];
+    const label = artworkOnly && scope === "surface-treatment" ? "图件绘画材质、纤维与吸墨质感" : styleScopeLabels[scope];
     if (!label) throw new Error(`视觉参考图 ${reference.id} 含未知 styleScope: ${scope}`);
     return label;
   });

@@ -1,4 +1,3 @@
-import {imageProfileFor} from '../packages/templates/vox-explainer/image-style.mjs';
 import {createAppearance, SURFACE_PALETTE} from '../packages/templates/vox-explainer/appearance.mjs';
 import {refreshAuthorReferences, projectSpeechTiming} from '../packages/templates/vox-explainer/author-context.mjs';
 import assert from 'node:assert/strict';
@@ -25,6 +24,7 @@ test('vox defaults may refresh without changing the current author task', () => 
   current.inputs.templateContext.appearance.fonts.title.family = 'updated-title';
   current.inputs.templateContext.renderContext.palette.background = '#173E45';
   current.inputs.templateContext.renderContext.subtitle.outline = 4;
+  current.inputs.templateContext.visual = {id:'meiji-state-machine', references:[{id:'current-reference'}]};
   assert.doesNotThrow(() => assertTaskContinuity(saved, current));
   current.inputs.templateContext.renderContext.width = 1280;
   assert.throws(() => assertTaskContinuity(saved, current), /inputs/);
@@ -219,7 +219,8 @@ test('B2交回候选后由主代理接纳；下一段任务视图可完整恢复
   assert.deepEqual(order.inputs.templateContext.appearance.palette,SURFACE_PALETTE,
     '新工作单投递固定底板与字线颜色，主体角色色由作者选择');
   assert.deepEqual(authorContext.appearance,order.inputs.currentTreatment.appearance,'当前视图保留已有作品实际选择的颜色');
-  assert.equal(authorContext.visual,undefined);
+  assert.equal(order.inputs.templateContext.visual?.id,'meiji-state-machine','工作单投递测试节目选定的画风');
+  assert.deepEqual(authorContext.visual,order.inputs.templateContext.visual,'作者视图保留工作单的画风和参考图');
   const audioFile=path.join(paths.p2,'narration.wav');
   const {speechTiming,...audioContext} = authorContext.audio;
   assert.equal(speechTiming.available,false);
@@ -300,7 +301,7 @@ test('Vox原图片入口传递新姿态与修图参考，漏传不导入，沿�
   const order=await readData(work.workOrder);
   const authored=vox(1);
   const request=id=>({requestId:id,purpose:'保持同一人物',sourceRefs:['C001'],mustNotInvent:['不改变身份'],
-    visualBrief:{composition:'人物站立，衣装与装备清楚'},exactTexts:[],transparentBackground:false});
+    visualBrief:{composition:'人物站立，衣装与装备清楚，袖口使用 var(--accent)'},exactTexts:[],transparentBackground:false});
   authored.assetRequests=[request('AR001'),{...request('AR002'),referenceImageId:'AR001',
     visualBrief:{composition:'同一人物坐下，保留面貌、衣装与装备'}}];
   authored.scene.markup='<img src="asset:AR001"><img src="asset:AR002">';
@@ -310,11 +311,12 @@ test('Vox原图片入口传递新姿态与修图参考，漏传不导入，沿�
     [path.join(root,'packages/templates/vox-explainer/images.mjs'),command,work.workOrder,work.candidate,...args],
     {cwd:root,encoding:'utf8',maxBuffer:4*1024*1024,stdio:'pipe'}));
   const image=path.join(root,'packages/templates/vox-explainer/references/comic-figures.png');
-  const changedImage=(await imageProfileFor(authored.appearance)).styles.general.references[0].absolutePath;
+  const changedImage=path.join(root,'packages/templates/vox-explainer/references/comic-terrain.png');
+  const references=order.inputs.templateContext.visual.references.map(reference=>reference.absolutePath);
   const jobFile=path.join(options.workspaceRoot,'actual-call.json');
   let jobs=cli('prepare');
   assert.deepEqual(jobs.map(item=>item.requestId),['AR001'],'原图未完成时不提交依赖它的新姿态');
-  assert.deepEqual(jobs[0].job.referenced_image_paths,[changedImage,image],'普通图件在共同画风后收到人物与器物结构参考');
+  assert.deepEqual(jobs[0].job.referenced_image_paths,references,'普通图件收到节目正文的画风参考');
   assert.doesNotMatch(jobs[0].job.prompt,/薄土层断面|连续的大地块/,'普通人物不接收地形切片的构图要求');
   await write(jobFile,jobs[0].job);
   const original=cli('import','AR001',image,jobFile);
@@ -324,7 +326,7 @@ test('Vox原图片入口传递新姿态与修图参考，漏传不导入，沿�
   const poseJob=jobs[0].job;
   assert.equal(poseJob.referenced_image_paths.at(-1),originalFile);
   assert.equal(sha256(await readFile(originalFile)),original.sha256);
-  assert.match(poseJob.prompt,/第3张参考图是本件内容的参考原图/);
+  assert.ok(poseJob.prompt.includes(`第${references.length+1}张参考图是本件内容的参考原图`));
   assert.match(poseJob.prompt,/保持同一人物的面貌、衣装和装备/);
   const saved=await readData(work.candidate),recolored=structuredClone(saved);
   recolored.result.treatment.appearance.palette.accent='#775588';
@@ -358,7 +360,7 @@ test('Vox原图片入口传递新姿态与修图参考，漏传不导入，沿�
   const poseFile=path.join(options.workspaceRoot,pose.file);
   assert.deepEqual(revisionJob.referenced_image_paths.slice(-2),[originalFile,poseFile]);
   assert.match(revisionJob.prompt,/待修改的原图/);
-  assert.match(revisionJob.prompt,/第4张参考图是本件待修改的原图/);
+  assert.ok(revisionJob.prompt.includes(`第${references.length+2}张参考图是本件待修改的原图`));
   assert.match(revisionJob.prompt,/只修正右手握姿/);
   await write(jobFile,{...revisionJob,referenced_image_paths:revisionJob.referenced_image_paths.slice(0,-1)});
   assert.throws(()=>cli('import','AR002',changedImage,jobFile),/须原样携带/);
@@ -397,7 +399,7 @@ test('Vox原图片入口传递新姿态与修图参考，漏传不导入，沿�
   assert.deepEqual(assets.map(asset=>asset.sha256),[original.sha256,revised.sha256]);
 });
 
-test('Vox共用地图画风参考并按图件形态投递说明，原图片与B2消费同一选择',async t=>{
+test('Vox作者视图和生图共用节目视觉包，地貌与人物保留各自画法说明',async t=>{
   const {options,paths,work}=await setup(t);
   await runNext({...options,redesignBody:true,redesignBeatIds:['B001'],revisionReason:'验证参考用途投递'});
   const order=await readData(work.workOrder),authored=vox(1);
@@ -414,25 +416,31 @@ test('Vox共用地图画风参考并按图件形态投递说明，原图片与B2
     [path.join(root,'packages/templates/vox-explainer/images.mjs'),command,work.workOrder,work.candidate,...args],
     {cwd:root,encoding:'utf8',maxBuffer:4*1024*1024,stdio:'pipe'}));
   const figure=path.join(root,'packages/templates/vox-explainer/references/comic-figures.png');
-  const terrain=(await imageProfileFor(authored.appearance)).styles.general.references[0].absolutePath;
+  const terrain=path.join(root,'packages/templates/vox-explainer/references/comic-terrain.png');
   const jobs=cli('prepare'),callFile=path.join(options.workspaceRoot,'actual-call.json');
-  const art=await readFile(path.join(root,'packages/templates/vox-explainer/references/art.md'),'utf8');
-  const section=title=>art.split(`## ${title}\n`)[1].split('\n## ')[0].trim();
-  const common=section('共同画风'),general=section('人物、器物与普通情境'),terrainMethod=section('空间地形');
-  assert.deepEqual(jobs.map(item=>item.job.referenced_image_paths),[[terrain,figure],[terrain]]);
+  const visualRoot=path.join(root,'visuals/meiji-state-machine');
+  const manifest=await readData(path.join(visualRoot,'visual-package.json'));
+  const refs=[manifest.masterReference,...(manifest.supplementaryReferences??[])].map(ref=>path.join(visualRoot,ref.path));
+  const view=JSON.parse(execFileSync(process.execPath,[path.join(root,'packages/p3-task-view.mjs'),work.workOrder],
+    {cwd:root,encoding:'utf8',maxBuffer:4*1024*1024}));
+  const visual=view.inputs.templateContext.visual;
+  assert.equal(visual.id,manifest.id);
+  assert.deepEqual(visual,order.inputs.templateContext.visual);
+  assert.deepEqual(visual.references.map(ref=>ref.absolutePath),refs);
+  assert.deepEqual(jobs.map(item=>item.job.referenced_image_paths),[refs,refs]);
   for(const {requestId,job} of jobs)
     assert.ok(job.prompt.includes(authored.assetRequests.find(request=>request.requestId===requestId).purpose),
       '图片模型收到作者已经填写的本件用途');
-  assert.ok(jobs[0].job.prompt.includes(general),'普通图件收到现行人物、器物与情境画法');
-  assert.ok(!jobs[0].job.prompt.includes(terrainMethod),'普通图件不误收地形专用说明');
+  assert.match(jobs[0].job.prompt,/主要体块的大小、长短、厚薄及相互嵌接/);
+  assert.doesNotMatch(jobs[0].job.prompt,/山口遮挡|剖切厚度/);
   for(const {job} of jobs) {
-    assert.ok(job.prompt.includes(common),'各类图件均收到完整现行共同画风');
+    assert.ok(job.prompt.includes(visual.stylePrompt),'各类图件均收到节目视觉包编译后的画法');
     assert.doesNotMatch(job.prompt,/默认底板是暖灰米色|强调默认用清楚的朱红/,
       '不注入废弃预设；画法措辞由当前art真源拥有');
   }
   assert.doesNotMatch(jobs[0].job.prompt,/生成蓝图中的完整场景|保留连续环境/,'不透明背景不应把独立图件变成完整场景');
-  assert.ok(jobs[1].job.prompt.includes(terrainMethod),'地形图件收到现行空间地形画法');
-  assert.ok(!jobs[1].job.prompt.includes(general),'地形图件不误收普通图件专用说明');
+  assert.match(jobs[1].job.prompt,/剖切厚度不代表真实悬崖/);
+  assert.doesNotMatch(jobs[1].job.prompt,/主要体块的大小、长短、厚薄及相互嵌接/);
   assert.doesNotMatch(jobs[1].job.prompt,/comic-figures\.png|从人物与器物图里/);
   const before=await readFile(work.candidate);
   await write(callFile,{...jobs[0].job,referenced_image_paths:[figure,terrain]});

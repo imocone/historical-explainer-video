@@ -2,9 +2,10 @@ import { CALLOUT_RENDER_POLICY, prepareCalloutRenderPolicy } from "./callout/ren
 import { VIDEO_SPEC, durationFramesForMs } from "../../video-spec.mjs";
 export const FULLFRAME_RENDER_POLICY = Object.freeze({
   motion: Object.freeze({
-    traverseNormalizedSpeedPerSecond: 0.01883673792,
-    zoomScaleSpeedPerSecond: 0.0313945632,
+    traverseNormalizedSpeedPerSecond: 0.03,
+    zoomScaleSpeedPerSecond: 0.0375,
     minimumSpeedRatio: 1,
+    maximumSpeedRatio: 3,
     maximumBoundaryTravelMs: 1200
   }),
   transition: Object.freeze({
@@ -18,8 +19,9 @@ export const FULLFRAME_RENDER_POLICY = Object.freeze({
 // The constants above are the 100% reference, not a default authored speed.
 export const fullframeMotionPolicyForRatio = (speedRatio, policy = FULLFRAME_RENDER_POLICY.motion) => {
   if (!Number.isFinite(speedRatio)
-    || speedRatio < policy.minimumSpeedRatio) {
-    throw new Error(`全画幅运动速度必须不低于 ${policy.minimumSpeedRatio}，由联合设计选择`);
+    || speedRatio < policy.minimumSpeedRatio
+    || speedRatio > policy.maximumSpeedRatio) {
+    throw new Error(`全画幅运动速度必须在 ${policy.minimumSpeedRatio}—${policy.maximumSpeedRatio} 之间，由联合设计选择`);
   }
   return {
     ...policy,

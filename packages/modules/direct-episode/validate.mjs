@@ -1,8 +1,14 @@
+import { resolveNarrativeTransition } from "../render-video/runtime/narrative-transition.mjs";
+import { projectBeatSemantics } from "../author-beat/projection.mjs";
+import { validate as validateSemanticReading } from "./semantic-validation.mjs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { frameForMs } from "../../video-spec.mjs";
 import { hashObject } from "../../program-utils.mjs";
+import { currentP3DirectorInputs } from "../../p3-task-view.mjs";
+import { matchesDirectorRevisionBaseline } from "../../../engine/runtime/storyboard.mjs";
 import {
-  directorAuthorabilityErrors,
+  directorOpenerTemplate,
   inspectDirectorAuthorability
 } from "./authorability.mjs";
 import {
@@ -195,11 +201,12 @@ function validateTemplateAssembly(context, errors) {
   for (const id of EXPLAINER_TEMPLATE_IDS) if (!ids.has(id)) errors.push(`模板装配投影缺少讲解模板 ${id}`);
 }
 
-function validateBeats({ beats, cues, cueIndexes, errors }) {
+function validateBeats({ beats, cues, cueIndexes, baseline, rebinding, chapterDraft, errors }) {
   if (!Array.isArray(beats) || beats.length === 0) {
     errors.push("beats 必须是非空数组");
     return { beatIds: [] };
   }
+  const originalById = new Map((baseline?.beats ?? []).map(beat => [beat.id, beat]));
   const beatIds = [];
   let expectedCueIndex = 0;
   for (const [index, beat] of beats.entries()) {
@@ -208,7 +215,7 @@ function validateBeats({ beats, cues, cueIndexes, errors }) {
       errors.push(`${label} 必须是对象`);
       continue;
     }
-    const allowedKeys = ["id", "cueRange", "viewerOutcome", "directorBrief", "templateId"];
+    const allowedKeys = ["id", "cueRange", "viewerOutcome", "directorBrief", "templateId", "incomingTransition"];
     checkKeys(beat, new Set(allowedKeys), label, errors);
     if (!isBeatId(beat.id)) errors.push(`${label}.id 必须是 B 加三位数字`);
     if (beatIds.includes(beat.id)) errors.push(`${label}.id 重复: ${String(beat.id)}`);
@@ -223,13 +230,61 @@ function validateBeats({ beats, cues, cueIndexes, errors }) {
     }
 
     checkText(beat.viewerOutcome, `${label}.viewerOutcome`, errors);
+    const original = originalById.get(beat.id);
+    const shotIntent = ({ directorBrief: { relationFromPrevious, ...brief } = {}, ...shot }) => ({ ...shot, directorBrief: brief });
+    const originalShot = original && rebinding ? { ...original, cueRange: beat.cueRange } : original;
+    const needsShotPlan = !originalShot || hashObject(shotIntent(beat)) !== hashObject(shotIntent(originalShot));
+    const hasTransition = Object.hasOwn(beat, "incomingTransition");
+    const keepsOriginalTransition = original && original.templateId === beat.templateId
+      && Object.hasOwn(original, "incomingTransition")
+      && hashObject(original.incomingTransition) === hashObject(beat.incomingTransition);
+    const previous = beats[index - 1];
+    const originalIndex = baseline?.beats?.indexOf(original) ?? -1;
+    const originalPrevious = originalIndex > 0 ? baseline.beats[originalIndex - 1] : undefined;
+    if (!chapterDraft && beat.templateId === FULLFRAME_TEMPLATE_ID) {
+      if (previous?.templateId === FULLFRAME_TEMPLATE_ID) {
+        const keepsPreviousShot = originalPrevious?.id === previous.id
+          && originalPrevious.templateId === previous.templateId;
+        const inherited = keepsPreviousShot && (keepsOriginalTransition || (!hasTransition && !needsShotPlan));
+        if (beat.incomingTransition == null && !inherited) {
+          errors.push(`${label} 相邻全画幅必须交付叠化或闪黑`);
+        }
+      } else if (needsShotPlan && !hasTransition) {
+        errors.push(`${label} 正文首镜及紧接讲解的全画幅 incomingTransition 必须为 null`);
+      }
+    }
+    if (hasTransition) {
+      if (isExplainerTemplateId(beat.templateId) && !keepsOriginalTransition) {
+        errors.push(`${label} 讲解章不交付 incomingTransition，章内切镜由讲解作者在全章粗排决定`);
+      }
+      if (beat.templateId === FULLFRAME_TEMPLATE_ID && isExplainerTemplateId(previous?.templateId)
+        && beat.incomingTransition !== null) {
+        if (!keepsOriginalTransition || originalPrevious?.id !== previous.id) {
+          errors.push(`${label} 紧接讲解的全画幅由讲解专用推出接入，incomingTransition 必须为 null`);
+        }
+      }
+      if (range) {
+        const startMs = cues[range.firstIndex].startMs;
+        const endMs = cues[range.lastIndex].endMs;
+        if (Number.isFinite(startMs) && Number.isFinite(endMs)
+          && frameForMs({ milliseconds: endMs }) <= frameForMs({ milliseconds: startMs })) {
+          errors.push(`${label} 的正式Cue窗口不足一帧`);
+        }
+      }
+      try { resolveNarrativeTransition(beat.incomingTransition); }
+      catch (error) { errors.push(`${label}: ${error.message}`); }
+      if (index === 0 && beat.incomingTransition !== null) errors.push("首镜 incomingTransition 必须为 null，片头接法由片头交接");
+    }
     const brief = beat.directorBrief;
     if (!isObject(brief)) {
       errors.push(`${label}.directorBrief 必须是对象`);
     } else {
-      checkKeys(brief, new Set(["roleInAlbum", "mustShow", "relationFromPrevious"]), `${label}.directorBrief`, errors);
+      checkKeys(brief, new Set(["roleInAlbum", "mustShow", "relationFromPrevious", "entryFocus", "reveal", "exitHold"]), `${label}.directorBrief`, errors);
       checkText(brief.roleInAlbum, `${label}.directorBrief.roleInAlbum`, errors);
       checkText(brief.mustShow, `${label}.directorBrief.mustShow`, errors);
+      if (!chapterDraft && (needsShotPlan || hasTransition)) {
+        for (const key of ["entryFocus", "reveal", "exitHold"]) checkText(brief[key], `${label}.directorBrief.${key}`, errors);
+      }
       if (index === 0) {
         if (brief.relationFromPrevious !== null) errors.push("首 Beat 的 relationFromPrevious 必须为 null");
       } else if (!hasText(brief.relationFromPrevious)) {
@@ -245,12 +300,13 @@ function validateBeats({ beats, cues, cueIndexes, errors }) {
   return { beatIds };
 }
 
-function validateTemplateRuns({ templateRuns, beats, beatIds, errors }) {
+function validateTemplateRuns({ templateRuns, beats, beatIds, baseline, errors }) {
   if (!Array.isArray(templateRuns)) {
     errors.push("templateRuns 必须是数组");
     return;
   }
   const beatIndex = new Map(beatIds.map((id, index) => [id, index]));
+  const previousRuns = new Map((baseline?.templateRuns ?? []).map(run => [run.id, run]));
   const membership = new Map();
   let previousLastIndex = -1;
   const seenRunIds = new Set();
@@ -288,6 +344,12 @@ function validateTemplateRuns({ templateRuns, beats, beatIds, errors }) {
         errors.push(`${label}.beatIds 必须按正文顺序连续排列`);
       }
     }
+    if (isExplainerTemplateId(run.templateId) && memberIds.length > 1) {
+      const previous = previousRuns.get(run.id);
+      if (previous?.templateId !== run.templateId || hashObject(previous.beatIds) !== hashObject(memberIds)) {
+        errors.push(`${label} 新划讲解章只交接一条整章B记录，章内切镜由讲解作者粗排`);
+      }
+    }
     if (indexes.length > 0) {
       if (indexes[0] <= previousLastIndex) errors.push(`${label} 与前一运行组乱序或重叠`);
       previousLastIndex = indexes.at(-1);
@@ -299,10 +361,10 @@ function validateTemplateRuns({ templateRuns, beats, beatIds, errors }) {
   }
 }
 
-const validateDirectorCore = ({ result, context }) => {
+const validateDirectorCore = ({ result, context, chapterDraft }) => {
   const errors = [];
   if (!isObject(result)) return { errors: ["候选稿必须是对象"], beatIds: [], beats: [] };
-  checkKeys(result, new Set(["albumPlan", "beats", "templateRuns"]), "候选稿", errors);
+  checkKeys(result, new Set(["understanding", "albumPlan", "beats", "templateRuns"]), "候选稿", errors);
 
   const cues = Array.isArray(context?.cues) ? context.cues : [];
   const cueIndexes = cueIndexMap(cues, errors);
@@ -312,6 +374,9 @@ const validateDirectorCore = ({ result, context }) => {
     beats,
     cues,
     cueIndexes,
+    baseline: context?.currentVisualPlan,
+    rebinding: context?.returnRequest?.cueRebinding,
+    chapterDraft,
     errors
   });
   return { errors, beatIds: beatValidation.beatIds, beats };
@@ -321,7 +386,7 @@ function validateLocalRevision(result, context, errors) {
   const request = context?.returnRequest;
   if (request?.revisionScope !== "director-revision") return;
   const baseline = context.currentVisualPlan;
-  if (!baseline?.beats || hashObject(baseline) !== request.baselineVisualPlanSha256) {
+  if (!baseline?.beats || !matchesDirectorRevisionBaseline(baseline, request.baselineVisualPlanSha256)) {
     errors.push("导演局部修订缺少与请求一致的正式基线");
     return;
   }
@@ -345,6 +410,7 @@ function validateLocalRevision(result, context, errors) {
       const comparable = structuredClone(beat);
       if (successors.has(beat.id) && comparable.directorBrief) {
         comparable.directorBrief.relationFromPrevious = original.directorBrief.relationFromPrevious;
+        if (Object.hasOwn(original, "incomingTransition")) comparable.incomingTransition = original.incomingTransition;
       }
       if (hashObject(comparable) !== hashObject(original)) errors.push(`局部修订不得改变范围外页面 ${beat.id}`);
     } else {
@@ -359,6 +425,14 @@ function validateLocalRevision(result, context, errors) {
   for (const beat of baseline.beats) {
     if (!selected.has(beat.id) && !result.beats?.some(({ id }) => id === beat.id)) {
       errors.push(`局部修订不得删除范围外页面 ${beat.id}`);
+    }
+  }
+  if (baseline.understanding) {
+    for (const beat of baseline.beats.filter(({ id }) => !selected.has(id))) {
+      const project = understanding => projectBeatSemantics({ understanding, beat, cues: context.cues });
+      if (hashObject(project(baseline.understanding)) !== hashObject(project(result.understanding))) {
+        errors.push(`局部修订不得改变 ${beat.id} 实际继承的共享理解`);
+      }
     }
   }
   for (const key of ["intent", "openingState", "progression", "endingState"]) {
@@ -417,16 +491,19 @@ function validateStableIdentities(result, context, errors) {
   }
 }
 
-export function validate({ result, context } = {}) {
-  const core = validateDirectorCore({ result, context });
+export function validate({ result, context, chapterDraft = false } = {}) {
+  if (context?.understanding?.content) context = currentP3DirectorInputs(context);
+  const core = validateDirectorCore({ result, context, chapterDraft });
   if (!isObject(result)) return core.errors;
   const errors = core.errors;
+  errors.push(...validateSemanticReading({ result: { understanding: result.understanding }, context }));
   rejectForbidden(result, "候选稿", errors);
   validateTemplateAssembly(context, errors);
   validateTemplateRuns({
     templateRuns: result.templateRuns,
     beats: core.beats,
     beatIds: core.beatIds,
+    baseline: context?.currentVisualPlan,
     errors
   });
   if (!errors.length) {
@@ -447,18 +524,19 @@ const cuePolicyResources = (resolvedAssembly) => new Map(
 
 const moduleSystemRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 
-const validateTemplateAuthorability = async ({ result, context, systemRoot, resolvedAssembly }) => {
+const validateTemplateAuthorability = async ({ result, context, systemRoot, resolvedAssembly, workspaceRoot }) => {
   const resources = cuePolicyResources(resolvedAssembly);
-  const inspections = await inspectDirectorAuthorability({
+  const { errors } = await inspectDirectorAuthorability({
     result,
     cues: context?.cues ?? [],
+    openerTemplate: await directorOpenerTemplate({ workspaceRoot, context }),
     loadCuePolicy: async (templateId) => {
       const resource = resources.get(templateId);
       if (!systemRoot || !resource?.source) throw new Error(`${templateId} 缺少正式 cuePolicy`);
       return import(pathToFileURL(path.resolve(systemRoot, resource.source)).href);
     }
   });
-  return directorAuthorabilityErrors(inspections);
+  return errors;
 };
 
 export async function validateAcceptance({ result, context, services } = {}) {
@@ -479,6 +557,7 @@ export async function validateAcceptance({ result, context, services } = {}) {
     result,
     context,
     systemRoot: services?.systemRoot,
+    workspaceRoot: services?.workspaceRoot,
     resolvedAssembly: services?.resolvedAssembly ?? services?.task?.resolvedAssembly
   });
 }
@@ -488,6 +567,7 @@ export async function validateStoredAcceptance({ result, context, services } = {
     result,
     context,
     systemRoot: moduleSystemRoot,
+    workspaceRoot: services?.workspaceRoot,
     resolvedAssembly: services?.resolvedAssembly ?? services?.task?.resolvedAssembly
   });
 }

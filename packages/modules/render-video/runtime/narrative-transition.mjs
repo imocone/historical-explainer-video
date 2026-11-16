@@ -62,10 +62,10 @@ export const resolveNarrativeTransition = (design = null, fps = VIDEO_SPEC.fps) 
   return { ...design, durationInFrames, presentation: "story-designed" };
 };
 
-export const narrativeBoundary = ({ previous, next, fps = VIDEO_SPEC.fps }) => {
+export const narrativeBoundary = ({ previous, next, fps = VIDEO_SPEC.fps, requireCameraHandles = true }) => {
   const handle = narrativeHandleFrames(fps);
   const design = resolveNarrativeTransition(next.incomingTransition ?? null, fps);
-  if (handle > previous.durationInFrames || handle > next.durationInFrames) {
+  if (requireCameraHandles && (handle > previous.durationInFrames || handle > next.durationInFrames)) {
     throw new Error(`${previous.id}->${next.id} 缺少已有相机边界余量`);
   }
   return {

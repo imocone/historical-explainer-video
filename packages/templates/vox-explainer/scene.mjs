@@ -7,7 +7,7 @@ export const resolveMarkupAssets = (markup, assets, urlFor) => markup.replace(as
     .replace(/['()]/g, value => `%${value.charCodeAt(0).toString(16)}`));
 });
 
-const parameters = ['root', 'select', 'gsap', 'timeline', 'cue', 'onFrame', 'onCleanup', 'assets', 'width', 'height', 'fps', 'duration', 'spatial', 'THREE', 'eventTime'];
+const parameters = ['root', 'select', 'gsap', 'timeline', 'cue', 'onFrame', 'onCleanup', 'assets', 'width', 'height', 'fps', 'duration', 'spatial', 'THREE', 'eventTime', 'ending'];
 export const compileAnimation = source => new Function(...parameters, `"use strict";\n${source}`);
 export const runAnimation = (source, api) => compileAnimation(source)(...parameters.map(key => api[key]));
 

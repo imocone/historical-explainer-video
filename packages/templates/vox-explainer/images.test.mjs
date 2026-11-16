@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import os from 'node:os';
+import {fileURLToPath} from 'node:url';
 import {mkdtemp, mkdir, readFile, writeFile, rm} from 'node:fs/promises';
 import {createAppearance} from './appearance.mjs';
 import {drawingDigest, imageJob, imageJobs, prepareImageCalls, loadImageProfile, importAuthoredImage, importSourceImage, verifyAuthoredImage} from './images.mjs';
@@ -11,12 +12,22 @@ import {getEpisodePaths} from '../../workspace-paths.mjs';
 import {sha256, readData, atomicWriteData} from '../../program-utils.mjs';
 import {projectRhetoricalBoundaries} from '../../modules/author-beat/projection.mjs';
 import {projectRenderStoryboard} from '../../modules/render-video/runtime/projection.mjs';
+import {loadProgramVisualPackage} from '../../visual-package.mjs';
+import {programDrawingFor} from './image-style.mjs';
+
+const systemRoot = fileURLToPath(new URL('../../../', import.meta.url));
 
 // Already-imported image fixtures; no image generation, media lease or real episode.
 async function fixture(t) {
   const workspaceRoot = await mkdtemp(path.join(os.tmpdir(), 'vox-image-references-'));
   t.after(() => rm(workspaceRoot, {recursive: true, force: true}));
   const workspace = {workspaceRoot, episodeId: 'ep99', unitId: 'TR001'};
+  const programFile = path.join(workspaceRoot, 'program.yaml');
+  const selectVisual = async id => {
+    const {version} = await readData(path.join(systemRoot, 'visuals', id, 'visual-package.json'));
+    await atomicWriteData(programFile, {visualPackage:{visualPackageId:id, version}});
+  };
+  await selectVisual('meiji-state-machine');
   const directory = path.join(getEpisodePaths(workspaceRoot, workspace.episodeId).p3, 'assets', workspace.unitId);
   await mkdir(directory, {recursive: true});
   const appearance = createAppearance({palette: {background: '#ffffff', ink: '#202020', paper: '#f0f0f0',
@@ -60,13 +71,44 @@ async function fixture(t) {
   for (const request of treatment.assetRequests) request.asset = await save(request, request.requestId + '-v1', bytes);
   const prepare = () => imageJobs({treatment, profile, semanticContext, cues, sourceAssets: [], ...workspace});
   const acceptance = () => validateAcceptance({result: treatment,
-    context: {authorUnit: {id: workspace.unitId}, sourceAssets: [], semanticContext, cues}, services: {task: {}, ...workspace}});
-  const renderAssets = () => authoredAssetsForTreatment({treatment: projectRenderStoryboard({understanding: semanticContext,
+    context: {authorUnit: {id: workspace.unitId}, sourceAssets: [], semanticContext, cues},
+    services: {task: {}, systemRoot, ...workspace}});
+  const renderAssets = async () => authoredAssetsForTreatment({treatment: projectRenderStoryboard({understanding: semanticContext,
     beats: [{id: 'B001', templateId: treatment.templateId, cueRange: [1, 1], treatment}]}).beats[0].treatment,
-    ...workspace, segmentId: workspace.unitId});
+    ...workspace, segmentId: workspace.unitId,
+    visualPackageId:(await loadProgramVisualPackage(systemRoot, workspaceRoot, {roles:[]})).id});
   return {workspace, treatment, profile, semanticContext, cues, parent, pose, detail, separate, bytes, changedBytes,
-    save, absolute, prepare, acceptance, renderAssets};
+    save, absolute, prepare, acceptance, renderAssets, selectVisual};
 }
+
+test('实际节目画风切换后，图片准备、接纳与P4给出同一判断', async t => {
+  const f = await fixture(t);
+  f.treatment.assetRequests = [f.parent];
+  f.treatment.scene.markup = '<img src="asset:AR001">';
+  const activeProfile = async () => loadImageProfile(f.treatment.appearance, programDrawingFor(
+    await loadProgramVisualPackage(systemRoot, f.workspace.workspaceRoot,
+      {roles:['productionProfiles'], profileKinds:['fullframe-image']})));
+  const prepare = async () => imageJobs({...f.workspace, treatment:f.treatment, profile:await activeProfile(),
+    semanticContext:f.semanticContext, cues:f.cues});
+  const saveCurrent = async name => {
+    const job = imageJob({request:f.parent, treatment:f.treatment, profile:await activeProfile()});
+    f.parent.asset = await f.save(f.parent, name, f.bytes, job);
+  };
+  await saveCurrent('same-meiji');
+  assert.deepEqual(await prepare(), []);
+  assert.deepEqual(await f.acceptance(), []);
+  assert.equal((await f.renderAssets()).length, 1);
+
+  await f.selectVisual('wet-watercolor');
+  assert.deepEqual((await prepare()).map(item=>item.requestId), ['AR001']);
+  assert.match((await f.acceptance()).join(' '), /与当前讲解样式不一致/);
+  await assert.rejects(f.renderAssets(), /与当前讲解样式不一致/);
+
+  await saveCurrent('updated-watercolor');
+  assert.deepEqual(await prepare(), []);
+  assert.deepEqual(await f.acceptance(), []);
+  assert.equal((await f.renderAssets()).length, 1);
+});
 
 test('原图内容修订逐级更新引用姿态，旧引用不能接纳或进入渲染，无关素材保留', async t => {
   const f = await fixture(t);
@@ -136,7 +178,7 @@ test('登记画像经原件导入到新姿态的真实请求，面貌用途与�
   assert.deepEqual(await imageJobs(options), []);
   assert.deepEqual(await validateAcceptance({result: f.treatment,
     context: {authorUnit: {id: f.workspace.unitId}, sourceAssets: [source], semanticContext: f.semanticContext, cues: f.cues},
-    services: {task: {}, ...f.workspace}}), []);
+    services: {task: {}, systemRoot, ...f.workspace}}), []);
   // A later pose still cites the original, not the generated pose.
   f.pose.visualBrief.composition += '；仅将手臂抬起';
   const [revision] = await imageJobs(options);
@@ -177,7 +219,7 @@ test('补充画风参考保留旧调用的普通及登记原图链，身份与�
       semanticContext: f.semanticContext, cues: f.cues, sourceAssets};
     const acceptance = () => validateAcceptance({result: f.treatment,
       context: {authorUnit: {id: f.workspace.unitId}, sourceAssets,
-        semanticContext: f.semanticContext, cues: f.cues}, services: {task: {}, ...f.workspace}});
+        semanticContext: f.semanticContext, cues: f.cues}, services: {task: {}, systemRoot, ...f.workspace}});
     const retained = structuredClone(f.treatment.assetRequests.map(request => request.asset));
     assert.equal(f.profile.styles.general.references.length, 2);
     assert.equal(calls.get('AR002').referenced_image_paths.length, 2, '旧调用只有一张画风图和一张身份原图');
@@ -291,11 +333,22 @@ test('设计和配色字段换序仍复用原图，导入保留原始参数且�
   assert.deepEqual((await f.prepare()).map(item => item.requestId), ['AR001'], '实际阅读顺序变化仍需修图');
 });
 
-test('旧配色不能导入或靠当前样式摘要通过接纳，正确参数沿原链路恢复', async t => {
+test('调整角色色只重做引用该色的图件，旧调用不能冒充当前用色', async t => {
   const f = await fixture(t);
+  f.parent.visualBrief.composition = '人物披风使用 var(--accent)';
+  f.parent.asset = await f.save(f.parent, 'role-color-original', f.bytes);
+  f.pose.asset = await f.save(f.pose, 'pose-from-color-original', f.bytes);
+  f.detail.asset = await f.save(f.detail, 'detail-from-color-original', f.bytes);
+  const oldObjectJob = imageJob({request:f.separate, treatment:f.treatment, profile:f.profile});
+  oldObjectJob.prompt = oldObjectJob.prompt.replace('图文角色色：{}', '图文角色色：{"accent":"#c83c32","secondary":"#3268c8"}');
+  f.separate.asset = await f.save(f.separate, 'object-with-old-palette', f.bytes, oldObjectJob);
+  const originalObject = structuredClone(f.separate.asset);
+  const originalPrompt = await readFile(path.resolve(f.workspace.workspaceRoot, originalObject.promptFile));
   const before = structuredClone(f.parent.asset);
   const job = imageJob({request: f.parent, treatment: f.treatment, profile: f.profile,
     referenceImages: [{kind: 'revision', file: f.absolute(before)}]});
+  assert.match(job.prompt, /图文角色色：\{"accent":"#c83c32"\}；/u);
+  assert.deepEqual(await f.prepare(), []);
   f.treatment.appearance.palette.accent = '#00ff00';
   Object.assign(f.profile, await loadImageProfile(f.treatment.appearance));
   await assert.rejects(importAuthoredImage({...f.workspace, request: f.parent, treatment: f.treatment,
@@ -306,19 +359,28 @@ test('旧配色不能导入或靠当前样式摘要通过接纳，正确参数�
   // Reproduce a prior incorrect import: old call, stamped with the current appearance.
   f.parent.asset = await f.save(f.parent, 'old-colors-current-stamp', f.bytes, job);
   assert.equal(f.parent.asset.appearance.digest, f.profile.digest);
-  assert.deepEqual((await f.prepare()).map(item => item.requestId), ['AR001', 'AR004']);
+  const [recolorJob] = await f.prepare();
+  assert.equal(recolorJob.requestId, 'AR001');
+  assert.match(recolorJob.job.prompt, /图文角色色：\{"accent":"#00ff00"\}；/u);
+  assert.deepEqual((await f.prepare()).map(item => item.requestId), ['AR001']);
   assert.ok((await f.acceptance()).some(error => error.includes('AR001图片与当前讲解样式不一致')));
+  assert.deepEqual(await f.acceptance().then(errors => errors.filter(error => error.includes('AR004'))), []);
   await assert.rejects(f.renderAssets(), /当前讲解样式不一致/);
 
-  for (let round = 0; round < 3; round++) for (const {requestId, job: currentJob} of await f.prepare()) {
-    const request = f.treatment.assetRequests.find(item => item.requestId === requestId);
+  const recoloredImage = path.join(f.workspace.workspaceRoot, 'recolored.png');
+  await writeFile(recoloredImage, f.changedBytes);
+  for (const request of [f.parent, f.pose, f.detail]) {
+    const jobs = await f.prepare();
+    assert.deepEqual(jobs.map(item => item.requestId), [request.requestId]);
     request.asset = await importAuthoredImage({...f.workspace, request, treatment: f.treatment,
       profile: f.profile, semanticContext: f.semanticContext, cues: f.cues,
-      sourceFile: f.absolute(request.asset), job: currentJob});
+      sourceFile: recoloredImage, job: jobs[0].job});
   }
   assert.deepEqual(await f.prepare(), []);
   assert.deepEqual(await f.acceptance(), []);
   assert.equal((await f.renderAssets()).length, 4);
+  assert.deepEqual(f.separate.asset, originalObject);
+  assert.deepEqual(await readFile(path.resolve(f.workspace.workspaceRoot, originalObject.promptFile)), originalPrompt);
   assert.equal(sha256(await readFile(path.resolve(f.workspace.workspaceRoot, before.promptFile))), before.promptSha256);
 });
 
@@ -457,13 +519,30 @@ test('历史API讲解结果可沿原导入使用；未知记录不转为原生�
   const directory=path.join(f.workspace.workspaceRoot,scratchPath,'api/AR001');
   const receiptPath=path.join(directory,'generation.json'),sourceFile=path.join(directory,'image.png');
   const {hashObject}=await import('../../program-utils.mjs');
-  const saved={provider:'openai-images',model:'retained-model',state:'completed',job:jobs[0].job,
-    jobDigest:hashObject(jobs[0].job),outputSha256:sha256(f.changedBytes)};
+  const oldJob={...jobs[0].job,prompt:'当时使用的画法说明\n\n'+jobs[0].job.prompt};
+  const saved={provider:'openai-images',model:'retained-model',state:'completed',job:oldJob,
+    jobDigest:hashObject(oldJob),outputSha256:sha256(f.changedBytes)};
   await atomicWriteData(receiptPath,saved);await writeFile(sourceFile,f.changedBytes);
-  const [resumed]=await prepareImageCalls({jobs,workspaceRoot:f.workspace.workspaceRoot,scratchPath});
+  const [resumed]=await prepareImageCalls({jobs:[{requestId:'AR001',job:oldJob}],workspaceRoot:f.workspace.workspaceRoot,scratchPath});
   assert.deepEqual(resumed.recovery,{sourceFile,receiptPath});
+  const oldPaletteJob = {...jobs[0].job,
+    prompt: jobs[0].job.prompt.replace('图文角色色：{}', '图文角色色：{"accent":"#c83c32","secondary":"#3268c8"}')};
+  await atomicWriteData(receiptPath,{...saved,job:oldPaletteJob,jobDigest:hashObject(oldPaletteJob)});
+  const [resumedWithoutUnusedColors]=await prepareImageCalls({jobs,workspaceRoot:f.workspace.workspaceRoot,scratchPath});
+  assert.deepEqual(resumedWithoutUnusedColors,{...resumed,job:oldPaletteJob});
+  await atomicWriteData(receiptPath,saved);
+  const newStyleJobs=jobs.map(item=>({...item,job:{...item.job,prompt:'节目画风：test\n'+item.job.prompt}}));
+  const projected=projectRhetoricalBoundaries(f.treatment,{semanticContext:f.semanticContext,cues:f.cues});
+  const legacyContext={request:projected.assetRequests[0],treatment:projected,profile:f.profile,
+    referenceImages:[{kind:'revision',file:f.absolute(f.parent.asset)}]};
+  const [resumedAfterStyleChange]=await prepareImageCalls({jobs:newStyleJobs,workspaceRoot:f.workspace.workspaceRoot,
+    scratchPath,legacyContextFor:async()=>legacyContext});
+  assert.deepEqual(resumedAfterStyleChange,resumed,'保留旧调用的真实输入，不按新参考再次提交');
+  const revisedRequest={...legacyContext.request,visualBrief:{composition:'人物改穿绿衣'}};
+  assert.deepEqual(await prepareImageCalls({jobs:newStyleJobs,workspaceRoot:f.workspace.workspaceRoot,scratchPath,
+    legacyContextFor:async()=>({...legacyContext,request:revisedRequest})}),newStyleJobs);
   f.parent.asset=await importAuthoredImage({...f.workspace,request:f.parent,treatment:f.treatment,
-    profile:f.profile,semanticContext:f.semanticContext,cues:f.cues,sourceAssets:[],job:jobs[0].job,
+    profile:f.profile,semanticContext:f.semanticContext,cues:f.cues,sourceAssets:[],job:oldJob,
     sourceFile,generationReceipt:receiptPath});
   assert.equal(f.parent.asset.provider,'openai-images');assert.equal(f.parent.asset.model,'retained-model');
   assert.deepEqual(await f.prepare(),[]);

@@ -19,35 +19,38 @@ const view = {x:120, y:240, width:1680, height:720};
 const frame = b => ({x:b.x+b.width/2, y:b.y+b.height/2,
   s:Math.min(view.width/b.width, view.height/b.height)});
 const camera = frame({x:100,y:230,width:1720,height:740});
-timeline.to(camera,
-  {...frame({x:505,y:405,width:360,height:250}), duration:.5, ease:'power2.inOut'}, cue('M001')+.9);
+const detail = frame({x:505,y:405,width:360,height:250});
+const approach = cue('M001');
+const observe = cue('M002');
+timeline.to(camera, {...detail, duration:observe-approach, ease:'power2.inOut'}, approach);
 onFrame(() => select('#camera').setAttribute('transform',
   `translate(${view.x+view.width/2} ${view.y+view.height/2}) scale(${camera.s}) translate(${-camera.x} ${-camera.y})`));
 ```
 
-上面的数值只说明范围适配。实际取景可看[七国之乱的官署过程](../../examples/seven-kingdoms/README.md#观看设计)：由外观叠化进入内部，再依三处职能安排开门、取景和回到全景。相机与人物、门扇各自排时，共同服务当前观看。实际题目重选范围与时间；范围仍包住整张图时不会形成近景，不直接套用本例坐标和镜头顺序。
+上例在 `M001` 到 `M002` 沿共同画面移近，机位到点后交给主体动作。这两个锚点依实际时窗选取，前后须有可用的移动时间。只需直接切近时，用 `timeline.set(camera, detail, observe)`；开场就在近景时，用细节幅作初始取景。跟随可在原 `onFrame` 从主体当前状态求机位。
+
+看[《七国》32.5至50.4秒的官署](../../examples/seven-kingdoms/README.md#观看设计)。外观先让观众认出官署，内部沿同一屋檐与柱位移焦。镜头给每扇门让出观察位置，门扇先露出当处职能，最后拉回看三处的关系。用本题的作用点和参照分别排相机、活动件和字组，章尾是否拉开由还要说明的关系决定。
 
 按对象范围求取景可参照[Manim的auto_zoom实际实现](https://github.com/ManimCommunity/manim/blob/16ea443e2a5f1d79db0a721161411ce916d6e733/manim/camera/moving_camera.py)；[Motion Canvas相机示例](https://github.com/motion-canvas/motion-canvas/blob/7b91435c301d530351dcf5ebb91dd139c002e405/packages/docs/docs/getting-started/camera.mdx)同样把对象状态与观看窗口分开。此处二维适配不提供三维透视；Three.js与数据地图使用自身相机。取景、比较尺度和标签归属沿[主体动作与取景](../creative/motion.md#主体动作与取景一起排)判断，屏幕字号按观看距离调整。
 
 ## 作用与回应的错时
 
-进场可用`power3.out`先快后缓取得位置，退出可用`power3.in`加速让位，镜头或大组重排可用`power2.inOut`协调启停；按已定动作选择曲线。
-
-以“物件落入可动托盘”为例，先在markup中对齐物件终点与托盘，把物件和托盘放在同一`#landing`组内，再将该组放入取景组：
+以“物件滑上可动托盘”为例，在markup中把 `#piece` 摆在刚好接触托盘的位置，两者放在同一 `#landing` 组。已确定本镜取景；`M001` 对应可用的准备起点，`M002` 对应接触时刻。若章首先看到的就是接触，用接触状态作初态，令 `approachFrom` 等于 `hit`：
 
 ```js
-const hit = cue('M002'); // 本例贴Cue边界；句内落点取本单实测偏移
-timeline.to(select('#view'),
-  {x:-180, scale:1.25, duration:.6, ease:'power2.inOut'}, hit-.9);
-timeline.to(select('#piece'),
-  {x:300, duration:.32, ease:'power3.in'}, hit-.32);
+const approachFrom = cue('M001');
+const hit = cue('M002');
+if (approachFrom < hit) {
+  timeline.fromTo(select('#piece'), {x:-120},
+    {x:0, duration:hit-approachFrom, ease:'power2.in'}, approachFrom);
+}
 timeline.to(select('#landing'), {y:8, duration:.08, ease:'power2.out'}, hit);
 timeline.to(select('#landing'), {y:0, duration:.16, ease:'power2.out'}, hit+.08);
-timeline.fromTo(select('#result'), {opacity:0},
-  {opacity:1, duration:.18}, hit+.14);
 ```
 
-这里的数值只解释一次编排：取景先完成，物件较快抵达，承托组随后带着已接触的物件一同回应，读数再接过注意。换对象就按真实结构改姿态、路径和反馈，静止地面不跟着跳；归属与读数按真正完成条件改变，不因视觉收势反复增减。用onFrame时同样为这些角色分别求进度和保持态，再由同一时间重建完整画面。
+这里的数值只说明一次承托反应。按本镜行程和时窗选速度；如果准备不够看清，改起幅或拍法，别把起势排到0秒之前。用[实测短语](cues.md#实测短语与句内卡点)时可将 `hit` 设在句内。接触之后物件与托盘一起回应，静止的地面保持原位；归属与读数按真正完成条件改变。用onFrame时同样由当前时间重建完整画面。
+
+需要把视线交给作用处时，可让镜头先到位；托盘刚受力时把注意留给主体，可读的结果字随后进入。显示后的数值读取已经成立的状态，字组显现时机由阅读安排确定。当镜头跟随过程才有观看价值时，用主体位置与镜头各自的状态保持行程可读。
 
 ## 动画实现参考
 

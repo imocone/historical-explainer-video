@@ -1,4 +1,4 @@
-import { assertPublicationRevisionRequest, sealedPublicationBusinessForRevision } from "./publication-requests.mjs";
+import { assertPublicationRevisionRequest, canReviseRetainedPlatformCopy, sealedPublicationBusinessForRevision } from "./publication-requests.mjs";
 import { getPublicationPaths } from "../../packages/publication-paths.mjs";
 import { resolvePublicationCurrent } from "./state-publication.mjs";
 import { episodeReferenceVideos } from "../../packages/reference-program.mjs";
@@ -409,9 +409,11 @@ const resolveNarrationCurrent = async ({
     let revisionInputHashes = returnRequest ? [hashObject(authorReturnRequest)] : [];
     if (publicationRevision.includes(returnRequest?.revisionScope)) {
       const { scriptPackage, openerNarration } = await readP1Delivery({ root, workspaceRoot, episodeId });
-      const reusedNarrationMaterials = await validateReusableNarrationMaterials({ workspaceRoot, episodeId,
+      const retainedCopy = pinnedNarrationMaterials == null
+        && await canReviseRetainedPlatformCopy({ workspaceRoot, episodeId, request: returnRequest });
+      const reusedNarrationMaterials = retainedCopy ? null : await validateReusableNarrationMaterials({ workspaceRoot, episodeId,
         episodeBrief, materials: pinnedNarrationMaterials });
-      revisionInputs = { reusedNarrationMaterials, materialExecutionId: scriptPackage._producer.materialExecutionId,
+      revisionInputs = { ...(reusedNarrationMaterials ? { reusedNarrationMaterials } : {}), materialExecutionId: scriptPackage._producer.materialExecutionId,
         currentScriptPackage: businessContent(scriptPackage), currentOpenerNarration: businessContent(openerNarration),
         ...(await exists(publicationPaths.publicationDocument)
           ? { currentPublication: (await sealedPublicationBusinessForRevision({ paths: publicationPaths,

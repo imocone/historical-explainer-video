@@ -1,7 +1,7 @@
 import { mkdir, readFile, readdir, rm } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import path from "node:path";
-import { getEpisodePaths, getStageWorkPaths } from "../../packages/workspace-paths.mjs";
+import { getEpisodePaths, getStageWorkPaths, listAuthorWorkPaths, p4WorkPaths } from "../../packages/workspace-paths.mjs";
 import {
   assertProjectPath,
   atomicWriteData,
@@ -393,10 +393,13 @@ const prepareSubtitleRevision = async ({
     if (!(await exists(requestPath))) {
       if (current.kind !== "complete")
         throw new Error("字幕返工只用于已完成P2；未完成任务继续当前工作单");
-      for (const stage of ["p2", "p3", "p4"]) {
-        const active = getStageWorkPaths(paths, stage);
+      const activePaths = [
+        ...["p2", "p3", "p4"].map(stage => getStageWorkPaths(paths, stage)),
+        ...await listAuthorWorkPaths(paths), ...p4WorkPaths(paths)
+      ];
+      for (const active of activePaths) {
         if ((await exists(active.workOrder)) || (await exists(active.candidate))) {
-          throw new Error(`${stage}仍有未收口工作单或候选，不能开始字幕返工`);
+          throw new Error(`${relative(workspaceRoot, active.work)}仍有未收口工作单或候选，不能开始字幕返工`);
         }
       }
       const correction = businessContent(await readData(paths.subtitleCorrection));

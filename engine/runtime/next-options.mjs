@@ -31,8 +31,12 @@ const validateNextOptions = async ({
   adoptCoverImages = null,
   coverVariants,
   authorizePaidTts,
+  replaceTtsTask = null,
 }) => {
   requireStageId(stageId, "next");
+  if (replaceTtsTask !== null && (stageId !== "p2" || !authorizePaidTts
+    || !/^[a-f0-9]{64}$/u.test(replaceTtsTask ?? "") || reviseSubtitles))
+    throw new Error("--replace-tts-task 只用于P2，须点名原提交摘要并明确授权本次付费，不能同时修订字幕");
   if (claim !== null && (stageId !== "p3" || !["fullframe", "explainer"].includes(claim)
     || segmentId || redesignBody || reviseDirector || reviseQuotes || cancelDirectorRevision))
     throw new Error("--claim 只用于P3领取 fullframe 或 explainer，不同时指定段或发起修订");

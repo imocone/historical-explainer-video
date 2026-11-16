@@ -10,6 +10,7 @@
   "runtimeResources": [
     "references/video-led.md",
     "references/explainer-planning-method.md",
+    "scripts/prepare-reference-transcript.mjs",
     "../../runtime-config.mjs"
   ],
   "outputSchema": "result.schema.json",

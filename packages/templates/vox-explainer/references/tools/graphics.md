@@ -43,7 +43,7 @@ const setup = `const pen = (${annotationTools.toString()})(select('#canvas'));
 onFrame(({time}) => {
   pen.draw(select('#detail-mark'), (time-cue('M002'))/.6);
 });`;
-// 把setup并入同一scene.animation；#canvas是本段SVG根，Cue与时长按本单声音设计。
+// 把setup并入同一scene.animation。#canvas是本段SVG根，起点与时长按本单Cue和镜内编排确定。
 ```
 
 `annotationTools(svg)`只使用传入的SVG，序列化后随正式animation保存；不另装播放器或时钟：

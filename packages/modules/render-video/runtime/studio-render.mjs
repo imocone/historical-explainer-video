@@ -20,8 +20,8 @@ export const installStudioCompositionPreview = (adapter, { extractStandaloneEntr
   };
 };
 
-export const createStudioProject = (runtime, projectDirectory) => {
-  const native = runtime.createStudioServer({ projectDir: projectDirectory, projectName: path.basename(projectDirectory) });
+export const createStudioProject = (runtime, projectDirectory, options = {}) => {
+  const native = runtime.createStudioServer({ ...options, projectDir: projectDirectory, projectName: path.basename(projectDirectory) });
   installStudioCompositionPreview(native.adapter, runtime);
   return native;
 };

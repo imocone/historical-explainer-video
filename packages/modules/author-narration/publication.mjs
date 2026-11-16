@@ -75,6 +75,9 @@ const youtubeTagCharacters = (values = []) => Array.from(
 export function validate({ result, context = {} }) {
   const errors = [];
   const returnRequest = context.returnRequest ?? null;
+  // Spoken revisions can carry the accepted publication with its existing cover binding.
+  const inheritedPublication = ["opener", "narration"].includes(returnRequest?.revisionScope)
+    && isDeepStrictEqual(result, context.currentPublication);
   const brief = context.episodeBrief ?? {};
   const script = context.scriptPackage ?? {};
   const opener = context.openerNarration ?? {};
@@ -184,10 +187,10 @@ export function validate({ result, context = {} }) {
         }
       }
     }
-  } else if (result.coverReuse != null) {
+  } else if (result.coverReuse != null && !inheritedPublication) {
     errors.push("只有P1平台文案返工可以声明复用已接受封面");
   }
-  if (result.coverTextEdit != null && returnRequest?.revisionScope !== "publication-copy") {
+  if (result.coverTextEdit != null && returnRequest?.revisionScope !== "publication-copy" && !inheritedPublication) {
     errors.push("只有定点封面文字修改可以绑定现图换字");
   }
   return errors;

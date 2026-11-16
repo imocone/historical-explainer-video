@@ -23,13 +23,14 @@ export const resolveMusicGestures = ({result, holdEndFrame, ...timing}) => {
   });
 };
 
-export const musicEnvelopesForSegments = ({soundDesign, segments = [], fps, trackStartMs, trackEndMs, bodyEndMs}) => {
+export const musicEnvelopesForSegments = ({soundDesign, segments = [], fps, trackStartMs, trackEndMs, bodyEndMs, finalSegmentId}) => {
   if (!soundDesign || soundDesign.enabled === false) return [];
   return segments.filter(isSoundDesignSegment).flatMap(segment =>
     resolveMusicGestures({result:soundDesign.units?.[segment.id], actionTimings:segment.actionTimings,
       eventTimings:segment.renderData?.eventTimings, durationInFrames:segment.durationInFrames,
       holdEndFrame:Number.isFinite(trackEndMs) && Number.isFinite(bodyEndMs)
-        && segment.startMs + segment.durationInFrames / fps * 1000 >= bodyEndMs - 1000 / fps
+        && (finalSegmentId ? segment.id === finalSegmentId
+          : segment.startMs + segment.durationInFrames / fps * 1000 >= bodyEndMs - 1000 / fps)
         ? Math.max(segment.durationInFrames, Math.round((trackEndMs - segment.startMs) * fps / 1000)) : segment.durationInFrames,
       fps, segmentStartMs:segment.startMs}).map(points => points.map(point => ({...point,
       frame:point.frame + Math.round((segment.startMs - trackStartMs) * fps / 1000)}))));

@@ -85,24 +85,26 @@ export const viewingStudies = visualStyle => {
   const roomPush = route("push-in", viewport(0, 0, 1), viewport(.20, .05, .75));
   const roomPan = route("traverse", viewport(.25, .02, .75), viewport(.05, .02, .75));
   const corridorRoute = route("traverse", viewport(0, .12, 2 / 3), viewport(1 / 3, .12, 2 / 3));
-  const rhythm = { speedRatio: 1, speedChanges: [{ timeMs: 3000, speedRatio: 4.9 }, { timeMs: 5900, speedRatio: 1 }] };
+  const rhythm = { speedRatio: 1, speedChanges: [{ timeMs: 3000, speedRatio: 3 }, { timeMs: 5900, speedRatio: 1 }] };
   // Match the control clip's actual final crop; this is a comparison fixture, not production speed selection.
   const elapsed = 8 - 1 / VIDEO_SPEC.fps;
   const constantSpeed = fullframeSpeedSecondsAt({ motion: rhythm, elapsedSeconds: elapsed }) / elapsed;
   const waiting = { ...corridor, purpose: "以门外等待接住室内迟疑", entry: "空手等候者与关闭的门",
     change: "屋内迟迟不接，屋外迟迟未获回应" };
-  const joint = type => segmentFor(`joint-${type}`, [request(room, roomPush),
-    { ...request(waiting, route("traverse", viewport(.20, .09, .80), viewport(0, .09, .80)), "B"),
+  const jointRoomEnd = viewport(.224, .056, .72);
+  const joint = type => segmentFor(`joint-${type}`, [request(room, {
+    ...roomPush, semanticEndViewport: jointRoomEnd, safeEndViewport: jointRoomEnd }),
+    { ...request(waiting, route("traverse", viewport(.24, .09, .76), viewport(0, .09, .76)), "B"),
       incomingTransition: { type: "dissolve", durationMs: type === "short" ? 600 : 1600, reason: "室内停手接屋外等待，未完成的回应仍持续；比较共显时长对人物和门墙辨认的影响，不以闪黑强行制造结束" } }], visualStyle, 16);
   return [
     { id: "transfer-supply", name: "器材与接手：沿台面横移", segment: segmentFor("transfer-supply", [request(supply,
-      route("traverse", viewport(0, .08, .72), viewport(.28, .08, .72), { speedRatio: 1.35,
+      route("traverse", viewport(0, .08, .72), viewport(.28, .08, .72), { speedRatio: 1.3,
         speedChanges: [{ timeMs: 4500, speedRatio: 2.2 }, { timeMs: 7000, speedRatio: 1 }] }))], visualStyle, 8, lighthouseContinuity),
       speech: [{ startMs: 300, endMs: 3100, text: "器材先从码头送来。" },
         { startMs: 3500, endMs: 7800, text: "再交到检修的双手之间。" }] },
     { id: "transfer-height", name: "工人与灯室：沿阶梯上移", segment: segmentFor("transfer-height", [request(height,
-      route("traverse", viewport(.28, .30, .70), viewport(.28, .02, .70), { speedRatio: 1.8,
-        speedChanges: [{ timeMs: 4500, speedRatio: 3 }, { timeMs: 6300, speedRatio: 1 }] }))], visualStyle, 9, lighthouseContinuity),
+      route("traverse", viewport(.28, .30, .70), viewport(.28, .02, .70), { speedRatio: 1.2,
+        speedChanges: [{ timeMs: 4500, speedRatio: 2 }, { timeMs: 6300, speedRatio: 1 }] }))], visualStyle, 9, lighthouseContinuity),
       speech: [{ startMs: 300, endMs: 3600, text: "检修台上完成的，只是第一步。" },
         { startMs: 4100, endMs: 8700, text: "这些器材，还要沿着阶梯送上灯室。" }] },
     { id: "transfer-wick", name: "细节获得分量：近景定向推近", segment: segmentFor("transfer-wick", [request(wick,

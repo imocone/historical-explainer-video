@@ -76,6 +76,9 @@ async function compile({ props: input, projectDirectory, audio = true }) {
       const sourceAtStart = sampleStart + frameOffset;
       const localStart = Math.max(0, -sourceAtStart);
       const availableFrames = Math.min(hostEnd - hostStart - localStart, endFrame - Math.max(0, sourceAtStart) + 1);
+      if (segment.id === props.ending?.afterSegmentId && scene.role === "body"
+        && localStart + availableFrames < hostEnd - hostStart)
+        throw new Error(`${segment.id} 末镜视频活动余量不足，无法连续播放到全黑`);
       if (availableFrames <= 0) return;
       const holdStart = localStart + availableFrames, holdFrames = hostEnd - hostStart - holdStart;
       const hold = holdFrames > 0 ? `<img class="clip" src="${attribute(url(asset.playback.lastStill))}" data-start="${seconds(holdStart)}" data-duration="${seconds(holdFrames)}" data-track-index="0" style="position:absolute;inset:0;width:100%;height:100%;object-fit:inherit">` : "";

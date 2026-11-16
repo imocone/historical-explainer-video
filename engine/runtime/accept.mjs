@@ -2,7 +2,10 @@ import { publicationTextFor } from "../../packages/modules/author-narration/publ
 import { projectVideoProduction } from "../../packages/templates/cinematic-video/production-projection.mjs";
 import { assertVideoOpenerInput } from "../../packages/p4-opener-reference.mjs";
 import { collectQuoteRequests, mergeAcceptedQuotes } from "../../packages/templates/fullframe-narrative/callout/batch.mjs";
-import { projectAcceptedOpenerBodyDependencies } from "../../packages/modules/author-bookend/dependency-projection.mjs";
+import { openerBodyRefs, projectAcceptedOpenerBodyDependencies } from "../../packages/modules/author-bookend/dependency-projection.mjs";
+import { fullframeRuntimeTimingForAuthorUnits } from "../../packages/templates/fullframe-narrative/camera/author-transition-handoff.mjs";
+import { changedBodyViewingUnits } from "../../packages/modules/render-video/runtime/transitions.mjs";
+import { currentP3ReturnTargets } from "../../packages/p3-task-view.mjs";
 import { projectRenderStoryboard } from "../../packages/modules/render-video/runtime/projection.mjs";
 import { authorPreviousTreatmentProducerInputsForResult, previousTreatmentInputForAuthorUnit } from "./author-tasks.mjs";
 import { inspectP3Inputs } from "./storyboard-validation.mjs";
@@ -20,11 +23,13 @@ import { hashObject, readData, sha256, stableStringify } from "../../packages/pr
 import { completeTreatmentCandidate, validateTreatmentCandidate } from "../../packages/modules/author-beat/candidate-validation.mjs";
 import { validateAuthorBatch } from "../../packages/modules/author-beat/batch-validation.mjs";
 import { resolveReusableNarrationMaterials } from ".././p1-revision-materials.mjs";
+import { canReviseRetainedPlatformCopy } from "./publication-requests.mjs";
 import { assertProgramRevisionRequest } from "./state-program.mjs";
 import { assertProjectPaths, exists, importModule } from "./files.mjs";
 import { validateSchema } from "./schema.mjs";
 import { loadStageModel } from "./model.mjs";
 import { loadPackages } from "./packages.mjs";
+import { assertStageSettled } from "./stage-restart.mjs";
 import {
   controllerSpecFor,
   featureAdapter,
@@ -36,6 +41,7 @@ import {
 } from "./implementations.mjs";
 import {
   assertP3BodyRedesignRequest,
+  assertP3DirectorRevisionRequest,
   authorUnitsForStoryboard,
   businessContent,
   changedDirectorBeatIds,
@@ -143,11 +149,19 @@ async function acceptCandidate({
   if (candidate.taskDigest !== current.workOrder.taskDigest)
     throw new Error("candidate taskDigest 已过期");
   if (candidate.returnTo) {
-    if (!current.workOrder.allowedReturnTargets.includes(candidate.returnTo.target)) {
-      throw new Error(`${current.workOrder.nodeId} 不允许退回 ${candidate.returnTo.target}`);
+    const requestedTarget = candidate.returnTo.target;
+    if (current.mode === "visual-plan" && requestedTarget === "understand"
+      && saved.allowedReturnTargets.includes(requestedTarget)) {
+      throw new Error("理解已并入导演；按原候选的退回原因回本单第一步，在原路径继续完成结果");
+    }
+    const target = saved.workflowId === "video" && requestedTarget === "understand"
+      && saved.allowedReturnTargets.includes(requestedTarget) ? "director" : requestedTarget;
+    const signedTargets = saved.workflowId === "video" ? currentP3ReturnTargets(saved) : saved.allowedReturnTargets;
+    if (!signedTargets.includes(target)) {
+      throw new Error(`${current.workOrder.nodeId} 不允许退回 ${requestedTarget}`);
     }
     const fullWorkflow = model.workflowModel.workflowById.get(current.workOrder.workflowId);
-    const targetNode = fullWorkflow.nodeById.get(candidate.returnTo.target);
+    const targetNode = fullWorkflow.nodeById.get(target);
     if (!targetNode)
       throw new Error(`returnTo 引用了不存在的 Workflow 节点: ${candidate.returnTo.target}`);
     if (current.workOrder.workflowId === "video" && candidate.returnTo.cueRefs.length === 0) {
@@ -164,6 +178,7 @@ async function acceptCandidate({
     }
     const request = {
       ...candidate.returnTo,
+      target,
       requestedBy: {
         taskId: current.workOrder.taskId,
         nodeId: current.workOrder.nodeId,
@@ -172,16 +187,52 @@ async function acceptCandidate({
       }
     };
     const targetStageId = fullWorkflow.stageByNodeId.get(targetNode.id);
-    const requestPath = getStageWorkPaths(paths, targetStageId).returnRequest(targetNode.id);
+    const targetWork = getStageWorkPaths(paths, targetStageId);
+    const requestPath = targetWork.returnRequest(targetNode.id);
+    const localDirectorReturn = stageId === "p3" && current.mode === "treatment" && target === "director";
+    if (candidate.result && !localDirectorReturn) throw new Error("只有退回P3导演局部修订时可以同时保留原结果草稿");
+    const writes = new Map([[requestPath, request]]);
+    let scratchPath = saved.scratchPath ? path.resolve(workspaceRoot, saved.scratchPath) : null;
+    if (localDirectorReturn) {
+      const baseline = directorResultSlice(await readData(paths.storyboard));
+      const selected = baseline.beats.filter(({ cueRange: [first, last] }) =>
+        request.cueRefs.some(id => id >= first && id <= last));
+      Object.assign(request, {
+        revisionScope: "director-revision",
+        baselineVisualPlanSha256: hashObject(baseline),
+        selectedBeatIds: selected.map(({ id }) => id),
+        cueRefs: selected.flatMap(({ cueRange: [first, last] }) =>
+          Array.from({ length: last - first + 1 }, (_, index) => first + index))
+      });
+      assertP3DirectorRevisionRequest(request, baseline);
+      const heldPath = path.join(workPaths.work, "held-work", `${saved.taskDigest}.json`);
+      writes.set(heldPath, {
+        workOrder: saved,
+        candidate: candidate.result ? { taskDigest: saved.taskDigest, result: candidate.result } : null
+      });
+      scratchPath = null;
+    }
     return commitAcceptance({
       workspaceRoot, workPaths,
-      writes: new Map([[requestPath, request]]),
+      writes,
       cleanup: [workPaths.workOrder, workPaths.candidate],
-      scratchPath: current.workOrder.scratchPath ? path.resolve(workspaceRoot, current.workOrder.scratchPath) : null,
+      scratchPath,
       materials: null,
       verify: async () => {
         if (hashObject(await readData(workPaths.workOrder)) !== savedHash
           || hashObject(await readData(workPaths.candidate)) !== candidateHash) throw new Error("退回期间候选或工作单已变化");
+        if (localDirectorReturn) {
+          for (const node of ["director", "understand"]) {
+            if (await exists(targetWork.returnRequest(node))) throw new Error("P3已有待处理修订，保留作者原单及工程");
+          }
+          const bodyPath = targetWork.returnRequest("author");
+          const body = await exists(bodyPath) ? await readData(bodyPath) : null;
+          if (hashObject(body) !== hashObject(current.context.p3BodyRedesign ?? null)) {
+            throw new Error("P3正文返工已变化，保留作者原单及工程");
+          }
+          await assertStageSettled(workspaceRoot, workPaths.work);
+          assertP3DirectorRevisionRequest(request, directorResultSlice(await readData(paths.storyboard)));
+        }
       },
       result: { kind: "returned", subject: current.workOrder.subject, workflowId: current.workOrder.workflowId,
         stageId: current.workOrder.stageId, taskId: current.workOrder.taskId, target: request.target, reason: request.reason }
@@ -347,8 +398,6 @@ async function acceptCandidate({
   let projectedPrimaryResult;
   if (current.mode === "author-quotes" && projection.kind === "author-quotes") {
     projectedPrimaryResult = projection.quotes;
-  } else if (current.mode === "understanding" && projection.kind === "understanding") {
-    projectedPrimaryResult = projection.section;
   } else if (current.mode === "visual-plan" && projection.kind === "visual-plan") {
     projectedPrimaryResult = projection.visualPlan;
   } else if (
@@ -374,9 +423,7 @@ async function acceptCandidate({
       `${current.workOrder.moduleId} controller.project 返回了不属于当前工位的局部补丁`
     );
   }
-  const validatedPrimaryResult =
-    current.mode === "understanding" ? primaryResult.understanding : primaryResult;
-  if (stableStringify(projectedPrimaryResult) !== stableStringify(validatedPrimaryResult)) {
+  if (stableStringify(projectedPrimaryResult) !== stableStringify(primaryResult)) {
     throw new Error(`${current.workOrder.moduleId} controller.project 不得改写已验证业务内容`);
   }
   if (
@@ -398,13 +445,18 @@ async function acceptCandidate({
   };
   const oldOutput = await exists(current.outputPath) ? businessContent(await readData(current.outputPath)) : null;
 
-  const editsStoryboard = ["author-quotes", "understanding", "visual-plan", "treatment", "feature"].includes(current.mode);
+  const editsStoryboard = ["author-quotes", "visual-plan", "treatment", "feature"].includes(current.mode);
   const priorStoryboard = editsStoryboard && await exists(paths.storyboard) ? await readData(paths.storyboard) : null;
   if (editsStoryboard) writeBaselines.set(paths.storyboard, priorStoryboard ? hashObject(priorStoryboard) : null);
   let updatedStoryboard = null;
+  const cueRebinding = current.context?.returnRequest?.cueRebinding;
+  const previousCues = cueRebinding?.previousCues ?? current.context?.returnRequest?.previousCues;
+  let cueRebindingBeatIds = null;
   let materials = null;
   let outputSha256;
   let consumedReturnPath = null;
+  const directorReturnFiles = current.directorReturnFiles ?? new Map();
+  for (const [file, request] of directorReturnFiles) writeBaselines.set(file, hashObject(request));
   if (current.mode === "author-quotes") {
     const storyboard = structuredClone(priorStoryboard);
     const accepted = { ...projectedPrimaryResult, _producer: producer({ task: current, result: projectedPrimaryResult }) };
@@ -420,22 +472,13 @@ async function acceptCandidate({
       }
       consumedReturnPath = requestPath;
     }
-  } else if (current.mode === "understanding") {
-    const existing = structuredClone(priorStoryboard ?? {});
-    const result = businessContent(projectedPrimaryResult);
-    const sectionResult = { understanding: result };
-    const sectionProducer = producer({ task: current, result: sectionResult });
-    const storyboard = { ...existing, understanding: { ...result, _producer: sectionProducer } };
-    updatedStoryboard = storyboard;
-    outputSha256 = sectionProducer.outputSha256;
-    consumedReturnPath = workPaths.returnRequest(current.node.id);
   } else if (current.mode === "visual-plan") {
-    const storedExisting = structuredClone(priorStoryboard);
+    const storedExisting = structuredClone(priorStoryboard ?? {});
     const existing = storedExisting;
     const albumDirectionChanged =
       hashObject(directorAlbumDirection(existing.albumPlan)) !==
       hashObject(directorAlbumDirection(projectedPrimaryResult.albumPlan));
-    const changedBeatIds =
+    let changedBeatIds =
       albumDirectionChanged
         ? [
             ...new Set([
@@ -443,16 +486,64 @@ async function acceptCandidate({
               ...(projectedPrimaryResult.beats ?? []).map((beat) => beat.id)
             ])
           ]
-        : changedDirectorBeatIds(existing, projectedPrimaryResult);
-    const changedRunIds =
-      albumDirectionChanged
-        ? [
-            ...new Set([
-              ...(storedExisting.templateRuns ?? []).map((run) => run.id),
-              ...(projectedPrimaryResult.templateRuns ?? []).map((run) => run.id)
-            ])
-          ]
-        : changedDirectorRunIds(existing, projectedPrimaryResult, changedBeatIds);
+        : changedDirectorBeatIds(existing, projectedPrimaryResult, {
+          cues: current.context.cues, previousCues
+        });
+    const retainedTreatmentIds = new Set();
+    if (previousCues) {
+      const cuesFor = (cues, beat) => cues.filter(cue => beat && cue.id >= beat.cueRange[0] && cue.id <= beat.cueRange[1]);
+      const oldBeats = new Map((existing.beats ?? []).map(beat => [beat.id, beat]));
+      changedBeatIds = [...new Set([...changedBeatIds, ...projectedPrimaryResult.beats.filter(beat =>
+        stableStringify(cuesFor(previousCues, oldBeats.get(beat.id)))
+          !== stableStringify(cuesFor(current.context.cues, beat))).map(beat => beat.id)])];
+      if (cueRebinding) cueRebindingBeatIds = new Set(changedBeatIds);
+      const oldUnits = new Map(authorUnitsForStoryboard(existing).map(unit => [unit.id, unit]));
+      for (const unit of authorUnitsForStoryboard(projectedPrimaryResult)) {
+        const previous = oldUnits.get(unit.id);
+        if (cueRebinding && previous?.treatment && previous.kind === unit.kind && previous.templateId === unit.templateId)
+          retainedTreatmentIds.add(unit.id);
+      }
+    }
+    const changedRunIds = albumDirectionChanged
+      ? [...new Set([
+        ...(storedExisting.templateRuns ?? []).map((run) => run.id),
+        ...(projectedPrimaryResult.templateRuns ?? []).map((run) => run.id)
+      ])]
+      : changedDirectorRunIds(existing, projectedPrimaryResult, changedBeatIds);
+    // Accepted authors also depend on the actual windows supplied by adjacent beats.
+    const previousUnits = authorUnitsForStoryboard(existing);
+    const nextUnits = authorUnitsForStoryboard(projectedPrimaryResult);
+    const retainedTimingIds = new Set();
+    if (previousUnits.some(unit => unit.treatment)) {
+      const timings = (units, cues, requireCameraHandles) => fullframeRuntimeTimingForAuthorUnits({
+        authorUnits: units, cues, requireCameraHandles, openerTemplate: current.context.openerTemplate
+      });
+      const accepted = new Set(previousUnits.filter(unit => unit.treatment).map(unit => unit.id));
+      const directlyChanged = new Set([...changedBeatIds, ...changedRunIds]);
+      const changedTimingIds = changedBodyViewingUnits({
+        before: timings(previousUnits, previousCues ?? current.context.cues, false),
+        after: timings(nextUnits, current.context.cues, true)
+      });
+      for (const id of changedTimingIds) {
+        if (!accepted.has(id) || directlyChanged.has(id)) continue;
+        retainedTimingIds.add(id);
+        retainedTreatmentIds.add(id);
+      }
+    }
+    const localDirectorRevision = current.context?.returnRequest?.revisionScope === "director-revision";
+    if (localDirectorRevision) {
+      const oldUnits = new Map(authorUnitsForStoryboard(existing).map(unit => [unit.id, unit]));
+      for (const unit of authorUnitsForStoryboard(projectedPrimaryResult)) {
+        const previous = oldUnits.get(unit.id);
+        const affected = unit.beatIds.some(id => changedBeatIds.includes(id)) || changedRunIds.includes(unit.id);
+        if (affected && previous?.treatment && previous.kind === unit.kind && previous.templateId === unit.templateId
+          && stableStringify(previous.beatIds) === stableStringify(unit.beatIds)
+          && stableStringify(previous.beats.map(beat => beat.cueRange))
+            === stableStringify(unit.beats.map(beat => beat.cueRange))) {
+          retainedTreatmentIds.add(unit.id);
+        }
+      }
+    }
     const directorProducer = producer({
       task: current,
       result: directorResultSlice(projectedPrimaryResult)
@@ -463,17 +554,50 @@ async function acceptCandidate({
       existing,
       result: projectedPrimaryResult,
       directorProducer,
+      understandingProducer: producer({ task: current, result: { understanding: projectedPrimaryResult.understanding } }),
       changedBeatIds,
-      changedRunIds
+      changedRunIds,
+      retainedTreatmentIds
     });
     await clearChangedBeatFeatureResults({
       model,
       storyboard,
-      beatIds: [...new Set([...changedBeatIds, ...changedRunIds])]
+      beatIds: [...new Set([...changedBeatIds, ...changedRunIds])].filter(id => !retainedTreatmentIds.has(id))
     });
+    const requestPath = workPaths.returnRequest("author");
+    const resumesBody = localDirectorRevision && current.context.returnRequest.requestedBy?.nodeId === "author";
+    if (resumesBody || cueRebindingBeatIds || retainedTimingIds.size || (localDirectorRevision && retainedTreatmentIds.size)) {
+      const units = nextUnits.filter(unit => retainedTimingIds.has(unit.id)
+        || (cueRebindingBeatIds
+          ? unit.beatIds.some(id => cueRebindingBeatIds.has(id)) || changedRunIds.includes(unit.id)
+          : retainedTreatmentIds.has(unit.id)));
+      const prior = await exists(requestPath) ? assertP3BodyRedesignRequest(await readData(requestPath)) : null;
+      writeBaselines.set(requestPath, prior ? hashObject(prior) : null);
+      const baselineVisualPlanSha256 = hashObject(directorResultSlice(storyboard));
+      if (units.length || (prior && prior.baselineVisualPlanSha256 !== baselineVisualPlanSha256)) {
+        const nextIds = new Set(nextUnits.map(unit => unit.id));
+        const pendingIds = new Set(prior?.pendingAuthorUnitIds ?? []);
+        const removedRanges = previousUnits.filter(unit => pendingIds.has(unit.id) && !nextIds.has(unit.id))
+          .flatMap(unit => unit.beats.map(beat => beat.cueRange));
+        const remapped = nextUnits.filter(unit => unit.beats.some(({ cueRange: [first, last] }) =>
+          removedRanges.some(([before, after]) => first <= after && last >= before)));
+        const beatIds = new Set(storyboard.beats.map(beat => beat.id));
+        await queueWrite(requestPath, { ...prior, target: "author", cueRefs: [],
+          reason: prior?.reason ?? (localDirectorRevision ? current.context.returnRequest.reason
+            : cueRebinding ? "正文未变，字幕分句变化；对照旧Cue只修受影响的引用、时窗与承接，保留有效设计和素材"
+            : "导演改变相邻接法，核对受影响的观看时窗，保留有效画面和素材"),
+          revisionScope: "body-redesign", redesignState: "pending-author",
+          baselineVisualPlanSha256,
+          selectedBeatIds: [...new Set([...(prior?.selectedBeatIds ?? []).filter(id => beatIds.has(id)),
+            ...remapped.flatMap(unit => unit.beatIds), ...units.flatMap(unit => unit.beatIds.filter(id =>
+            !cueRebindingBeatIds || cueRebindingBeatIds.has(id) || retainedTimingIds.has(unit.id)))])],
+          pendingAuthorUnitIds: [...new Set([...pendingIds].filter(id => nextIds.has(id))
+            .concat(remapped.map(unit => unit.id), units.map(unit => unit.id)))],
+          ...(cueRebinding ? { cueRebinding } : {}) });
+      }
+    }
     updatedStoryboard = storyboard;
     outputSha256 = directorProducer.outputSha256;
-    consumedReturnPath = workPaths.returnRequest(current.node.id);
   } else if (current.mode === "segment") {
     const accepted = {
       ...projectedPrimaryResult,
@@ -594,6 +718,8 @@ async function acceptCandidate({
     const { openerNarration, publication, ...scriptBusiness } = projectedPrimaryResult;
     const openerBusiness = { schemaVersion: "3.0", openerNarration };
     const revisionScope = current.context?.returnRequest?.revisionScope ?? null;
+    const retainedCopy = current.context?.reusedNarrationMaterials == null
+      && await canReviseRetainedPlatformCopy({ workspaceRoot, episodeId, request: current.context?.returnRequest });
     const rewriteNarration = revisionScope === "narration" && current.workOrder.moduleId === "author-narration";
     let materialExecutionId;
     if (["publication-copy", "publication-all", "cover-content"].includes(revisionScope)) {
@@ -611,6 +737,23 @@ async function acceptCandidate({
     }
     if (!/^[a-f0-9]{64}$/u.test(materialExecutionId ?? "")) {
       throw new Error("P1接纳无法确定正文使用的材料尝试身份");
+    }
+    const recoveryFile = path.resolve(workspaceRoot, current.workOrder.scratchPath, "author-recovery.json");
+    if (await exists(recoveryFile)) {
+      await assertProjectPaths({ root: workspaceRoot, files: [recoveryFile], label: "P1作者上下文恢复" });
+      const recovery = await readData(recoveryFile);
+      const identityFile = path.resolve(workspaceRoot, current.workOrder.scratchPath, "agy-conversation-id.txt");
+      await assertProjectPaths({ root: workspaceRoot, files: [identityFile], label: "P1恢复作者身份" });
+      const identity = (await readFile(identityFile, "utf8")).trim();
+      if (recovery.taskDigest !== current.workOrder.taskDigest || recovery.previousCallEnded !== true
+        || !recovery.reason?.trim() || !/^[0-9a-f-]{36}$/iu.test(identity) || identity !== recovery.conversationId) {
+        throw new Error("P1恢复作者尚未完成真实回包交接");
+      }
+      if (!retainedCopy) {
+        const materialPath = path.join(workPaths.work, `attempt-${materialExecutionId}`);
+        rawWrites.set(path.join(materialPath, "agy-conversation-id.txt"), `${identity}\n`);
+        rawWrites.set(path.join(materialPath, `author-recovery-${current.workOrder.executionId}.json`), await readFile(recoveryFile, "utf8"));
+      }
     }
     const scriptChanged = !oldOutput || stableStringify(oldOutput) !== stableStringify(scriptBusiness);
     const previousScript = oldOutput ? await readData(current.outputPath) : null;
@@ -674,9 +817,9 @@ async function acceptCandidate({
         });
       }
     }
-    materials = { episodeId, materialExecutionId };
+    if (!retainedCopy) materials = { episodeId, materialExecutionId };
     const publicationInput = path.resolve(workspaceRoot, current.workOrder.scratchPath, "publication-input.md");
-    if (publication && await exists(publicationInput)) {
+    if (!retainedCopy && publication && await exists(publicationInput)) {
       await assertProjectPaths({ root: workspaceRoot, files: [publicationInput], label: "P1发布调查输入" });
       rawWrites.set(path.join(workPaths.work, `attempt-${materialExecutionId}`, "publication-input.md"),
         await readFile(publicationInput, "utf8"));
@@ -774,7 +917,7 @@ async function acceptCandidate({
         quotes._producer.outputSha256 = hashObject(businessContent(quotes));
       }
     }
-    if (stableStringify(businessContent(priorStoryboard)) !== stableStringify(businessContent(updatedStoryboard))) {
+    if (cueRebindingBeatIds?.size || stableStringify(businessContent(priorStoryboard)) !== stableStringify(businessContent(updatedStoryboard))) {
       // P3's model deliberately omits render roles; read consumer manifests, not whole downstream stages.
       const consumerModel = { packages: await loadPackages(root, {
         moduleIds: new Set(["render-video"]),
@@ -782,8 +925,11 @@ async function acceptCandidate({
       }) };
       if (await exists(paths.episodePackage)) {
         const { opener } = await readData(paths.episodePackage);
-        if (stableStringify(businessContent(openerInputsFromBody(priorStoryboard, opener)))
-          !== stableStringify(businessContent(openerInputsFromBody(updatedStoryboard, opener)))) {
+        const affected = cueRebindingBeatIds
+          ? [priorStoryboard?.beats?.[0]?.id, updatedStoryboard.beats[0]?.id, ...openerBodyRefs(opener)].some(id => cueRebindingBeatIds.has(id))
+          : stableStringify(businessContent(openerInputsFromBody(priorStoryboard, opener)))
+            !== stableStringify(businessContent(openerInputsFromBody(updatedStoryboard, opener)));
+        if (affected) {
           await markRepair("p4", "opener", "片头实际读取的正文内容发生修改，更新片头衔接");
         }
       }
@@ -803,20 +949,21 @@ async function acceptCandidate({
           return businessContent({
             understanding: story?.understanding,
             beats: beats.map((beat) => ({ id: beat.id, cueRange: beat.cueRange, templateId: beat.templateId,
-              ...(consumed.has(beat.id) ? { treatment: beat.treatment } : {}) })),
+              ...(consumed.has(beat.id) ? { treatment: beat.treatment, incomingTransition: beat.incomingTransition } : {}) })),
             templateRuns: runs,
             bindings: Object.fromEntries(Object.entries(story?.features?.["cue-sync"]?.bindings ?? {})
               .filter(([id]) => bindingIds.has(id)))
           });
         };
-        if (stableStringify(videoInputs(priorStoryboard)) !== stableStringify(videoInputs(updatedStoryboard)))
+        const affected = cueRebindingBeatIds
+          ? [priorStoryboard, updatedStoryboard].some(story => story?.beats?.some((beat, index, beats) =>
+            cueRebindingBeatIds.has(beat.id) && (selected.has(beat.id) || selected.has(beats[index - 1]?.id) || selected.has(beats[index + 1]?.id))))
+          : stableStringify(videoInputs(priorStoryboard)) !== stableStringify(videoInputs(updatedStoryboard));
+        if (affected)
           await markRepair("p4", "video", "视频选段的正文语义、范围、画面或前后接镜发生实际修改，修正受影响设计");
       }
       if (stableStringify(renderInputsFromBody(consumerModel, priorStoryboard)) !== stableStringify(renderInputsFromBody(consumerModel, updatedStoryboard))) {
         await markRepair("p4", "render", "正文交付发生实际修改，更新成片");
-      }
-      if (current.mode === "understanding" && priorStoryboard?.albumPlan) {
-        await markRepair("p3", "director", "理解内容发生实际修改，修订受影响的视觉计划");
       }
     }
     await queueWrite(paths.storyboard, updatedStoryboard);
@@ -845,8 +992,16 @@ async function acceptCandidate({
           })
         });
         try {
-          inheritedInputChanged = stableStringify(await inheritedInputs(priorStoryboard, oldUnits, previous))
-            !== stableStringify(await inheritedInputs(updated, units, latest));
+          const updatedInputs = await inheritedInputs(updated, units, latest);
+          try {
+            inheritedInputChanged = stableStringify(await inheritedInputs(priorStoryboard, oldUnits, previous))
+              !== stableStringify(updatedInputs);
+          } catch (error) {
+            // The old route being repaired cannot supply a current camera handoff.
+            // The replacement above still has to satisfy the full runtime window.
+            if (error.name !== "FullframeCameraDesignError" || error.failureClass !== "window-contract") throw error;
+            inheritedInputChanged = true;
+          }
         } catch (error) {
           // A changed predecessor may no longer supply the next page's old dependency.
           // Repair that consumer instead of rejecting the valid current author result.
@@ -870,7 +1025,8 @@ async function acceptCandidate({
   }
   return commitAcceptance({
     workspaceRoot, workPaths, writes, rawWrites,
-    cleanup: [workPaths.workOrder, workPaths.candidate, ...(consumedReturnPath ? [consumedReturnPath] : [])],
+    cleanup: [workPaths.workOrder, workPaths.candidate, ...directorReturnFiles.keys(),
+      ...(consumedReturnPath ? [consumedReturnPath] : [])],
     scratchPath: current.mode !== "ai-narration" && current.workOrder.scratchPath
       ? path.resolve(workspaceRoot, current.workOrder.scratchPath) : null,
     materials,

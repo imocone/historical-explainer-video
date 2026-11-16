@@ -43,16 +43,16 @@ export function validateCommon({ result, context = {} }) {
     errors.push("节目策划必须使用用户已交付的 NotebookLM 资料库");
   }
   const planningKind = request.planningBasis?.kind;
-  if (planningKind === "video-led") {
-    if (!isExplainer
-      || hashObject(result.referenceProgram ?? null) !== hashObject(request.planningBasis.referenceProgram)) {
-      errors.push("video-led 必须使用委托指定的参考节目材料");
+  if (isExplainer) {
+    if (planningKind === "video-led" && !result.referenceProgram) {
+      errors.push("节目策划须交接用户提供的参考节目，可合并检索所得节目");
     }
-    if ((result.episodes ?? []).some(episode => !episode.referenceVideoIds?.length)) {
-      errors.push("参考节目路线每集须交接实际使用的视频编号");
+    if (!result.referenceProgram && (result.episodes ?? []).some(episode => episode.referenceVideoIds)) {
+      errors.push("使用视频编号的单集必须交接参考节目材料清单");
     }
-  } else if (result.referenceProgram || (result.episodes ?? []).some(episode => episode.referenceVideoIds)) {
-    errors.push("只有 video-led 使用参考节目材料");
+  } else if (planningKind === "video-led" || result.referenceProgram
+    || (result.episodes ?? []).some(episode => episode.referenceVideoIds)) {
+    errors.push("纪录片策划不使用参考节目材料");
   }
   const baseBookSourceId = result.researchLibrary?.baseBookSourceId;
   const requiredSourceIds = result.researchLibrary?.requiredSourceIds ?? [];
@@ -139,6 +139,18 @@ export async function validateAcceptance({ result, context = {}, services = {} }
     try {
       const videos = await readReferenceVideos(result.referenceProgram);
       const ids = new Set(videos.map(video => video.id));
+      const suppliedReference = context.programRequest?.planningBasis;
+      if (suppliedReference?.kind === "video-led") {
+        const supplied = suppliedReference.referenceProgram;
+        const originalVideos = supplied.path === result.referenceProgram.path
+          ? videos : await readReferenceVideos(supplied);
+        const videosById = new Map(videos.map(video => [video.id, video]));
+        for (const original of originalVideos) {
+          if (hashObject(videosById.get(original.id) ?? null) !== hashObject(original)) {
+            errors.push(`合并参考节目须保留用户原视频内容身份: ${original.id}`);
+          }
+        }
+      }
       for (const episode of result.episodes ?? []) {
         for (const id of episode.referenceVideoIds ?? []) {
           if (!ids.has(id)) errors.push(`参考节目缺少 ${episode.episodeId} 使用的视频 ${id}`);

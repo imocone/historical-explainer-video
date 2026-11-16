@@ -1,13 +1,13 @@
 # 全画幅叙事
 
-根据口播含义自由创作完整画面，构图、景别与运动服务观看。全画幅在整个实际运镜窗口持续运动，不能停镜；行程不足由作者联合调整构图、取景与路线。本模板拥有全画幅Beat的画面、实图、相机、转场、效果与解说框；章节组织共同创作，正式成果、媒体与局部修改仍归Beat。
+根据口播含义自由创作完整画面，构图、景别与运动服务观看。全画幅在整个实际运镜窗口持续运动，不能停镜；作者按本图的观看目标、实际取景和声音节奏显式选速，不能把规划边界或教材数字当作默认速度。行程不足在原候选、原时窗与原用图内联合调整取景、路线和选速，不擅自改变既定Beat时长或换图。本模板拥有全画幅Beat的画面、实图、相机、转场、效果与解说框；章节组织共同创作，正式成果、媒体与局部修改仍归Beat。
 
 根入口负责顺序、候选、锁和交接，专业判断归下列方法与组件：
 
 | 使用时机 | 唯一职责与入口 |
 |---|---|
-| 联合设计 | [场面选择](references/scene-selection-method.md)决定画什么及A/B是否成立；[观看骨架](references/viewing-skeleton-method.md)落实逐图职责、来源和Cue |
-| 联合设计 | [构图](references/picture-construction-method.md)安排完整画面；[相机](camera/design-method.md)安排观看路线与节奏；[共享转场](../../modules/render-video/references/narrative-transitions.md)按字幕选择叠化或闪黑并安排显露 |
+| 联合设计 | [场面选择](references/scene-selection-method.md)决定每镜的完整场面；[观看骨架](references/viewing-skeleton-method.md)落实逐图职责、来源和Cue |
+| 联合设计 | [构图](references/picture-construction-method.md)安排完整画面；[相机](camera/design-method.md)安排观看路线与节奏；[共享转场](../../modules/render-video/references/narrative-transitions.md)落实导演接法的两镜显露 |
 | 首次写图纸 | [交付说明](references/picture-delivery-reference.md)形成唯一场面原文；人物造型按其链接进入人物方法 |
 | 设计具体时期的人物、场所或器物 | 读取导演的[时代外观方法](../../modules/direct-episode/references/period-appearance-method.md)，消费已登记依据；缺少本图必要依据时沿[原来源入口](../../p3-sources.md)补查 |
 | 选择动画效果 | [效果组件](effects/AUTHOR.md)负责效果、Cue与实图锚点 |
@@ -29,7 +29,9 @@
 
 ## 联合设计与测量
 
-把本单所有成员的选场、图数、职责、源图、构图、Cue、运动、转场与效果放在同一次设计中调整。联合单先完成整章设计，再生图、落镜；程序逐Beat测量保存，不改变共同创作方式。各Beat保留自己的来源、窗口与结果，A/B各有画面与职责，不为求异改变成立选择。
+设计前读本视图共享的 `templateContext.visual.stylePrompt` 和 `templateContext.visual.references` 所列样图，结合所选画法判断形体、景别和可辨细节。`sceneDescription` 写实际场面、动作、空间和剧情照明。成图的画法、整幅用色和明暗层次由同一视觉包随原生图请求交付；成图后按实图落镜方法对照样图复核。
+
+按已精排的镜头顺序理解整章的观看推进，结合每镜的导演观看任务、场面构想和接法，联合设计具体场面、源图、构图、镜内Cue、运动与效果。新镜只交一幅完整静态主画面。将 `templateContext.directedTransition` 原样填入treatment的 `incomingTransition`。用接法理由校准前镜退去时应保留的参照、后镜进入时最先可辨的主体及揭示时机，把实际显露做进构图和运镜。实际画面要求改变该镜观看职责、拆合镜头、另添主画面、改切点或接法时，把具体Cue和观看影响交回导演。按[构图方法](references/picture-construction-method.md#2-决定景别视点与主体分量)确定源图需要覆盖的范围，再组织实际取景。联合单先完成整章各镜的设计，再生图、落镜。程序逐Beat测量保存，各镜保留自己的来源、窗口与结果。
 
 按上表方法交付完整设计及画面、效果的`featureResults["cue-sync"]`。联合单在唯一`candidatePath`按所选成员顺序写`result.items=[{beatId,treatment,featureResults}]`；单Beat仍写`result.treatment / featureResults`，不把整章合成一个treatment。成员各自使用`AR001 / AR002`。可省略恒定`kind / required`，测量入口补齐`fullframe-image / true`，不覆盖显式值。
 
@@ -44,7 +46,7 @@ node packages/templates/fullframe-narrative/inspect-design.mjs <workOrderPath> <
 
 入口核对字段、来源、连续性、Cue和相机关系；`geometryPassed / cameraLockWritten`只证明可执行。`reviewAction=review-visible-composition`在生成前用于设计复核，生成后用于实图落实。生图前不锁最终镜头，不另开设计接纳。反馈绑定当前设计及前序接缝，变化后只重测实际影响；反馈不是第二候选。
 
-测量或设计不成立时，按[相机失败归属](camera/design-method.md#测量不足时修什么)修正同一完整候选。修改观看任务时同步核对来源、Cue及实际影响；不删回骨架、不改阈值凑通过，也不绕开登记入口另取诊断。
+测量或设计不成立时，按[相机失败归属](camera/design-method.md#测量不足时修什么)在既定镜头内修正同一候选，核对变更涉及的来源、Cue和接缝。需要改导演分镜时，沿上面的交接返回；不删回骨架、不改阈值凑通过，也不绕开登记入口另取诊断。
 
 ## 实图与最终镜头
 

@@ -56,6 +56,7 @@
   ],
   "runtimeResources": [
     "scripts/author-handoff.mjs",
+    "scripts/agy-run.mjs",
     "references/author-handoff.md",
     "references/video-led.md",
     "scripts/find-evidence.mjs",

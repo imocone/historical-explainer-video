@@ -6,11 +6,15 @@ import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { executeProgramNode } from "../../../engine/runtime/program-execution.mjs";
+import { inspectP3Input } from "../../../engine/p3-input.mjs";
 import { atomicWriteData, fileSha256, readData, sha256 } from "../../program-utils.mjs";
 import { getEpisodePaths, getStageWorkPaths } from "../../workspace-paths.mjs";
 import { withMediaResources } from "../render-video/runtime/media-process.mjs";
 import { inspect, run } from "./run.mjs";
-import { normalizeWordTimeline, projectSpeechCues } from '../author-subtitles/subtitle-timing.mjs';
+import { prepareSubtitleInput } from "../author-subtitles/build-candidate.mjs";
+import { assertP3BodyRedesignRequest } from "../../../engine/runtime/storyboard.mjs";
+import { normalizeWordTimeline, projectSpeechCues, projectSubtitleCues } from '../author-subtitles/subtitle-timing.mjs';
+import { projectSpeechTiming } from '../../templates/vox-explainer/author-context.mjs';
 
 const directory = fileURLToPath(new URL("./", import.meta.url));
 const deliveries = ["narration.txt", "narration.mp3", "narration.srt", "subtitle-quality.yaml", "narration-package.yaml"];
@@ -27,7 +31,7 @@ const fixture = async (t) => {
   await writeFile(paths.rawNarration, raw);
   const narration = "甲。";
   const audioSha256 = sha256(raw);
-  const state = { encodes: 0, encoded: "offline encoded audio" };
+  const state = { encodes: 0, inspections: 0, encoded: "offline encoded audio" };
   const task = {
     moduleId: "finalize-narration", nodeId: "finalize-narration", taskDigest: "a".repeat(64), inputHashes: [],
     inputs: {
@@ -50,6 +54,7 @@ const fixture = async (t) => {
         await writeFile(outputPath, state.encoded);
       },
       async inspect({ audioPath }) {
+        state.inspections++;
         const format = audioPath.endsWith(".flac") ? "flac" : "mp3";
         return { durationSeconds: 1, sampleRate: 32000, channels: 1, integratedLufs: -18,
           truePeakDbTp: -2, codecName: format, formatName: format };
@@ -117,6 +122,9 @@ test("默认音频入口等待共享队列，限制线程，失败保留旧交�
     assert.equal(args[args.indexOf("-filter_threads") + 1], "1");
   }
   const before = await snapshot(f.paths.p2);
+  await writeFile(f.paths.rawNarration, "changed raw audio");
+  f.task.inputs.ttsResult.rawAudio.sha256 = sha256("changed raw audio");
+  f.task.inputs.subtitleCorrection.evidence.audioSha256 = sha256("changed raw audio");
   await writeFile(tools.failure, "fail");
   await assert.rejects(run(f), /ffmpeg.*退出码 2/u);
   assert.deepEqual(await snapshot(f.paths.p2), before);
@@ -133,6 +141,23 @@ test("同源音频正常交付，模块不删除公共控制与恢复文件", as
   assert.equal((await inspect(f)).valid, true);
   for (const name of controls) assert.equal(await readFile(path.join(f.work.work, name), "utf8"), name);
   assert.equal((await readdir(f.work.work)).some(name => name.startsWith(".finalize-") || name === "finalize-transaction.yaml"), false);
+});
+
+test("英文词间空格沿原文切片、字幕接纳与最终SRT保留", async (t) => {
+  const f = await fixture(t), narration = "我们使用 Open AI。";
+  const words = [{ text: "我们", startMs: 0, endMs: 200 }, { text: "使用", startMs: 200, endMs: 400 },
+    { text: "Open", startMs: 400, endMs: 700 }, { text: "AI", startMs: 700, endMs: 1000 }];
+  f.task.inputs.scriptPackage.narration = narration;
+  f.task.inputs.ttsResult.ttsInput.text = narration;
+  f.task.inputs.ttsResult.nativeTiming.cues = words;
+  f.task.inputs.subtitleCorrection.narrationSha256 = sha256(narration);
+  f.task.inputs.subtitleCorrection.cues = projectSubtitleCues({ wordCues: words, narration, maxContentChars: 32 });
+  assert.equal(f.task.inputs.subtitleCorrection.cues[0].text, narration);
+  await run(f);
+  assert.ok((await readFile(f.paths.narrationSubtitles, "utf8")).includes(narration));
+  assert.equal((await inspect(f)).valid, true);
+  const split = projectSubtitleCues({ wordCues: words, narration, maxContentChars: 32, breakAt: [8] });
+  assert.deepEqual(split.map(c => c.text), ["我们使用 Open", "AI。"]);
 });
 
 test('原生与ASR短语时间沿既有P2交付绑定最终音轨，重复词分别保留', async t => {
@@ -206,6 +231,12 @@ test('同条字幕内保留词级实测重叠，跨条字幕重叠仍在编码�
         const quality = await readData(path.join(f.paths.p2,'subtitle-quality.yaml'));
         assert.deepEqual(quality.speechTiming.cues[0].phrases,
           [{text:'甲',startMs:0,endMs:520},{text:'乙。',startMs:500,endMs:1000}]);
+        await mkdir(path.dirname(f.paths.sourceAssets), {recursive: true});
+        await writeFile(f.paths.sourceAssets, JSON.stringify({assets: []}));
+        const input = await inspectP3Input({root: f.root, episodeId: 'ep01', includeSpeechTiming: true});
+        const [first, second] = projectSpeechTiming(input).cues[0].phrases;
+        assert.equal(second.startOffsetSeconds, 0.5);
+        assert.ok(first.endOffsetSeconds > second.startOffsetSeconds);
         assert.deepEqual(f.task.inputs.ttsResult.nativeTiming.cues, words);
         assert.equal((await inspect(f)).valid, true);
       }
@@ -242,35 +273,41 @@ test("正式Engine入口保留共享返工，收口后传播实际交付变化",
   const f = await fixture(t);
   await run(f);
   f.state.encoded = "updated offline audio";
+  await rm(path.join(f.paths.p2, "narration.mp3"));
   const requestPath = f.work.returnRequest("finalize-narration");
   const unrelatedRequest = f.work.returnRequest("author-subtitles");
   const request = { target: "finalize-narration", reason: "当前交付返工", cueRefs: [] };
   const unrelated = { target: "author-subtitles", reason: "独立待办", cueRefs: [] };
   await atomicWriteData(requestPath, request);
   await atomicWriteData(unrelatedRequest, unrelated);
-  const controller = await readData(path.join(directory, "controller.json"));
-  const current = {
-    record: { directory, manifest: await readData(path.join(directory, "package.yaml")),
-      resourcesByPath: new Map([["controller.json", { content: controller }]]) },
-    node: { id: "finalize-narration" }, invocation: { episodeId: "ep01" },
-    outputPath: f.paths.narrationPackage, returnRequestPath: requestPath,
-    taskDigest: f.task.taskDigest, inputHashes: [], context: f.task.context,
-    base: { stageId: "p2", resolvedAssembly: { slots: [] }, resolvedRules: [],
-      outputContract: {source:"contracts/narration-package.schema.json",
-        sha256:await fileSha256(path.resolve(directory,"../../../contracts/narration-package.schema.json"))},
-      entry: { sha256: await fileSha256(path.join(directory, "run.mjs")) }, inputs: f.task.inputs }
-  };
-  const result = await executeProgramNode({ root: path.resolve(directory, "../../.."), workspaceRoot: f.root, current });
+  const result = await finalizeThroughEngine(f);
   assert.equal(result.files.audio.sha256, sha256(f.state.encoded));
   assert.deepEqual(await readData(unrelatedRequest), unrelated);
   assert.equal(await exists(requestPath), false);
-  for (const [stage, node] of [["p3", "understand"], ["p4", "opener"], ["p4", "render"]]) {
+  for (const [stage, node] of [["p4", "render"]]) {
     const repair = await readData(getStageWorkPaths(f.paths, stage).returnRequest(node));
     assert.equal(repair.target, node);
     assert.match(repair.reason, /口播交付发生实际修改/u);
   }
+  for (const [stage, node] of [["p3", "director"], ["p4", "opener"]])
+    assert.equal(await exists(getStageWorkPaths(f.paths, stage).returnRequest(node)), false, "音轨变化不返工未变语义和片头");
   assert.equal(await exists(path.join(f.work.work, ".program-execution.lock")), false);
   assert.equal(await exists(path.join(f.work.work, "program-execution.yaml")), false);
+});
+
+test("字幕收口复用相同原音频与处理合同，损坏成品仍重新编码", async t => {
+  const f = await fixture(t);
+  const first = await run(f);
+  f.task.taskDigest = "c".repeat(64);
+  const second = await run(f);
+  assert.equal(f.state.encodes, 1);
+  assert.equal(f.state.inspections, 2);
+  assert.equal(second.files.audio.sha256, first.files.audio.sha256);
+  assert.equal(second.durationMs, first.durationMs);
+  await writeFile(path.join(f.paths.p2, "narration.mp3"), "damaged");
+  await run(f);
+  assert.equal(f.state.encodes, 2);
+  assert.equal(f.state.inspections, 4);
 });
 
 test("交付提升中断恢复旧文件，不删除公共控制", async (t) => {
@@ -289,4 +326,96 @@ test("交付提升中断恢复旧文件，不删除公共控制", async (t) => {
   assert.equal(await readFile(marker, "utf8"), "保留原控制");
   assert.equal((await inspect(f)).valid, true);
   assert.equal((await readdir(f.work.work)).some(name => name.startsWith(".finalize-") || name === "finalize-transaction.yaml"), false);
+});
+
+const finalizeThroughEngine = async f => {
+  const controller = await readData(path.join(directory, "controller.json"));
+  const current = {
+    record: { directory, manifest: await readData(path.join(directory, "package.yaml")),
+      resourcesByPath: new Map([["controller.json", { content: controller }]]) },
+    node: { id: "finalize-narration" }, invocation: { episodeId: "ep01" },
+    outputPath: f.paths.narrationPackage, returnRequestPath: f.work.returnRequest("finalize-narration"),
+    taskDigest: f.task.taskDigest, inputHashes: [], context: f.task.context,
+    base: { stageId: "p2", resolvedAssembly: { slots: [] }, resolvedRules: [],
+      outputContract: {source:"contracts/narration-package.schema.json",
+        sha256:await fileSha256(path.resolve(directory,"../../../contracts/narration-package.schema.json"))},
+      entry: { sha256: await fileSha256(path.join(directory, "run.mjs")) }, inputs: f.task.inputs }
+  };
+  return executeProgramNode({ root: path.resolve(directory, "../../.."), workspaceRoot: f.root, current });
+};
+
+test("正式收口能重建损坏旧字幕，不重编码或误报下游内容变化", async t => {
+  const f = await fixture(t);
+  const before = await run(f);
+  const subtitles = await readFile(f.paths.narrationSubtitles, "utf8");
+  await writeFile(f.paths.narrationSubtitles, "损坏的旧字幕");
+  const after = await finalizeThroughEngine(f);
+  assert.equal(after.files.audio.sha256, before.files.audio.sha256);
+  assert.equal(await readFile(f.paths.narrationSubtitles, "utf8"), subtitles);
+  assert.equal((await inspect(f)).valid, true);
+  assert.equal(f.state.encodes, 1);
+  for (const [stage, node] of [["p3", "director"], ["p4", "render"]])
+    assert.equal(await exists(getStageWorkPaths(f.paths, stage).returnRequest(node)), false);
+});
+
+
+const threeWords = (f, split = false) => {
+  const narration = "甲乙丙。";
+  const words = [{ text: "甲", startMs: 0, endMs: 300 }, { text: "乙", startMs: 300, endMs: 600 }, { text: "丙", startMs: 600, endMs: 1000 }];
+  f.task.inputs.scriptPackage.narration = narration;
+  f.task.inputs.ttsResult.ttsInput.text = narration;
+  f.task.inputs.ttsResult.nativeTiming.cues = words;
+  Object.assign(f.task.inputs.subtitleCorrection, { narrationSha256: sha256(narration),
+    cues: split ? words.map((cue, i) => ({ ...cue, text: cue.text + (i === 2 ? "。" : "") })) : [{ text: narration, startMs: 0, endMs: 1000 }] });
+};
+
+test("仅时间变化沿正式收口只通知实际受影响的画面单元", async t => {
+  const f = await fixture(t); threeWords(f, true);
+  await run(f);
+  await atomicWriteData(f.paths.storyboard, { albumPlan: {}, templateRuns: [], features: {},
+    beats: [1, 2, 3].map(i => ({ id: `B00${i}`, cueRange: [i, i], templateId: "fullframe-narrative" })) });
+  await atomicWriteData(f.paths.episodePackage, { opener: { bodyRefs: ["B001"] } });
+  await atomicWriteData(f.paths.videoPlan, { spans: [{ beatIds: ["B002"] }] });
+  f.task.inputs.ttsResult.nativeTiming.cues[2].endMs = 900;
+  f.task.inputs.subtitleCorrection.cues[2].endMs = 900;
+  await finalizeThroughEngine(f);
+  const request = await readData(getStageWorkPaths(f.paths, "p3").returnRequest("author"));
+  assertP3BodyRedesignRequest(request);
+  assert.deepEqual(request.selectedBeatIds, ["B003"]);
+  assert.deepEqual(request.pendingAuthorUnitIds, ["B003"]);
+  for (const [stage, node] of [["p3", "director"], ["p4", "opener"], ["p4", "video"]])
+    assert.equal(await exists(getStageWorkPaths(f.paths, stage).returnRequest(node)), false);
+  assert.equal(await exists(getStageWorkPaths(f.paths, "p4").returnRequest("render")), true);
+  assert.equal(f.state.encodes, 1);
+});
+
+test("字幕分句变化保留原理解交给引用修订，并复用音轨", async t => {
+  const f = await fixture(t); threeWords(f);
+  await run(f);
+  const understanding = { causalModel: "原有理解", facts: [{ id: "F001", cueRefs: [1] }] };
+  await atomicWriteData(f.paths.storyboard, { understanding, albumPlan: {}, beats: [], templateRuns: [], features: {} });
+  threeWords(f, true);
+  await finalizeThroughEngine(f);
+  const director = await readData(getStageWorkPaths(f.paths, "p3").returnRequest("director"));
+  assert.deepEqual((await readData(f.paths.storyboard)).understanding, understanding);
+  assert.equal(director.cueRebinding.previousCues[0].text, "甲乙丙。");
+  for (const node of ["opener", "video"])
+    assert.equal(await exists(getStageWorkPaths(f.paths, "p4").returnRequest(node)), false);
+  assert.equal(f.state.encodes, 1);
+  assert.equal(f.state.inspections, 2);
+});
+
+test("原生字幕准备直接读取同源时间，仅显式导出SRT", async t => {
+  const f = await fixture(t);
+  const executionId = "d".repeat(64), scratchPath = path.relative(f.root, path.join(f.work.work, `attempt-${executionId}`));
+  const task = { runner: "ai", workflowId: "narration", stageId: "p2", nodeId: "author-subtitles", moduleId: "author-subtitles",
+    executionId, taskDigest: "a".repeat(64), candidatePath: path.relative(f.root, f.work.candidate), scratchPath,
+    inputs: { scriptPackage: f.task.inputs.scriptPackage, ttsResult: f.task.inputs.ttsResult } };
+  await atomicWriteData(f.work.workOrder, task);
+  const result = await prepareSubtitleInput(f.work.workOrder);
+  assert.equal(result.source, "workOrder.inputs.ttsResult.nativeTiming");
+  assert.equal(result.output, undefined);
+  assert.equal(await exists(path.join(f.root, scratchPath, "raw-word.srt")), false);
+  const exported = await prepareSubtitleInput(f.work.workOrder, { exportNativeSrt: true });
+  assert.match(await readFile(exported.output, "utf8"), /甲/u);
 });

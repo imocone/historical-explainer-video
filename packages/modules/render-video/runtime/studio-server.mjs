@@ -2,21 +2,25 @@ import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import path from 'node:path';
-import { loadStudioRuntime, studioBuildSignature } from './browser-session.mjs';
+import { loadStudioRuntime, studioBuildHeader, studioBuildSignature } from './browser-session.mjs';
 import { createStudioProject } from './studio-render.mjs';
 
 export async function startStudioServer(projectDirectory) {
   const runtime = await loadStudioRuntime();
   const signature = await studioBuildSignature();
-  const native = createStudioProject(runtime, projectDirectory);
+  let origin;
+  const native = createStudioProject(runtime, projectDirectory, { origin: () => origin });
   let served;
   try {
-    served = await runtime.findPortAndServe(async request => {
-      const response = await native.app.fetch(request);
-      if (new URL(request.url).pathname === '/__hyperframes_config')
-        return Response.json({ ...await response.json(), serverBuildSignature: signature });
+    // Native ownership proof signs the config body and uses the incoming socket.
+    served = await runtime.findPortAndServe(async (request, environment) => {
+      const response = await native.app.fetch(request, environment);
+      if (response.ok && new URL(request.url).pathname === '/__hyperframes_config')
+        response.headers.set(studioBuildHeader, signature);
       return response;
-    }, 3002, projectDirectory, false, signature);
+    }, 3002, projectDirectory, true);
+    origin = runtime.originForListeningAddress(served.server.address(), 'http', process.env.HYPERFRAMES_PREVIEW_HOST)
+      ?? `http://127.0.0.1:${served.port}`;
   } catch (error) {
     native.watcher.close(); await native.shutdown(); throw error;
   }

@@ -19,6 +19,7 @@
       "enum": ["not-created", "submitting", "unknown", "succeeded"]
     },
     "rawAudioSha256": {"$ref": "#/$defs/sha"},
+    "previousAttempt": {"$ref": "#"},
     "_producer": {"$ref": "#/$defs/producer"}
   },
   "$defs": {

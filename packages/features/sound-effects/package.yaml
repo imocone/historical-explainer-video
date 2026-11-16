@@ -36,11 +36,16 @@
     "lemo/LICENSE",
     "generate.mjs",
     "synthesize.py",
+    "recordings/catalog.json",
+    "recordings/heavy-wood-door.wav",
+    "recordings/shore-lap.wav",
     "lemo/ink_wash.py",
     "lemo/watercolor.py",
     "references/sound-design.md",
     "references/synthesis.md",
     "../background-music/DYNAMICS.md",
+    "../../p3-sources.mjs",
+    "../../source-rights.mjs",
     "../../runtime-config.mjs"
   ],
   "acceptanceRules": [

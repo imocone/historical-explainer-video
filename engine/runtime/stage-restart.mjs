@@ -49,6 +49,8 @@ export const assertStageSettled = async (root, directory) => {
   const superseded = new Set(records.map(({ record }) => record.request?.replacesRequestDigest).filter(Boolean));
   for (const { file, record } of records) {
     const status = record.status ?? record.state;
+    // Native covers are still local prompts until builtin.begin records tool-intent.
+    if (path.basename(file) === "generation.json" && record.provider === "imagegen" && status === "prepared") continue;
     if (!superseded.has(record.requestDigest)
       && !["completed", "complete", "succeeded", "superseded", "not-created", "remote-failed", "submit-rejected", "local-rejected", "failed", "rejected"].includes(status))
       throw new Error(`先恢复原远端任务，再更换工作: ${file} (${status})`);

@@ -2,19 +2,12 @@
   "id": "video",
   "subjectKind": "episode",
   "stages": {
-    "p3": "understand",
+    "p3": "director",
     "p4": "opener"
   },
   "nodes": [
     {
-      "id": "understand",
-      "moduleId": "understand-episode",
-      "scope": "subject",
-      "condition": "always"
-    },
-    {
       "id": "director",
-      "after": "understand",
       "moduleId": "direct-episode",
       "scope": "subject",
       "condition": "always"

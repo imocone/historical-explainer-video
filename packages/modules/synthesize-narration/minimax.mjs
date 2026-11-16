@@ -49,50 +49,60 @@ const numericValue = (value) => value === null || value === undefined || value =
 const nativeWordCuesFrom = (value) => {
   if (!Array.isArray(value) || value.length === 0) return null;
   const hasSentenceContainers = value.some((cue) => Object.hasOwn(cue ?? {}, "timestamped_words"));
-  if (hasSentenceContainers) {
-    if (!value.every((cue) => Array.isArray(cue?.timestamped_words))) return null;
-    const words = value.flatMap((cue) => cue.timestamped_words);
-    return words.length && words.every((cue) => typeof cue?.word === "string") ? words : null;
-  }
-  return value.every((cue) => typeof cue?.word === "string") ? value : null;
+  const sections = hasSentenceContainers ? value : [{ timestamped_words: value }];
+  if (!sections.every((section) => Array.isArray(section?.timestamped_words)
+    && section.timestamped_words.every((cue) => typeof cue?.word === "string"))) return null;
+  return sections.flatMap((section, sectionIndex) => section.timestamped_words.map((cue) => ({ cue, section, sectionIndex })));
 };
 
-const nativeTimingFrom = (value) => {
+const nativeTimingFrom = (value, sourceText) => {
   const wordCues = nativeWordCuesFrom(value);
   if (!wordCues) return null;
+  const sourceCharacters = Array.from(sourceText ?? "");
   let previousSourceSpan = null;
+  let lastRawStartMs = -1;
   let lastRawEndMs = -1;
-  let lastEndMs = -1;
   const cues = [];
-  for (const [index, cue] of wordCues.entries()) {
+  for (const [index, { cue, section, sectionIndex }] of wordCues.entries()) {
     const text = typeof cue?.word === "string" ? cue.word.trim() : "";
     if (!text) continue;
     const rawWordBegin = numericValue(cue?.word_begin);
     const rawWordEnd = numericValue(cue?.word_end);
-    const sourceSpan = Number.isFinite(rawWordBegin) && Number.isFinite(rawWordEnd) && rawWordEnd > rawWordBegin
-      ? `${rawWordBegin}:${rawWordEnd}` : null;
+    const sourceSpan = Number.isInteger(rawWordBegin) && rawWordBegin >= 0
+      && Number.isInteger(rawWordEnd) && rawWordEnd > rawWordBegin
+      ? `${sectionIndex}:${rawWordBegin}:${rawWordEnd}` : null;
     const rawStartMs = numericValue(cue?.time_begin ?? cue?.start_time ?? cue?.startMs);
     const rawEndMs = numericValue(cue?.time_end ?? cue?.end_time ?? cue?.endMs);
-    let startMs = Math.round(rawStartMs);
+    const startMs = Math.round(rawStartMs);
     const endMs = Math.round(rawEndMs);
     const sameSourceSpan = sourceSpan && sourceSpan === previousSourceSpan;
+    // A silent punctuation token carries no timing evidence and is restored from the narration.
+    if (rawStartMs === rawEndMs && /^\p{P}+$/u.test(text) && !/[%‰‱]/u.test(text.normalize("NFKC"))) continue;
+    // The subtitle consumer preserves measured overlaps between neighbouring words.
     if (!Number.isFinite(rawStartMs) || !Number.isFinite(rawEndMs)
-      || rawStartMs < 0 || rawEndMs <= rawStartMs || (!sameSourceSpan && rawStartMs < lastRawEndMs)) {
+      || rawStartMs < 0 || rawEndMs <= rawStartMs
+      || rawStartMs < lastRawStartMs || rawEndMs < lastRawEndMs) {
       throw new Error(`MiniMax 原生时间轴第 ${index + 1} 条无效`);
     }
+    lastRawStartMs = rawStartMs;
+    lastRawEndMs = rawEndMs;
     if (sameSourceSpan) {
-      if (cues.at(-1)?.text !== text || startMs < cues.at(-1).startMs || rawEndMs < lastRawEndMs) {
-        throw new Error(`MiniMax 同一原文区间文字或顺序不一致: ${index + 1}`);
+      const previous = cues.at(-1);
+      if (previous.text !== text) {
+        // The provider may split a normalized reading (such as a year) over one source span.
+        const sectionStart = Number.isInteger(section.text_begin) && typeof section.text === "string"
+          ? section.text_begin : 0;
+        const characters = typeof section.text === "string" && Number.isInteger(section.text_begin)
+          ? Array.from(section.text) : sourceCharacters;
+        const original = rawWordBegin >= sectionStart && rawWordEnd <= sectionStart + characters.length
+          ? characters.slice(rawWordBegin - sectionStart, rawWordEnd - sectionStart).join("").trim() : "";
+        if (!original) throw new Error(`MiniMax 同一原文区间无法映射到合成输入: ${index + 1}`);
+        previous.text = original;
       }
-      cues.at(-1).endMs = endMs;
-      lastRawEndMs = rawEndMs;
-      lastEndMs = endMs;
+      previous.endMs = endMs;
       continue;
     }
-    if (startMs < lastEndMs) startMs = lastEndMs;
     if (endMs <= startMs) throw new Error(`MiniMax 原生时间轴第 ${index + 1} 条无效`);
-    lastRawEndMs = rawEndMs;
-    lastEndMs = endMs;
     cues.push({ text, startMs, endMs });
     previousSourceSpan = sourceSpan;
   }
@@ -119,32 +129,65 @@ const nativeTimingCuesFrom = (value) => {
   return null;
 };
 
-const downloadNativeTiming = async ({ result, fetchImpl }) => {
+const unavailableNativeTiming = (reason) => {
+  console.warn(`MiniMax 未取得原生词级时间：${reason}`);
+  return null;
+};
+
+const downloadNativeTiming = async ({ result, fetchImpl, sourceText, downloadedSubtitle, onDownloadedSubtitle }) => {
   const inline = nativeTimingCuesFrom(result?.data?.subtitle);
+  let inlineIssue;
   if (inline?.length) {
     try {
-      const nativeTiming = nativeTimingFrom(inline);
+      const nativeTiming = nativeTimingFrom(inline, sourceText);
       if (nativeTiming) return nativeTiming;
-    } catch {
-      // 字幕只是同次 TTS 的可选证据，不能让已成功生成的付费音频变成未知结果。
+    } catch (error) {
+      inlineIssue = error.message;
     }
   }
   const subtitleFile = result?.data?.subtitle_file;
-  if (typeof subtitleFile !== "string" || !/^https?:\/\//iu.test(subtitleFile)) return null;
+  if (typeof subtitleFile !== "string" || !/^https?:\/\//iu.test(subtitleFile)) {
+    return unavailableNativeTiming(inlineIssue ?? "响应没有可用的字幕下载链接或内嵌词级时间");
+  }
+  let subtitleText = downloadedSubtitle;
+  if (subtitleText === undefined) {
+    let response;
+    try {
+      response = await fetchImpl(subtitleFile, { signal: AbortSignal.timeout(30_000) });
+    } catch {
+      return unavailableNativeTiming("字幕文件下载连接失败或超时");
+    }
+    if (!response.ok) return unavailableNativeTiming(`字幕文件下载返回 HTTP ${response.status}`);
+    try {
+      subtitleText = await response.text();
+    } catch {
+      return unavailableNativeTiming("无法读取字幕文件内容");
+    }
+    await onDownloadedSubtitle?.(subtitleText);
+  }
   try {
-    const response = await fetchImpl(subtitleFile, { signal: AbortSignal.timeout(30_000) });
-    if (!response?.ok) return null;
-    const body = typeof response.json === "function"
-      ? await response.json()
-      : JSON.parse(await response.text());
-    const cues = nativeTimingCuesFrom(body);
-    return cues ? nativeTimingFrom(cues) : null;
-  } catch {
-    return null;
+    const cues = nativeTimingCuesFrom(JSON.parse(subtitleText));
+    return nativeTimingFrom(cues, sourceText) ?? unavailableNativeTiming("字幕文件不含词级时间");
+  } catch (error) {
+    return unavailableNativeTiming(error instanceof SyntaxError ? "字幕文件不是有效 JSON" : error.message);
   }
 };
 
-export const miniMaxPayload = ({ text, contract }) => {
+export const validatePronunciations = (pronunciations = []) => {
+  if (!Array.isArray(pronunciations)) throw new Error("本集读音必须为数组");
+  const seen = new Set();
+  for (const item of pronunciations) {
+    if (!item || Object.keys(item).sort().join() !== "reading,text"
+      || [item.text, item.reading].some(value => typeof value !== "string" || !value.trim()
+        || value !== value.trim() || /[\/\r\n]/u.test(value)) || seen.has(item.text)) {
+      throw new Error("读音项须为不重复的text与reading，不能含斜杠或换行");
+    }
+    seen.add(item.text);
+  }
+  return [...pronunciations].sort((a, b) => a.text < b.text ? -1 : a.text > b.text ? 1 : 0);
+};
+
+export const miniMaxPayload = ({ text, contract, pronunciations = [] }) => {
   const voiceSetting = {
     voice_id: contract.voice,
     speed: contract.speechRate,
@@ -168,13 +211,9 @@ export const miniMaxPayload = ({ text, contract }) => {
   };
   // Explicit name readings prevent rare characters and compound surnames
   // from being guessed or omitted by the speech model. Keep the written text.
-  const nameReadings = [
-    ["秦熺", "(qin2)(xi1)"],
-    ["万俟卨", "(mo4)(qi2)(xie4)"]
-  ];
-  const tone = nameReadings
-    .filter(([name]) => text.includes(name))
-    .map(([name, reading]) => `${name}/${reading}`);
+  const tone = validatePronunciations(pronunciations)
+    .filter(item => text.includes(item.text))
+    .map(item => `${item.text}/${item.reading}`);
   if (tone.length) payload.pronunciation_dict = { tone };
   if (contract.subtitleGranularity) {
     payload.subtitle_enable = true;
@@ -201,14 +240,17 @@ export const createMiniMaxTtsService = (options = {}) => {
       if (typeof fetchImpl !== "function") throw localPreflightError("当前运行时不支持 MiniMax 网络请求");
       miniMaxApiUrl(apiHost);
     },
-    async synthesize({ text, contract }) {
+    async readNativeTiming(source, { sourceText, downloadedSubtitle, onDownloadedSubtitle } = {}) {
+      return downloadNativeTiming({ result: source, fetchImpl, sourceText, downloadedSubtitle, onDownloadedSubtitle });
+    },
+    async synthesize({ text, contract, pronunciations }) {
       this.assertReady();
       let response;
       try {
         response = await fetchImpl(miniMaxApiUrl(apiHost), {
           method: "POST",
           headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-          body: JSON.stringify(miniMaxPayload({ text, contract }))
+          body: JSON.stringify(miniMaxPayload({ text, contract, pronunciations }))
         });
       } catch (error) {
         throw remoteFailure(`MiniMax 请求连接失败，远端结果未知: ${error.message}`);
@@ -241,9 +283,19 @@ export const createMiniMaxTtsService = (options = {}) => {
       if (Number(result?.data?.status) !== 2) {
         throw remoteFailure(`MiniMax 合成尚未明确完成，远端结果未知: status=${String(result?.data?.status)}`);
       }
+      const audio = audioFromHex(result?.data?.audio);
+      const { subtitle, subtitle_file } = result.data;
+      if (contract.subtitleGranularity && !subtitle && !subtitle_file) {
+        unavailableNativeTiming("合成响应未返回字幕文件或内嵌时间");
+      }
       return {
-        audio: audioFromHex(result?.data?.audio),
-        nativeTiming: await downloadNativeTiming({ result, fetchImpl }),
+        audio,
+        nativeTiming: null,
+        ...(subtitle || subtitle_file ? {
+          nativeTimingSource: { data: { subtitle, subtitle_file } }
+        } : {}),
+        ...(Number.isFinite(result?.extra_info?.audio_length) && result.extra_info.audio_length > 0
+          ? { durationMs: Math.round(result.extra_info.audio_length) } : {}),
         remoteTaskId: typeof result?.data?.task_id === "string" ? result.data.task_id : null
       };
     }

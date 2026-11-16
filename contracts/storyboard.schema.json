@@ -126,6 +126,9 @@
       "properties": {
         "roleInAlbum": {"$ref": "#/$defs/text"},
         "mustShow": {"$ref": "#/$defs/text"},
+        "entryFocus": {"$ref": "#/$defs/text"},
+        "reveal": {"$ref": "#/$defs/text"},
+        "exitHold": {"$ref": "#/$defs/text"},
         "relationFromPrevious": {"type": ["string", "null"], "minLength": 1}
       }
     },
@@ -138,6 +141,16 @@
         "cueRange": {"$ref": "#/$defs/cueRange"},
         "viewerOutcome": {"$ref": "#/$defs/text"},
         "directorBrief": {"$ref": "#/$defs/directorBrief"},
+        "incomingTransition": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["type", "durationMs", "reason"],
+          "properties": {
+            "type": {"enum": ["dissolve", "dip-to-black"]},
+            "durationMs": {"type": "number", "exclusiveMinimum": 0, "maximum": 1800},
+            "reason": {"$ref": "#/$defs/text"}
+          }
+        },
         "templateId": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
         "treatment": {"$ref": "#/$defs/treatmentState"}
       }

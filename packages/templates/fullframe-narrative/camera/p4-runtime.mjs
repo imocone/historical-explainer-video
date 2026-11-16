@@ -49,6 +49,7 @@ export const inspectFullframeDesigns = ({ items }) => {
   }
   return items.map((item, index) => {
     const id = item?.id ?? `item-${index + 1}`;
+    let diagnostic = {};
     try {
       const plan = motionCameraPathFor({ motion: item?.motion, label: id });
       const family = motionFamily(item.motion.type);
@@ -58,6 +59,14 @@ export const inspectFullframeDesigns = ({ items }) => {
       if (!Number.isFinite(visibleCameraTravel) || !Number.isFinite(runtimeCameraTravel) || !Number.isFinite(maximumRuntimeCameraTravel)) {
         throw designError("window-contract", `${id} 缺少 ${family} 路线预算`);
       }
+      const seconds = item.budget.runtimeDurationMs / 1000;
+      const base = family === "traverse" ? FULLFRAME_RENDER_POLICY.motion.traverseNormalizedSpeedPerSecond
+        : FULLFRAME_RENDER_POLICY.motion.zoomScaleSpeedPerSecond;
+      const maximumRatio = Math.min(FULLFRAME_RENDER_POLICY.motion.maximumSpeedRatio,plan.routeLength/(base*seconds));
+      diagnostic = { routeLength: plan.routeLength, runtimeCameraTravel, runtimeDurationMs: item.budget.runtimeDurationMs,
+        requiredAdditionalTravel: Math.max(0,runtimeCameraTravel-plan.routeLength),
+        feasibleConstantSpeedRange: maximumRatio >= FULLFRAME_RENDER_POLICY.motion.minimumSpeedRatio
+          ? {minimumRatio:FULLFRAME_RENDER_POLICY.motion.minimumSpeedRatio,maximumRatio} : null };
       if (runtimeCameraTravel > plan.routeLength + epsilon) {
         throw designError("window-contract", `${id} 路线会在真实接镜运动窗口结束前耗尽`);
       }
@@ -70,6 +79,7 @@ export const inspectFullframeDesigns = ({ items }) => {
       return {
         id,
         ok: true,
+        ...diagnostic,
         family,
         speedRatio: item.motion.speedRatio,
         ...(item.motion.speedChanges ? { speedChanges: item.motion.speedChanges } : {}),
@@ -89,6 +99,7 @@ export const inspectFullframeDesigns = ({ items }) => {
       return {
         id,
         ok: false,
+        ...diagnostic,
         failureClass: error?.failureClass ?? "route-contract",
         error: error.message
       };
@@ -266,5 +277,7 @@ export const motionProgressAtFrame = ({ motion, frame, label = "P4 全画幅运�
 export const motionSpeedRatioAtFrame = ({ motion, motionStartFrame = motion.startFrame, frame, fps = VIDEO_SPEC.fps }) => {
   const at = elapsedSeconds => fullframeSpeedSecondsAt({ motion, elapsedSeconds });
   const seconds = (frame - motionStartFrame) / fps;
-  return Math.max(FULLFRAME_RENDER_POLICY.motion.minimumSpeedRatio, (at(seconds + 1 / fps) - at(seconds)) * fps);
+  // Numerical differentiation may put a valid boundary speed just outside its range.
+  return clamp((at(seconds + 1 / fps) - at(seconds)) * fps,
+    FULLFRAME_RENDER_POLICY.motion.minimumSpeedRatio, FULLFRAME_RENDER_POLICY.motion.maximumSpeedRatio);
 };

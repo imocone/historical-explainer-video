@@ -94,10 +94,10 @@ const promptForVariant = ({ publication, visualPackage, coverPackage, variant, e
     `【封面主题${editing ? "：仅确认内容" : ""}】${concept}`,
     `【本集画面设计${editing ? "：仅确认内容" : ""}】${heroVisual}`,
     ...(!editing ? ["【环境信息的表现】不承担信息的牌面、屏幕、书脊和文书，以不可读的形状、色块、侧背面或虚焦光色呈现，由器物形态和位置交代环境。本图需要辨读的文字只来自上列原文，不补造其它可辨读文字或具体数据。"] : []),
-    "【参考分工】Visual示范人物与环境的线条、色面、形体、用色和材质，并由下列字体说明提供封面字形；Cover示范文字材质与配色、断行、强调、图文比例，以及配图相对文字的明暗对比和细节分配，不继承其字体或人物画法。两类样图均不提供本集人物外貌、身份、服饰、道具或事件；动作、持物与可见状态按作者设计，不为强化主题补造武器、伤口或已经发生的行动。通用文字位置和图文关系按Cover，本集场面按作者设计。",
+    "【参考分工】Visual示范人物与环境的线条、色面、形体、用色和材质，并由下列字体说明提供封面字形；Cover版式参考以占位字和连续灰度背景示范文字材质与配色、断行、强调、图文比例及亮字与安静暗区的关系。占位字不进入成图，灰度背景不是本集场景或光源设计，也不规定主体站位。两类参考均不提供本集人物外貌、身份、服饰、道具或事件；动作、持物与可见状态按作者设计，不为强化主题补造武器、伤口或已经发生的行动。通用文字位置和图文关系按Cover，本集场面按作者设计。",
     "【Visual参考图：只学场景画法】",
     ...visualPackage.references.map(({ instruction }) => instruction),
-    `参考图${layoutReferenceNumbers}（Cover）：读取与下列现行规则一致的文字外观、版式及配图的视觉强弱；不继承样图的具体文字、系列栏、人物画法或场面内容。`,
+    `参考图${layoutReferenceNumbers}（Cover版式参考）：只读取与下列现行规则一致的字块位置、阅读层级、语义强调和明暗关系；占位字不复制，背景只作无叙事的明暗示意。`,
     ...(replaceText ? [] : [`【Visual场景画法${editing ? "：仅用于本次允许修改的场景" : ""}】\n${visualPackage.stylePrompt}`]),
     `【Visual封面字体】\n${visualPackage.fontPrompt}`,
     `【当前封面包设计语言】\n${coverPackage.rules.designLanguage}`,
@@ -203,6 +203,7 @@ const unresolvedOtherGenerationFor = async ({ work, variant, fingerprint }) => {
     const stateFile = path.join(directory, entry.name, "generation.json");
     if (!(await exists(stateFile))) continue;
     const state = await readData(stateFile);
+    if (state.provider === BUILTIN_PROVIDER && state.status === "prepared") continue;
     if (imageProviders.has(state.provider) && !terminalStatuses.has(state.status)) return stateFile;
   }
   return null;
@@ -437,13 +438,15 @@ const reusableFinalImageRecords = async ({
   const records = {};
   const publicationMatches = receipt.publicationSha256 === publicationSha256
     || (baselinePublicationSha256 != null && receipt.publicationSha256 === baselinePublicationSha256);
+  const restartId = generationInputs.youtube.restartId;
+  const pendingRestart = restartId && !receipt._producer.inputs?.includes(hashObject({ stageRestart: restartId }));
   for (const variant of Object.keys(variants)) {
     const source = variant === "youtube" ? receipt?.cover : receipt?.verticalCover;
     if (source?.packageId !== coverPackages[variant].id
       || source?.version !== coverPackages[variant].version) continue;
     if (!publicationMatches
       && receipt.generation?.[variant]?.stableFingerprint !== generationInputs[variant].stableFingerprint) continue;
-    if ((generationInputs[variant].restartId || coverRegeneration?.variants.includes(variant)
+    if ((pendingRestart || coverRegeneration?.variants.includes(variant)
       || (generationInputs[variant].textSourceSha256 && receipt.publicationSha256 !== publicationSha256))
       && receipt?.generation?.[variant]?.inputFingerprint !== generationInputs[variant].fingerprint) continue;
     const record = await validFinalImageRecord({ root, receipt, paths, variant });
@@ -850,7 +853,7 @@ export async function run({ root, systemRoot = process.cwd(), episodeId, targetI
               }
               toolReferences = [visualBoard, ...item.referenceFiles.slice(visuals.length)];
               if (toolReferences.length > 5) throw new Error("所选Cover参考与编辑原图超过自带工具容量；保留全部输入并停止");
-              toolPrompt = `【实际附件映射】附件1为画风参考板，按${columns}列从左到右、从上到下排列原Visual参考图1至${visuals.length}，每格只读原画法。附件2起依序对应下文原参考图${visuals.length + 1}至${item.referenceFiles.length}，分别是Cover样图${item.editing ? "及最后一张当前编辑原图" : ""}。下文图号指原参考身份；不把参考板作为新场景或四宫格封面。\n${item.prompt}`;
+              toolPrompt = `【实际附件映射】附件1为画风参考板，按${columns}列从左到右、从上到下排列原Visual参考图1至${visuals.length}，每格只读原画法。附件2起依序对应下文原参考图${visuals.length + 1}至${item.referenceFiles.length}，分别是Cover中性版式参考${item.editing ? "及最后一张当前编辑原图" : ""}。下文图号指原参考身份；不把参考板作为新场景或四宫格封面。\n${item.prompt}`;
             }
             await atomicWrite(files.prompt, `${toolPrompt}\n`);
             await atomicWriteData(files.state, { schemaVersion: "2.0", variant,

@@ -19,8 +19,8 @@ const accepted=(value,moduleId,nodeId)=>({...value,_producer:{moduleId,nodeId,ta
 test('逐段片头走作者图片和正式 Studio 入口，并在弹开期间露出正文', {timeout:60000}, async t=>{
   const workspace=await mkdtemp(path.join(os.tmpdir(),'opposed-studio-'));
   t.after(()=>rm(workspace,{recursive:true,force:true}));
-  const manifest=await readData(path.join(root,'visuals/modern-editorial/visual-package.json'));
-  const image=path.join(root,'visuals/modern-editorial',manifest.masterReference.path);
+  const manifest=await readData(path.join(root,'visuals/wet-watercolor/visual-package.json'));
+  const image=path.join(root,'visuals/wet-watercolor',manifest.masterReference.path);
   await write(path.join(workspace,'program.yaml'),{openerTemplate:'opposed-opener',visualPackage:{visualPackageId:manifest.id,version:manifest.version}});
   const paths=getEpisodePaths(workspace,'ep01'), work=getStageWorkPaths(paths,'p3');
   const cues=[{id:1,startMs:0,endMs:6000,text:'院子里的来客正在等候。'}];

@@ -36,6 +36,8 @@ next --stage p1 --revise-publication
 next --stage p1 --revise-publication --publication-field youtube.title --revision-reason "保留事件名，把这个标题中的疑问表达改顺"
 ```
 
+成片已按documents-and-release完成清理时，明确点名且只改平台文字的工作单使用保留的正式正文、片头及现行publication，不要求已清理的正文材料与原会话；按作者包同一发布方法，由单路AGY形成所选字段，继续原接纳和免费封面复用。正文、片头、封面修订仍使用各自原材料合同，不能借此重建已清理材料或重开制作。
+
 可选youtube的title/description/tags、douyin或xiaohongshu的title/body/topics，以及`covers.youtube.visibleText`、`covers.vertical.visibleText`；数组按整字段修改。工作单提供当前正式文案基线，选择封面文字时还提供该画幅当前成图路径与摘要。未选字段和已认可画面保留；普通措辞编辑不重新调查三平台，实际新增看点、时效或事实疑点按发布内容方法调查。未指定字段仍重写三平台文案；同时重作封面画面与文案时使用前述整套入口，不夹带字段限制。内容返工也可用revision-reason交接具体意见，意见不扩大所选范围；签发后用普通next恢复同一单，不通过重复命令改动意见或范围。
 
 图片已认可、只换封面文字时，可以与平台字段在同一张工作单内修改：
@@ -54,15 +56,9 @@ next --stage p1 --revise-publication --publication-field covers.youtube.visibleT
 next --stage p1 --target release-main --cover-variant youtube --cover-record <原记录指纹> --replace-cover-task
 ```
 
-该入口只准备点名画幅的自带生图替换，保留原记录与另一幅；重复命令指向同一替换对象，随后普通next交回提示与参考。替换再次失败或未知时不自动循环。封面不恢复旧供应商的API接口；可选OpenAI图片服务沿原图片交接入口，新增付费须有当前明确许可。已交付成品与真实来源回执保留，只做本地核对与复用。
+该入口只准备点名画幅的自带生图替换，保留原记录与另一幅；重复命令指向同一替换对象，随后普通next交回提示与参考。替换再次失败或未知时不自动循环。历史API记录只接收原结果导入与来源核验，不再提供提交、查询或重试入口。已交付成品与真实来源回执保留，只做本地核对与复用。
 
-用户明确选择当前横竖Cover包登记的本集成品样图作为正式封面时，执行：
-
-```text
-next --stage p1 --target release-main --adopt-cover-examples
-```
-
-该入口只读取当前装配Cover中显式登记的`finalExample`，沿原P1作者链把横竖`visibleText`对齐样图，平台文案保持不变；接纳后用普通`next`由produce-covers节点本地规格化写入正式双图和真实`package-example`回执。不调用远端生图、不付费，也不把旧远端未知任务冒充成功；已有未知缓存保留。样图缺失、摘要或包身份变化、文案不一致、已有独立发布副作用及冲突工作单都停止。未登记成品样图的Cover仍走原生成路线。
+当前Cover只登记中性版式样张，不提供可直接接纳为正式封面的成品样图；封面按本集内容生成，或采用用户明确指定的本地成图。
 
 用户明确接受现行封面并撤销待办重生时，执行`next --stage p1 --target release-main --cancel-cover-regeneration`。该动作只撤销现行重生请求，保留正式双图、文案、回执和生成记录，不生成或付费；有活动作者、生产锁、未收口远端或正式基线变化时保留现场并停止。
 

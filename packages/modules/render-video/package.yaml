@@ -121,7 +121,6 @@
     "runtime/caption-content.mjs",
     "runtime/caption-style.mjs",
     "runtime/transitions.mjs",
-    "../../templates/fullframe-narrative/camera/author-transition-handoff.mjs",
     "runtime/render-contracts.mjs",
     "runtime/narrative-transition.mjs",
     "runtime/narrative-transition.jsx",

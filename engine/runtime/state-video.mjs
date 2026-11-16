@@ -41,7 +41,7 @@ import {
   controllerInputs
 } from "./author-tasks.mjs";
 
-import { buildUnderstandingTask, buildVisualDirectorTask, buildVideoTask } from "./design-tasks.mjs";
+import { buildVisualDirectorTask, buildVideoTask } from "./design-tasks.mjs";
 import { collectQuoteRequests, projectResolvedQuotes, quoteBatchInputs, resolveQuoteDecisions, retainedQuoteEvidence } from "../../packages/templates/fullframe-narrative/callout/batch.mjs";
 import { P3_QUOTE_REVISION_SCOPE, assertP3QuoteRevisionRequest } from "./quote-revision-contract.mjs";
 
@@ -187,6 +187,26 @@ const resolveVideoCurrent = async ({
     }
     returnRequests.set(node.id, request);
   }
+  const directorReturnFiles = new Map();
+  const directorReturn = returnRequests.get("director");
+  let legacyUnderstandingRequest = null;
+  if (model.stageId === "p3") {
+    const legacyPath = workPaths.returnRequest("understand");
+    await assertProjectPaths({ root: workspaceRoot, label: "P3合并前的理解返工", files: [legacyPath] });
+    if (await exists(legacyPath)) {
+      legacyUnderstandingRequest = await readData(legacyPath);
+      const { target, reason, cueRefs, revisionScope, cueRebinding } = legacyUnderstandingRequest;
+      if (target !== "understand" || typeof reason !== "string" || !reason.trim() || revisionScope != null
+        || !Array.isArray(cueRefs) || cueRefs.some(id => !Number.isInteger(id) || id < 1)) {
+        throw new Error("合并前的理解返工请求无效，保留原件");
+      }
+      directorReturnFiles.set(legacyPath, legacyUnderstandingRequest);
+      const pairedRebinding = directorReturn?.revisionScope == null && Array.isArray(cueRebinding?.previousCues)
+        && hashObject(cueRebinding.previousCues) === hashObject(directorReturn?.cueRebinding?.previousCues ?? null);
+      if (!pairedRebinding) returnRequests.set("director", { ...legacyUnderstandingRequest, target: "director" });
+      else directorReturnFiles.set(workPaths.returnRequest("director"), directorReturn);
+    } else if (directorReturn) directorReturnFiles.set(workPaths.returnRequest("director"), directorReturn);
+  }
   const p3Revision = returnRequests.get("author") ?? null;
   const p3DirectorRevision = returnRequests.get("director")?.revisionScope === "director-revision"
     ? returnRequests.get("director") : null;
@@ -215,7 +235,7 @@ const resolveVideoCurrent = async ({
         return {
           kind: "blocked-upstream",
           upstreamStageId: "p3",
-          nodeId: "understand",
+          nodeId: "director",
           reason: `当前阶段无法读取 P3 已核验来源资产: ${error.message}`
         };
       }
@@ -224,7 +244,7 @@ const resolveVideoCurrent = async ({
       return {
         kind: mayInitializeMissingSourceAssets ? "initialization-required" : "blocked-upstream",
         ...(mayInitializeMissingSourceAssets ? {} : { upstreamStageId: "p3" }),
-        nodeId: "understand",
+        nodeId: "director",
         ...(mayInitializeMissingSourceAssets
           ? {
               initializeMissingSourceAssets: true,
@@ -249,7 +269,7 @@ const resolveVideoCurrent = async ({
   if (p3BodyRedesign && storyboard?.albumPlan) {
     assertP3BodyRedesignPreservesVisualPlan({
       baselineSha256: p3BodyRedesign.baselineVisualPlanSha256,
-      candidateSha256: hashObject(directorResultSlice(storyboard))
+      visualPlan: directorResultSlice(storyboard)
     });
   }
   if (p3DirectorRevision) assertP3DirectorRevisionRequest(p3DirectorRevision, directorResultSlice(storyboard));
@@ -267,7 +287,7 @@ const resolveVideoCurrent = async ({
     .some(({ id }) => !storyboard.authorQuotes.items.some((item) => item.id === id))) {
     quoteContext.notebookId = (await readData(getProgramPaths(workspaceRoot).programPlan)).researchLibrary?.notebookId;
   }
-  if (model.stageId !== "p3") storyboard = projectResolvedQuotes(storyboard, quoteContext);
+  if (model.stageId !== "p3") storyboard = projectResolvedQuotes(storyboard, quoteContext, { allowPending: isolatedPreview });
   if (previewPart) previewSegmentIds = previewPart === "body" ? storyboard.beats.map(beat => beat.id) : ["opener"];
   if (previewPart === "body") {
     const { opener, ...bodyStoryboard } = storyboard;
@@ -310,7 +330,7 @@ const resolveVideoCurrent = async ({
   }
 
   const state = {
-    understandingVerified:false, visualPlanVerified:model.stageId !== "p3",
+    visualPlanVerified:model.stageId !== "p3",
     validatedTreatments:new Set(), validatedSegments:new Set(), renderTask:null
   };
   const requireStage = (condition, node, label) => {
@@ -428,7 +448,9 @@ const resolveVideoCurrent = async ({
     if (task.runner !== "ai") return { ...task, descriptor: prepared.descriptor };
     const restrictReturnTargets = Boolean(p3DirectorRevision || (p3Revision && (!segmentId || task.context?.p3BodyRedesign)))
       || task.mode === "author-quotes";
-    const allowedReturnTargets = restrictReturnTargets
+    const allowedReturnTargets = task.mode === "treatment" && task.context?.p3BodyRedesign && !p3DirectorRevision
+      ? ["director"]
+      : restrictReturnTargets
       ? []
       : await allowedReturnTargetsFor({ node: task.node, descriptor: prepared.descriptor });
     return { ...task, descriptor: prepared.descriptor, allowedReturnTargets };
@@ -462,38 +484,14 @@ const resolveVideoCurrent = async ({
 
   const resolveUnit = async ({ node, item, prepared }) => {
     const { assembly, descriptor } = prepared;
-    if (descriptor.primitive === "ai-understanding") {
-      if (storyboard?.understanding && !restartPending(model, storyboard.understanding) && !returnRequests.has(node.id)) {
-        state.understandingVerified = true;
-        return null;
-      }
-
-      const task = await buildUnderstandingTask({
-        node,
-        assembly,
-        model,
-        inspected,
-        workspaceRoot,
-        returnRequests,
-        root,
-        episodeId,
-        paths
-      });
-      const returnRequest = returnRequests.get(node.id);
-      if (returnRequest) return { ...task, reason: `上游退回 ${node.id}：${returnRequest.reason}` };
-      if (!storyboard?.understanding || restartPending(model, storyboard.understanding))
-        return { ...task, reason: "storyboard 尚无正式 understanding 区" };
-      state.understandingVerified = true;
-      return null;
-    }
     if (descriptor.primitive === "ai-visual-director") {
-      if (storyboard?.albumPlan && storyboard?.beats && storyboard?.templateRuns && !restartPending(model, storyboard) && !returnRequests.has(node.id)) {
+      if (storyboard?.understanding && storyboard?.albumPlan && storyboard?.beats && storyboard?.templateRuns && !restartPending(model, storyboard) && !returnRequests.has(node.id)) {
         state.visualPlanVerified = true;
         return null;
       }
 
-      requireStage(state.understandingVerified, node, "已接纳 Understanding");
       const task = await buildVisualDirectorTask({
+        programPlan,
         node,
         assembly,
         model,
@@ -506,15 +504,16 @@ const resolveVideoCurrent = async ({
         episodeId
       });
       const returnRequest = returnRequests.get(node.id);
-      if (returnRequest) return { ...task, reason: `上游退回 ${node.id}：${returnRequest.reason}` };
+      if (returnRequest) return { ...task, directorReturnFiles, legacyUnderstandingRequest,
+        reason: `上游退回 ${node.id}：${returnRequest.reason}` };
       if (
-        restartPending(model, storyboard) || !storyboard?.albumPlan ||
+        restartPending(model, storyboard) || !storyboard?.understanding || !storyboard?.albumPlan ||
         !Array.isArray(storyboard.beats) ||
         !Array.isArray(storyboard.templateRuns)
       ) {
         return {
           ...task,
-          reason: "storyboard 尚无正式整集画册与 Beat 视觉计划"
+          reason: "storyboard 尚无正式整集理解与分镜计划"
         };
       }
       state.visualPlanVerified = true;

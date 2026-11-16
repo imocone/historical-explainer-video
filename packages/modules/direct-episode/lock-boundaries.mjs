@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import path from "node:path";
+import { readP3Sources } from "../../p3-sources.mjs";
 import { fileURLToPath } from "node:url";
 import { readData } from "../../program-utils.mjs";
 import { assertCurrentDirectorInputs } from "./inspect-boundaries.mjs";
@@ -21,7 +22,7 @@ const lockCurrentDirectorBoundaries = async ({ workOrderPath, candidatePath }) =
     result: candidate.result,
     context: {
       ...workOrder.inputs,
-      understanding: workOrder.inputs?.understanding?.content
+      sourceAssets: await readP3Sources({ workspaceRoot, workOrder })
     }
   });
   if (stageErrors.length) throw new Error(stageErrors.join("; "));

@@ -24,7 +24,15 @@
       "additionalProperties": false,
       "required": ["subtitleQuality"],
       "properties": {
-        "subtitleQuality": {"$ref": "#/$defs/subtitleQualityFile"}
+        "subtitleQuality": {"$ref": "#/$defs/subtitleQualityFile"},
+        "audioProcessing": {
+          "type": "object", "additionalProperties": false,
+          "required": ["rawAudioSha256", "contractSha256"],
+          "properties": {
+            "rawAudioSha256": {"$ref": "#/$defs/sha"},
+            "contractSha256": {"$ref": "#/$defs/sha"}
+          }
+        }
       }
     },
     "_producer": {"$ref": "#/$defs/producer"}

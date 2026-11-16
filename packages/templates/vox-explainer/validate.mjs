@@ -1,6 +1,8 @@
 import {canUseSourceForExternalProduction} from '../../source-rights.mjs';
 import {compileAnimation, markupAssetIds} from './scene.mjs';
 import {verifyAuthoredImage} from './images.mjs';
+import {loadProgramVisualPackage} from '../../visual-package.mjs';
+import {isGeneratedImage} from '../../image-provenance.mjs';
 
 export function validate({result, context}) {
   const errors = [];
@@ -40,9 +42,13 @@ export function validate({result, context}) {
 export async function validateAcceptance({result, context, services}) {
   if (!services.task) return [];
   const errors = [];
+  const visual = result.assetRequests.some(request => isGeneratedImage(request.asset))
+    ? await loadProgramVisualPackage(services.systemRoot, services.workspaceRoot, {roles: []})
+    : null;
+  const appearance = {...result.appearance, visualPackageId: visual?.id};
   for (const request of result.assetRequests) {
     try {
-      await verifyAuthoredImage({asset: request.asset, request, treatment: result, appearance: result.appearance,
+      await verifyAuthoredImage({asset: request.asset, request, treatment: result, appearance,
         semanticContext: context.semanticContext, cues: context.cues,
         workspaceRoot: services.workspaceRoot, episodeId: services.episodeId,
         unitId: context.authorUnit.id, sourceAssets: context.sourceAssets});

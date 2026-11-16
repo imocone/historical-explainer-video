@@ -2,13 +2,15 @@
 
 ## Cue绑定
 
-把`moments`写入候选后运行：
+全章粗排按分镜在原scene排实际观看转折，为重要的变化写 `moments`。同一镜可有多次变化，切镜也可由原动画单独安排。粗排初期若要用原预演短试，只写并绑好当前试做用到的项。把 `moments` 写入本单原候选后运行：
 
 ```bash
 node packages/modules/author-beat/cue-options.mjs <工作单> <候选>
 ```
 
-按本单文字、时窗及完整合法选项选择Cue，通过本单cue-sync把每项绑定为`{target:"M001",action:"advance-explainer",cueId,edge}`，写回同一候选的`featureResults["cue-sync"].items`。这个action只提供`cue(id)`的时间锚点，不自动换页或清空场景；对象可在多个锚点之间持续动作，具体时长和句内延迟在animation中设计，随画面预演校准。
+每次只给`nextTarget`的`legalOptions`。按本单文字和时窗选一条，经本单cue-sync写入`featureResults["cue-sync"].items`末尾（如`{target:"M001",action:"advance-explainer",cueId,edge}`），再运行命令选下一项，直到返回`complete:true`。`cuePool`是原始时点池，不能代替当前合法选项。返修时保留首条受影响绑定之前的有效前缀，从受影响处逐项重验；后续旧选择仍合法且符合设计的，原样写回。
+
+`advance-explainer`提供`cue(id)`的时间锚点，画面换镜和状态变化由animation编排。选项按原字幕毫秒检查顺序，同一帧可容纳按顺序绑定的多个变化。最后一个Cue的结束点取本章最后一帧。对象可跨锚点持续动作，已声明的动作偏移须落在本章内。动作和阅读留多少时间，由实际预演判断。
 
 ## 画面动作时刻
 
@@ -18,12 +20,10 @@ node packages/modules/author-beat/cue-options.mjs <工作单> <候选>
 
 当前任务视图的`templateContext.audio.speechTiming`按需给出P2已接纳、与同一原声绑定的实测短语。`available:true`时，只含本段Cue；每个`phrases`条目有`index / text / startOffsetSeconds / endOffsetSeconds`。偏移已沿原渲染帧率计算，均相对于该Cue的start；相同文本的不同次出现按Cue与index区分。原生词与ASR差异块都保持实际可用的整体边界，不能将词内各字平均分时。
 
-需要精卡时，把对应moment沿原cue-sync绑定该Cue的`edge:"start"`，直接取目标条目的偏移。例如当前条目的`endOffsetSeconds`为1.2，设计要在这次发声完成时让物件接触：
+需要精卡时，把对应moment沿原cue-sync绑定该Cue的`edge:"start"`。以卡在短语说完为例，在`scene.events`为该moment设一个事件，`offsetSeconds`填入本单选中的`endOffsetSeconds`。动画用事件时刻：
 
 ```js
-const contact = cue('M002') + 1.2; // 1.2复制自本单选中短语的实测偏移
-timeline.to(select('#parcel'), {x:180, duration:.45}, contact - .45);
-timeline.from(select('#keyword'), {opacity:0, y:8, duration:.15}, contact);
+const contact = eventTime('E001');
 ```
 
-动作时长和字组效果按本题设计；若要贴发声开始，用该条目的`startOffsetSeconds`。不得把start偏移加在end锚点上，也不能把整段Cue边界或手调动作秒数叫作词级实测时间。`available:false`时仍可按口播文本与Cue时窗编排；句内落点只是设计偏移，不能声称已与具体词语精确同步。不为取时间擅自重做配音、再次识别或补造对齐数据。原声或字幕真实变化后重取当前任务视图，并校准受影响的偏移和动作。
+在该时刻做出观众真能看见的变化；具体安排见[作用与回应](motion.md#作用与回应的错时)。事件按帧合成Cue与短语偏移，硬切、显隐和状态更新可落在同一帧。需要贴发声开始时用该条目的`startOffsetSeconds`。不得把相对Cue开头的偏移加在end锚点上，也不能把整段Cue边界或手调动作秒数叫作词级实测时间。`available:false`时仍可按口播文本与Cue时窗编排；句内落点只是设计偏移，不能声称已与具体词语精确同步。不为取时间擅自重做配音、再次识别或补造对齐数据。原声或字幕真实变化后重取当前任务视图，并校准受影响的偏移和动作。

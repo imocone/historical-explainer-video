@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 
 import path from "node:path";
+import { readP3Sources } from "../../p3-sources.mjs";
 import { fileURLToPath } from "node:url";
 import { hashObject, readData } from "../../program-utils.mjs";
+import { isExplainerTemplateId } from "../../explainer-template-selection.mjs";
 import {
   validateDirectorAuthorabilityLock,
   writeDirectorBoundaryInspectionLock
@@ -31,6 +33,9 @@ export const inspectDirectorBoundaries = ({ workOrder, candidate }) => {
   const result = candidate?.result ?? candidate;
   const beats = result?.beats ?? [];
   if (!beats.length) throw new Error("候选缺少 beats");
+  const explainerChapterByBeat = new Map((result.templateRuns ?? [])
+    .filter(run => isExplainerTemplateId(run.templateId))
+    .flatMap(run => run.beatIds.map(id => [id, run.id])));
   const beatCues = beats.map((beat) => ({
     beat,
     cues: cueSliceForBeat({ beat, cues, cueIndex })
@@ -44,25 +49,25 @@ export const inspectDirectorBoundaries = ({ workOrder, candidate }) => {
       beatId: beat.id
     })
   }));
-  const internalBoundaries = beatCues.filter(({ beat }) => (
-    beat.templateId === "fullframe-narrative"
-  )).flatMap(({ beat, cues: currentCues }) => (
-    currentCues.slice(0, -1).map((cue, index) => ({
+  const internalBoundaries = beatCues
+    .filter(({ beat }) => !isExplainerTemplateId(beat.templateId))
+    .flatMap(({ beat, cues: currentCues }) => currentCues.slice(0, -1).map((cue, index) => ({
       beatId: beat.id,
       boundary: `${cue.id}/${currentCues[index + 1].id}`,
       leftCueRange: [currentCues[0].id, cue.id],
       rightCueRange: [currentCues[index + 1].id, currentCues.at(-1).id]
-    }))
-  ));
-  const betweenBeatBoundaries = beatCues.slice(0, -1).map((left, index) => {
+    })));
+  const betweenBeatBoundaries = beatCues.slice(0, -1).flatMap((left, index) => {
     const right = beatCues[index + 1];
-    return {
+    const leftChapter = explainerChapterByBeat.get(left.beat.id);
+    if (leftChapter && leftChapter === explainerChapterByBeat.get(right.beat.id)) return [];
+    return [{
       boundary: `${left.beat.id}/${right.beat.id}`,
       leftBeatId: left.beat.id,
       rightBeatId: right.beat.id,
       leftCueRange: structuredClone(left.beat.cueRange),
       rightCueRange: structuredClone(right.beat.cueRange)
-    };
+    }];
   });
   return {
     summary: {
@@ -122,7 +127,7 @@ const main = async () => {
     result: candidate.result,
     context: {
       ...workOrder.inputs,
-      understanding: workOrder.inputs?.understanding?.content
+      sourceAssets: await readP3Sources({ workspaceRoot, workOrder })
     }
   });
   if (stageErrors.length) throw new Error(stageErrors.join("; "));

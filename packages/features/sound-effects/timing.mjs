@@ -50,7 +50,8 @@ export const soundTracksForSegment = ({segment, result, fps, durationMs = Infini
     const minimum = Math.round((earliestMs - segment.startMs) * fps / 1000);
     const sourceStartFrame = Math.max(0, minimum - (event.frame - sync));
     const startFrame = Math.max(minimum, event.frame - sync);
-    const endFrame = Math.min(Math.round((durationMs - segment.startMs) * fps / 1000), event.frame - sync + duration);
+    const naturalEndFrame = event.frame - sync + duration;
+    const endFrame = Math.min(Math.round((durationMs - segment.startMs) * fps / 1000), naturalEndFrame);
     if (endFrame <= startFrame) return [];
     return [{
       id: `sfx-${segment.id}-${event.id}`, kind: 'sound-effect', segmentType: 'body',
@@ -59,7 +60,8 @@ export const soundTracksForSegment = ({segment, result, fps, durationMs = Infini
       endMs: Math.min(durationMs, segment.startMs + endFrame / fps * 1000),
       sourceStartFrame, file: event.sound.file, sha256: event.sound.sha256,
       volume: event.gain ?? 1, pan: event.pan ?? 0, loop: false,
-      fadeOutFrames: Math.min(2, Math.max(0, endFrame - startFrame - 1))
+      // Keep the source's authored tail when playback reaches its natural end.
+      fadeOutFrames: endFrame < naturalEndFrame ? Math.min(2, endFrame - startFrame - 1) : 0
     }];
   });
 };

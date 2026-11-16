@@ -51,9 +51,9 @@ D01是D02方案形成前的内部调查与理解，不是独立交付步骤；�
 
 从工作单`openerTemplateCatalog`确定节目级`openerTemplate`：首次使用`programRequest.openerTemplate`，未指定则使用目录标记`defaultSelected`的片头。修订保留现行选择，只有用户明确要求才更换；纪录片不自动选回忆片头。只换片头时保持故事策划和材料原值。
 
-从工作单`visualPackageCatalog`确定节目级`visualPackage`：首次优先使用委托中明确且仍在目录内的选择，否则按纪录片的内容使命、故事世界和受众选择；修订保留现行Visual，只有用户明确要求或节目方向变化使原选择不再成立时才更换。`coverPackage`使用`coverPackageCatalog`中的唯一type-first-editorial，不再按题材分选。Visual提供正片及封面人物器物的画法和各用途字体；Cover拥有文字材质、配色、层级、配套横竖排版及配图的视觉强弱，画法与字体接入所选Visual。封面跨题材使用亮字与暗色满幅配图的关系；本集可见文字和场面由P1独立设计，不强制系列名、集号或A/B/C。两项选择仍独立，不能用Cover替代Visual。
+从工作单`visualPackageCatalog`确定节目级`visualPackage`：首次使用委托中明确且仍在目录内的选择；未明确指定时默认选择`wet-watercolor`，版本读取当前目录。修订优先采用用户指定且有效的Visual；未指定时沿用仍在目录内且适合当前方向的Visual ID，版本取当前目录；原包已下架时，按用户给出的修订要求从当前目录重新选择。`coverPackage`使用`coverPackageCatalog`中的唯一type-first-editorial，不再按题材分选。Visual提供正片及封面人物器物的画法和各用途字体；Cover拥有文字材质、配色、层级、配套横竖排版及配图的视觉强弱，画法与字体接入所选Visual。封面跨题材使用亮字与暗色满幅配图的关系；本集可见文字和场面由P1独立设计，不强制系列名、集号或A/B/C。两项选择仍独立，不能用Cover替代Visual。
 
-同时确定`seriesTitle / audience / editorialDirection / viewerBenefit / narrativeTone`和按委托存在的`maxDurationSeconds`。`seriesTitle`是全系列稳定使用的简洁展示名，封面确需系列识别时使用此正式名称，不强制上图；采用用户已确定的名称，不附加宣传副标题或单集看点，详细表达留在既有策划方向与观众收益中。修订时除非用户要求改名，否则保留现行值。D02必须在委托时长内选定每集核心收益、必要历史内容与最小生活过程，把取舍及集间范围落实到现有`episodeBenefit / episodeScope / episodeCreativeBrief`，再写`episodeThroughline / storyOutline`；不以安排完整路线代替容量判断，也不新增时间表或覆盖清单。字段写法、容量取舍、可观察动作、集间区分、四项观众结果及重构边界由方法集中规定。
+同时确定`seriesTitle / audience / editorialDirection / viewerBenefit / narrativeTone`和按委托存在的`maxDurationSeconds`。`seriesTitle`是全系列稳定使用的简洁展示名，封面确需系列识别时使用此正式名称，不强制上图；采用用户已确定的名称，不附加宣传副标题或单集看点，详细表达留在既有策划方向与观众收益中。修订时除非用户要求改名，否则保留现行值。按[纪录片策划方法](references/documentary-planning-method.md)确定每集要呈现的历史生活及观众能懂得的门道，选择在委托时长内能跟到具体结果的过程，写入现有单集字段。
 
 在方案形成时核对每集历史内容和故事是否共同成立、各集是否实质重复、系列方法是否符合委托。内容失败按方法修订受影响部分，不把普通人生活使命变成知识目录或独立人物戏。
 

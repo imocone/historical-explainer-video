@@ -7,7 +7,6 @@ const scopesByPrimitive = {
   "program-narration-synthesize": ["subject"],
   "ai-subtitles": ["subject"],
   "program-narration-finalize": ["subject"],
-  "ai-understanding": ["subject"],
   "ai-visual-director": ["subject"],
   "ai-beat-treatment": ["each-author-unit"],
   "ai-segment": ["opener"],
@@ -89,8 +88,6 @@ const projectControllerResult = ({
   scope = {}
 }) => {
   if (spec.projection === "artifact") return { kind: "artifact", artifact: result };
-  if (spec.projection === "understanding")
-    return { kind: "understanding", section: result.understanding };
   if (spec.projection === "visual-plan") return { kind: "visual-plan", visualPlan: result };
   if (spec.projection === "treatment") {
     if (scope.authorPhase === "quotes") return { kind: "author-quotes", quotes: result };

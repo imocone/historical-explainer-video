@@ -13,6 +13,31 @@ const envelopeExpression = (points, frame) => {
   return `if(lt((${frame}),${points[0].frame}),1,${expression})`;
 };
 
+const protectQuietNarration = ({ sampleRate, busDuration }) => {
+  const lookaheadSeconds = 0.024;
+  const controlDuration = busDuration + lookaheadSeconds;
+  const speechBandLevel = `apad=whole_dur=${controlDuration},highpass=f=120,lowpass=f=6000,aeval='max(abs(val(0)),abs(val(1)))':c=mono,lowpass=f=32:p=1,aformat=channel_layouts=mono`;
+  // A quiet noise floor should leave the authored effect alone. Ease into
+  // protection as narration becomes audible, then compare the two levels.
+  const speechPresence = 'clip((val(0)-0.003)/0.005,0,1)';
+  const effectLimit = 'min(1,0.75*max(val(0),0.008)/max(val(1),0.000001))';
+  const targetGain = `1-${speechPresence}*(1-${effectLimit})`;
+  const attack = 1 - Math.exp(-1 / (0.003 * sampleRate));
+  const release = 1 - Math.exp(-1 / (0.085 * sampleRate));
+  // val(0) and val(1) are the voice and effect envelopes, not the output channels.
+  // Smooth one shared gain so a panned hit does not move as speech enters.
+  const gain = `if(eq(n,0),st(0,1),0);st(1,${targetGain});st(0,ld(0)+(ld(1)-ld(0))*if(lt(ld(1),ld(0)),${attack},${release}));ld(0)`;
+  return [
+    '[duckedBodyEffects]asplit[bodyToMix][effectLevelInput]',
+    `[guardVoice]${speechBandLevel}[voiceLevel]`,
+    `[effectLevelInput]${speechBandLevel}[effectLevel]`,
+    `[voiceLevel][effectLevel]join=inputs=2:channel_layout=stereo:map=0.0-FL|1.0-FR,aeval='${gain}':c=mono[bodyGain]`,
+    // Advance the control signal only. Sound events and narration keep their original timing.
+    `[bodyGain]atrim=start=${lookaheadSeconds}:duration=${busDuration},asetpts=PTS-STARTPTS,pan=stereo|c0=c0|c1=c0[bodyGainStereo]`,
+    '[bodyToMix][bodyGainStereo]amultiply[balancedBodyEffects]'
+  ];
+};
+
 export const mixCompositionAudio = async ({ props, timeline, projectDirectory }) => {
   const { sampleRate, channels } = VIDEO_SPEC.finalOutput.audio;
   const duration = (timeline.toFrame - timeline.fromFrame) / props.fps;
@@ -26,7 +51,7 @@ export const mixCompositionAudio = async ({ props, timeline, projectDirectory })
   // A standalone opener retains its established voice/music levels. Body and
   // body-candidate playback use the shared programme finishing below.
   const finishing = props.audioTracks.some(track => track.kind === 'narration' && track.segmentType !== 'opener');
-  const groups = {voice:[],music:[],effects:[],other:[]};
+  const groups = {voice:[],music:[],effects:[],bodyEffects:[],other:[]};
   for (const track of props.audioTracks) {
     const originalStart = anchoredFrameForMs({ milliseconds: track.startMs, anchorMs: timeline.anchorMs, fps: props.fps });
     const originalEnd = track.endMs == null ? busEnd
@@ -60,20 +85,37 @@ export const mixCompositionAudio = async ({ props, timeline, projectDirectory })
     filters.push(`[${index}:a]aresample=${sampleRate},${channelFilter},atrim=start=${(offset + (track.sourceStartFrame ?? 0)) / props.fps}:duration=${(end - start) / props.fps},asetpts=PTS-STARTPTS,aeval='val(0)*${gain}*${left}|val(1)*${gain}*${right}'${voiceCompression},adelay=${delay}S|${delay}S[a${index}]`);
     outputs.push(`[a${index}]`);
     groups[track.kind === 'narration' ? 'voice' : track.kind === 'background-music' ? 'music'
-      : track.kind === 'sound-effect' ? 'effects' : 'other'].push(`[a${index}]`);
+      : track.kind === 'sound-effect' ? (track.segmentType === 'body' ? 'bodyEffects' : 'effects') : 'other']
+      .push(`[a${index}]`);
   }
   const analysis = `apad,atrim=duration=${busDuration},ebur128=peak=true:framelog=verbose`;
   if (finishing) {
     for (const [group,inputs] of Object.entries(groups)) {
+      if (group === 'bodyEffects' && !inputs.length) continue;
       if (!inputs.length) filters.push(`anullsrc=r=${sampleRate}:cl=stereo,atrim=duration=${busDuration}[${group}]`);
       else filters.push(`${inputs.join('')}${inputs.length === 1 ? 'anull' : `amix=inputs=${inputs.length}:normalize=0:dropout_transition=0`}[${group}]`);
     }
-    // Shared finishing owns balance. The effects Feature never selects or writes music.
-    filters.push('[voice]asplit=2[voiceMain][voiceControl]', '[effects]asplit=2[effectsMain][effectsControl]',
-      '[voiceControl][effectsControl]amix=inputs=2:weights=1 0.5:normalize=0:dropout_transition=0[control]',
-      '[music]equalizer=f=1600:t=q:w=1:g=-2.5[musicRoom]',
-      '[musicRoom][control]sidechaincompress=threshold=0.025:ratio=5:attack=15:release=400:makeup=1[duckMusic]',
-      `[voiceMain][effectsMain][duckMusic][other]amix=inputs=4:normalize=0:dropout_transition=0,${analysis}[mix]`);
+    const hasBodyEffects = groups.bodyEffects.length > 0;
+    const mixInputs = ['[voiceMain]', '[effectsMain]', '[duckMusic]', '[other]'];
+    // Pad both compressor inputs and trim its output. Either input can signal EOF
+    // while the compressor still has samples buffered, cutting off the audible tail.
+    if (hasBodyEffects) {
+      filters.push('[voice]asplit=4[voiceMain][voiceControl][voiceForEffects][guardVoice]',
+        '[voiceForEffects]apad[effectDetector]',
+        '[bodyEffects]equalizer=f=3200:t=q:w=0.8:g=-2,apad[bodyRoom]',
+        `[bodyRoom][effectDetector]sidechaincompress=threshold=0.038:ratio=3:attack=8:release=150:mix=0.42,atrim=duration=${busDuration}[duckedBodyEffects]`,
+        ...protectQuietNarration({ sampleRate, busDuration }));
+      mixInputs.push('[balancedBodyEffects]');
+    } else {
+      filters.push('[voice]asplit=2[voiceMain][voiceControl]');
+    }
+    // Template effects keep their existing music interaction. Body effects
+    // leave the music to its authored envelopes and dialogue detector.
+    filters.push('[effects]asplit=2[effectsMain][effectsControl]',
+      '[voiceControl][effectsControl]amix=inputs=2:weights=1 0.5:normalize=0:dropout_transition=0,apad[control]',
+      '[music]equalizer=f=1600:t=q:w=1:g=-2.5,apad[musicRoom]',
+      `[musicRoom][control]sidechaincompress=threshold=0.025:ratio=5:attack=15:release=400:makeup=1,atrim=duration=${busDuration}[duckMusic]`,
+      `${mixInputs.join('')}amix=inputs=${mixInputs.length}:normalize=0:dropout_transition=0,${analysis}[mix]`);
   } else if (outputs.length) filters.push(`${outputs.join('')}amix=inputs=${outputs.length}:normalize=0:dropout_transition=0,${analysis}[mix]`);
   else { args.push('-f','lavfi','-i',`anullsrc=r=${sampleRate}:cl=stereo`); filters.push(`[0:a]${analysis}[mix]`); }
   const file = path.join(projectDirectory, "audio.wav");

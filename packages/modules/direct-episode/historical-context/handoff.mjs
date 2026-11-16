@@ -12,7 +12,7 @@ import {validate as validateDirector} from '../validate.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const sourceSchema = path.resolve(here, '../../../../contracts/source-assets.schema.json');
-const marker = /^【历史视觉依据 SA\d{3}】[^\n]*(?:\n|$)/gmu;
+const marker = /^【历史视觉依据 (SA\d{3})】适用Cue (\d+)—(\d+)(?:（分配Cue (\d+)—(\d+)）)?[^\n]*(?:\n|$)/gmu;
 const image = file => /\.(png|jpe?g|webp)$/iu.test(file);
 const fail = message => { throw new Error(message); };
 const cueIds = (range, cues) => {
@@ -27,6 +27,17 @@ const findings = context => [
 const editable = task => task.inputs.returnRequest?.revisionScope === 'director-revision'
   ? new Set(task.inputs.returnRequest.cueRefs) : new Set(task.inputs.cues.map(cue => cue.id));
 
+function contiguousCueGroups(ids) {
+  const groups = [];
+  let start = 0;
+  for (let end = 1; end <= ids.length; end++) {
+    if (ids[end] === ids[end - 1] + 1) continue;
+    groups.push(ids.slice(start, end));
+    start = end;
+  }
+  return groups;
+}
+
 async function loadTask(workOrderPath) {
   const file = path.resolve(workOrderPath);
   const task = await readData(file);
@@ -36,9 +47,9 @@ async function loadTask(workOrderPath) {
   if (file !== path.join(workspaceRoot, path.dirname(task.candidatePath), 'work-order.yaml'))
     fail('考据组件只接受当前正式导演工作单路径');
   await assertProjectPath({root: workspaceRoot, file: candidatePath, label: '导演唯一候选'});
-  const errors = validateDirector({result: candidate.result, context: task.inputs});
-  if (errors.length) fail(`导演候选尚不能交接：${errors.join('; ')}`);
   const assets = await readP3Sources({workspaceRoot, workOrder: task});
+  const errors = validateDirector({result: candidate.result, context: {...task.inputs, sourceAssets: assets}, chapterDraft: true});
+  if (errors.length) fail(`导演候选尚不能交接：${errors.join('; ')}`);
   return {file, task, candidate, candidatePath, workspaceRoot, assets,
     input: getEpisodePaths(workspaceRoot, task.subject.id).input};
 }
@@ -51,12 +62,69 @@ function validateRanges(contexts, task) {
   }
 }
 
+function boundContexts(beats, baseline = []) {
+  const previous = new Map(baseline.map(beat => [beat.id, beat]));
+  return beats.flatMap(beat => [...beat.directorBrief.mustShow.matchAll(marker)].map(match => {
+    const [line, sourceId, start, end, assignedStart, assignedEnd] = match;
+    const contextRange = [Number(start), Number(end)];
+    const prior = previous.get(beat.id);
+    // The original hints only stored the context range. Recover their
+    // effective assignment from the accepted beat when it is available.
+    const assignedRange = assignedStart ? [Number(assignedStart), Number(assignedEnd)]
+      : prior?.directorBrief.mustShow.includes(line.trimEnd())
+        ? [Math.max(contextRange[0], prior.cueRange[0]), Math.min(contextRange[1], prior.cueRange[1])]
+        : contextRange;
+    return {sourceId, contextRange, assignedRange};
+  }));
+}
+
+function mapSubtitleCues(previous, current) {
+  const spans = cues => {
+    let offset = 0;
+    return cues.map(({id, text}) => {
+      const content = text.replace(/\s/gu, '');
+      const span = {id, start: offset, end: offset + content.length, content};
+      offset = span.end;
+      return span;
+    });
+  };
+  const before = spans(previous);
+  const after = spans(current);
+  if (before.map(cue => cue.content).join('') !== after.map(cue => cue.content).join(''))
+    fail('考据对应口播已改变；回导演考据处理实际范围');
+  const byId = new Map(before.map(cue => [cue.id, cue]));
+  return ([first, last], [trimStart, trimEnd] = [0, 0]) => {
+    const start = byId.get(first).start + trimStart;
+    const end = byId.get(last).end - trimEnd;
+    const covered = after.filter(cue => cue.end > start && cue.start < end);
+    // Keep a context's precise text span if a new cue combines two contexts.
+    // A later split can then recover the right range for each context.
+    return {ids: covered.map(cue => cue.id),
+      offsets: [start - covered[0].start, covered.at(-1).end - end]};
+  };
+}
+
 async function sourceBytes(asset, state) {
   const file = path.join(state.input, asset.path);
   await assertProjectPath({root: state.workspaceRoot, file, label: '历史视觉原件'});
   const bytes = await readFile(file);
   if (sha256(bytes) !== asset.sha256) fail(`${asset.id} 原件内容与登记不一致`);
   return bytes;
+}
+
+function dossierCues(contexts, cues) {
+  const selected = new Set(contexts.flatMap(context => cueIds(context.cueRange, cues)));
+  return cues.filter(cue => selected.has(cue.id)).map(({id, text}) => ({id, text}));
+}
+
+async function registerDossier(state, dossier) {
+  const file = path.join(state.workspaceRoot, state.task.scratchPath, 'historical-context',
+    `registered-context-${hashObject(dossier)}.json`);
+  await assertProjectPath({root: state.workspaceRoot, file, label: '考据登记输入'});
+  await atomicWriteData(file, dossier);
+  return registerP3Source({workOrderPath: state.file, source: {file, mediaType: 'document',
+    sourceCitation: dossier.title, creator: 'direct-episode', date: null, rightsStatus: 'permission-granted',
+    usageNotes: '本集历史视觉考据资料；阅读contexts的适用范围、人物样貌与衣装、环境和限制。原图按sources独立权利使用。'}});
 }
 
 // AI selects evidence and writes findings. This operation only preserves that
@@ -121,62 +189,140 @@ export async function publishHistoricalContext({workOrderPath, researchPath}) {
   for (const context of contexts) for (const finding of findings(context))
     finding.evidence = finding.evidence.map(key => resolved.get(key).id);
   if (!contexts.length) return {source: null, contexts: [], reason: research.notApplicableReason};
-  const selectedCues = new Set(contexts.flatMap(context => cueIds(context.cueRange, task.inputs.cues)));
   const dossier = {kind: 'historical-context', title: research.title,
-    cues: task.inputs.cues.filter(cue => selectedCues.has(cue.id)).map(({id, text}) => ({id, text})),
+    cues: dossierCues(contexts, task.inputs.cues),
     contexts, sources: [...resolved.values()]};
-  const file = path.join(workspaceRoot, task.scratchPath, 'historical-context', 'registered-context.json');
-  await assertProjectPath({root: workspaceRoot, file, label: '考据登记输入'});
-  await atomicWriteData(file, dossier);
-  const source = await registerP3Source({workOrderPath, source: {file, mediaType: 'document',
-    sourceCitation: research.title, creator: 'direct-episode', date: null, rightsStatus: 'permission-granted',
-    usageNotes: '本集历史视觉考据资料；阅读contexts的适用范围、人物样貌与衣装、环境和限制。原图按sources独立权利使用。'}});
+  const source = await registerDossier(state, dossier);
   return {source, contexts, sourceAssets: [...resolved.values()]};
 }
 
-export async function bindHistoricalContext({workOrderPath, sourceId}) {
-  const state = await loadTask(workOrderPath);
-  const {task, workspaceRoot, candidate, candidatePath} = state;
+async function readDossier(state, sourceId) {
   const source = state.assets.find(item => item.id === sourceId);
   if (!source) fail(`未登记历史视觉资料：${sourceId}`);
   const dossier = JSON.parse((await sourceBytes(source, state)).toString('utf8'));
-  if (dossier.kind !== 'historical-context' || !Array.isArray(dossier.contexts) || !Array.isArray(dossier.sources))
+  if (dossier.kind !== 'historical-context' || !Array.isArray(dossier.contexts) || !Array.isArray(dossier.sources)
+    || !Array.isArray(dossier.cues))
     fail('指定来源不是历史视觉组件交付');
-  // Reuse a whole-episode dossier during local revision. Only the selected
-  // contexts are consumed here; publish still restricts newly authored research.
-  const allowed = editable(task);
-  const contexts = dossier.contexts.filter(context =>
-    cueIds(context.cueRange, task.inputs.cues).some(id => allowed.has(id)));
-  const selectedCues = new Set(contexts.flatMap(context =>
-    cueIds(context.cueRange, task.inputs.cues).filter(id => allowed.has(id))));
-  for (const cue of dossier.cues ?? []) {
-    if (!selectedCues.has(cue.id)) continue;
-    if (task.inputs.cues.find(item => item.id === cue.id)?.text !== cue.text)
+  return dossier;
+}
+
+async function prepareBindings({state, sourceId, assignments, previous, mapping, allowed}) {
+  const dossier = await readDossier(state, sourceId);
+  const cues = state.task.inputs.cues;
+  const sourceCues = previous ?? cues;
+  const placements = [];
+  for (const context of dossier.contexts) {
+    const {cueRange, cueTextOffsets = [0, 0]} = context;
+    const contextAssignments = assignments?.filter(assignment =>
+      assignment.contextRange[0] === cueRange[0] && assignment.contextRange[1] === cueRange[1]);
+    if (contextAssignments && !contextAssignments.length) continue;
+    const originalIds = cueIds(context.cueRange, sourceCues);
+    const assignedIds = contextAssignments ? originalIds.filter(id =>
+      contextAssignments.some(({assignedRange: [start, end]}) => id >= start && id <= end)) : originalIds;
+    if (!mapping) {
+      const selectedIds = assignedIds.filter(id => allowed.has(id));
+      if (selectedIds.length) placements.push({context, selectedIds, cueIds: new Set(selectedIds)});
+      continue;
+    }
+    // Translate only the piece still assigned to this source. An older
+    // context can span an area already replaced by a local revision.
+    for (const selectedIds of contiguousCueGroups(assignedIds)) {
+      const first = selectedIds[0], last = selectedIds.at(-1);
+      const {ids, offsets} = mapping([first, last], [
+        first === cueRange[0] ? cueTextOffsets[0] : 0,
+        last === cueRange[1] ? cueTextOffsets[1] : 0
+      ]);
+      const currentIds = ids.filter(id => allowed.has(id));
+      if (!currentIds.length) continue;
+      const mappedContext = {...context, cueRange: [ids[0], ids.at(-1)]};
+      delete mappedContext.cueTextOffsets;
+      if (offsets.some(offset => offset > 0)) mappedContext.cueTextOffsets = offsets;
+      placements.push({context: mappedContext, selectedIds, cueIds: new Set(currentIds)});
+    }
+  }
+  const sourceTexts = new Map(sourceCues.map(({id, text}) => [id, text]));
+  const recordedTexts = new Map(dossier.cues.map(({id, text}) => [id, text]));
+  for (const id of new Set(placements.flatMap(item => item.selectedIds))) {
+    if (recordedTexts.get(id) !== sourceTexts.get(id))
       fail('考据对应口播已改变；回导演考据处理实际范围');
   }
+  const contexts = placements.map(item => item.context);
   const sourceIds = new Set(contexts.flatMap(context => findings(context).flatMap(item => item.evidence)));
   for (const original of dossier.sources.filter(item => sourceIds.has(item.id))) {
     const current = state.assets.find(item => item.id === original.id);
     if (!current || hashObject(current) !== hashObject(original)) fail(`考据原来源已改变：${original.id}`);
     await sourceBytes(current, state);
   }
+  const remapped = previous && contexts.length
+    ? {...dossier, cues: dossierCues(contexts, cues), contexts, sources: dossier.sources.filter(item => sourceIds.has(item.id))}
+    : null;
+  return {sourceId, placements, remapped: remapped && hashObject(remapped) !== hashObject(dossier) ? remapped : null};
+}
+
+export async function bindHistoricalContext({workOrderPath, sourceId}) {
+  const state = await loadTask(workOrderPath);
+  const {task, workspaceRoot, candidate, candidatePath} = state;
+  const allowed = editable(task);
+  const cues = task.inputs.cues;
+  const baseline = task.inputs.currentVisualPlan?.beats ?? [];
+  const assigned = boundContexts(candidate.result.beats, baseline);
+  const previous = task.inputs.returnRequest?.cueRebinding?.previousCues;
+  const previousSources = new Set(boundContexts(baseline).map(item => item.sourceId));
+  const reuse = !sourceId || assigned.some(item => item.sourceId === sourceId) || previousSources.has(sourceId);
+  const selected = reuse ? new Map() : new Map([[sourceId, null]]);
+  if (reuse) {
+    for (const item of assigned) {
+      if (!selected.has(item.sourceId)) selected.set(item.sourceId, []);
+      selected.get(item.sourceId).push(item);
+    }
+    // A caller can still re-apply a registered snapshot that has not been bound.
+    if (sourceId && !selected.size) selected.set(sourceId, null);
+  }
+  if (!selected.size) return {sourceId, candidatePath, bindings: []};
+  const cueLayoutChanged = previous && (previous.length !== cues.length
+    || previous.some((cue, index) => cue.id !== cues[index].id || cue.text !== cues[index].text));
+  const remap = cueLayoutChanged && reuse && [...selected.keys()].some(id => previousSources.has(id))
+    ? mapSubtitleCues(previous, cues) : null;
+  const research = [];
+  for (const [id, assignments] of selected) {
+    const mapping = reuse && previousSources.has(id) ? remap : null;
+    if (assignments && !assignments.some(({assignedRange}) => {
+      const ids = mapping ? mapping(assignedRange).ids : cueIds(assignedRange, cues);
+      return ids.some(id => allowed.has(id));
+    })) continue;
+    research.push(await prepareBindings({state, sourceId: id, assignments, previous: mapping ? previous : null, mapping, allowed}));
+  }
+  for (const item of research) {
+    if (item.remapped) item.sourceId = (await registerDossier(state, item.remapped)).id;
+  }
   const result = structuredClone(candidate.result);
   const bindings = [];
   for (const beat of result.beats) {
-    const ids = cueIds(beat.cueRange, task.inputs.cues);
+    const ids = cueIds(beat.cueRange, cues);
     if (!ids.every(id => allowed.has(id))) continue;
-    const beatContexts = contexts.filter(context =>
-      cueIds(context.cueRange, task.inputs.cues).some(id => ids.includes(id)));
     const clean = beat.directorBrief.mustShow.replace(marker, '').trimEnd();
-    const lines = beatContexts.map(context => {
-      const refs = [...new Set(findings(context).flatMap(item => item.evidence))];
-      const subjects = [...context.people.map(person => person.subject), ...context.environment.map(item => item.subject)];
-      return `【历史视觉依据 ${sourceId}】适用Cue ${context.cueRange.join('—')}；${context.period}，${context.place}，${context.occasion}；对象：${subjects.join('、')}；材料：${refs.join('、') || '资料内明确的合理复原'}。读取对应context的样貌、衣装、环境及限制，只采用本镜实际表现部分。`;
-    });
+    const lines = [];
+    for (const item of research) {
+      const cueRanges = [];
+      for (const placement of item.placements) {
+        const {context} = placement;
+        const inBeat = ids.filter(id => placement.cueIds.has(id));
+        if (!inBeat.length) continue;
+        const refs = [...new Set(findings(context).flatMap(finding => finding.evidence))];
+        const subjects = [...context.people.map(person => person.subject), ...context.environment.map(entry => entry.subject)];
+        const range = context.cueRange.join('—');
+        for (const group of contiguousCueGroups(inBeat)) {
+          const assigned = [group[0], group.at(-1)].join('—');
+          const assignment = assigned === range ? '' : `（分配Cue ${assigned}）`;
+          lines.push(`【历史视觉依据 ${item.sourceId}】适用Cue ${range}${assignment}；${context.period}，${context.place}，${context.occasion}；对象：${subjects.join('、')}；材料：${refs.join('、') || '资料内明确的合理复原'}。读取对应context的样貌、衣装、环境及限制，只采用本镜实际表现部分。`);
+        }
+        cueRanges.push(context.cueRange);
+      }
+      if (cueRanges.length) bindings.push({beatId: beat.id, sourceId: item.sourceId, cueRanges});
+    }
     beat.directorBrief.mustShow = [clean, ...lines].filter(Boolean).join('\n');
-    if (beatContexts.length) bindings.push({beatId: beat.id, sourceId, cueRanges: beatContexts.map(context => context.cueRange)});
   }
-  const errors = validateDirector({result, context: task.inputs});
+  const errors = validateDirector({result, context: {...task.inputs, sourceAssets: await readP3Sources({workspaceRoot, workOrder: task})}, chapterDraft: true});
   if (errors.length) fail(`考据交接不能改变导演合同：${errors.join('; ')}`);
   await withProjectLock({root: workspaceRoot, lock: path.join(workspaceRoot, '制作/.workflow-write.lock'),
     label: '导演历史视觉交接', execute: async () => {
@@ -190,9 +336,9 @@ export async function bindHistoricalContext({workOrderPath, sourceId}) {
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const [command, workOrderPath, input] = process.argv.slice(2);
   Promise.resolve().then(() => {
-    if (!workOrderPath || !input) fail('用法: handoff.mjs publish <工作单> <scratch研究JSON> | bind <工作单> <资料SA编号>');
-    if (command === 'publish') return publishHistoricalContext({workOrderPath, researchPath: path.resolve(input)});
-    if (command === 'bind') return bindHistoricalContext({workOrderPath, sourceId: input});
-    fail('命令只能是publish或bind');
+    if (command === 'publish' && workOrderPath && input)
+      return publishHistoricalContext({workOrderPath, researchPath: path.resolve(input)});
+    if (command === 'bind' && workOrderPath) return bindHistoricalContext({workOrderPath, sourceId: input});
+    fail('用法: handoff.mjs publish <工作单> <scratch研究JSON> | bind <工作单> [本次新登记的资料SA编号]');
   }).then(result => console.log(JSON.stringify(result))).catch(error => {console.error(error.message); process.exitCode = 1;});
 }

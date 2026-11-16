@@ -1,4 +1,4 @@
-import {resolveCueRange, resolveCueBindingsToFrames} from '../../cue-boundaries.mjs';
+import {frameForTime, resolveCueBoundary, resolveCueRange} from '../../cue-boundaries.mjs';
 import {frameSpanForMs, VIDEO_SPEC} from '../../video-spec.mjs';
 import {resolveSceneEvents} from './scene.mjs';
 export const eventTimingsForTreatment = ({treatment, ...time}) => resolveSceneEvents({scene:treatment.scene, ...time});
@@ -34,25 +34,37 @@ export const assertActionTimingsForTreatment = ({treatment, actionTimings, durat
 export const legalCueOptionsForTreatment = ({treatment, cues, cueRange, fixedBindings = [], fps = VIDEO_SPEC.fps}) => {
   const range = resolveCueRange({cueRange, cues});
   const targets = cueSyncTargetsForTreatment(treatment);
-  const pool = range.cues.flatMap(cue => ['start', 'end'].map(edge => ({cueId: cue.id, edge})))
-    .filter(item => (item.edge === 'start' ? cues.find(c => c.id === item.cueId).startMs
-      : cues.find(c => c.id === item.cueId).endMs) < range.endMs);
-  const toFrames = items => resolveCueBindingsToFrames({bindingSet: {items}, cues,
-    segmentStartMs: range.startMs, segmentEndMs: range.endMs, fps});
+  const pool = range.cues.flatMap(cue => ['start', 'end'].map(edge => ({cueId: cue.id, edge})));
+  const window = {segmentStartMs: range.startMs, segmentEndMs: range.endMs, fps};
+  const durationInFrames = frameSpanForMs({startMs: range.startMs, endMs: range.endMs, fps});
   const valid = items => {
     if (items.length > targets.length || items.some((item, i) =>
       item.target !== targets[i].target || item.action !== targets[i].action)) return false;
     try {
-      const timed = toFrames(items);
-      return timed.every((item, i) => item.frame >= 0 && (!i || item.frame >= timed[i - 1].frame));
+      const times = items.map(({cueId, edge}) => resolveCueBoundary({cueId, edge, cues: range.cues}).timeMs);
+      // Preserve source order before different instants can round to the same frame.
+      if (times.some((timeMs, i) => i > 0 && timeMs < times[i - 1])) return false;
+      const actionTimings = items.map(({target, action}, i) => ({
+        target, action, frame: frameForTime({timeMs: times[i], ...window})
+      }));
+      const boundTargets = new Set(items.map(item => item.target));
+      const events = treatment.scene?.events ?? [];
+      resolveSceneEvents({
+        scene: {events: items.length === targets.length ? events : events.filter(event => boundTargets.has(event.target))},
+        actionTimings, durationInFrames, fps
+      });
+      return true;
     } catch { return false; }
   };
   const nextTarget = targets[fixedBindings.length] ?? null;
   const good = targets.length > 0 && valid(fixedBindings);
-  return {complete: good && !nextTarget, nextTarget,
-    legalOptions: good && nextTarget ? pool.map(item => ({...nextTarget, ...item}))
-      .filter(item => valid([...fixedBindings, item])) : [],
-    cuePool: pool, recommendedPlan: [], diagnostics: good ? [] : ['先形成观看变化，并修正无效绑定']};
+  const legalOptions = good && nextTarget ? pool.map(item => ({...nextTarget, ...item}))
+    .filter(item => valid([...fixedBindings, item])) : [];
+  const diagnostics = [];
+  if (!good) diagnostics.push('检查已写入的观看变化、Cue顺序与动作时刻');
+  else if (nextTarget && !legalOptions.length) diagnostics.push(`${nextTarget.target} 没有符合顺序和动作时窗的Cue`);
+  return {complete: good && !nextTarget, nextTarget, legalOptions, cuePool: pool,
+    recommendedPlan: [], diagnostics};
 };
 
 export const inspectDirectorAuthorability = ({cueRange, cues, previousTemplateId, fps = VIDEO_SPEC.fps}) => {

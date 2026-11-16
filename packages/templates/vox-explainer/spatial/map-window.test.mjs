@@ -38,10 +38,9 @@ test('数据地图经正式Renderer离线及冻结RAF绘制、双图隔离、逆
         const animation = `
           const data = ${JSON.stringify(data)};
           const camera = {center: [132, 33.3], zoom: 6.5};
-          const box = {x: 20, y: 30, width: 640, height: 400};
+          const box = {x: 20, y: 30, width: 640, height: 400, rotate: .8};
           const map = spatial.createMapWindow({element: select('#map'), data, camera, box});
-          const second = spatial.createMapWindow({element: select('#map'), data, camera,
-            box: {...box, x: 900, width: 350, height: 250}});
+          const second = spatial.createMapWindow({element: select('#map'), data, camera});
           const crossing = spatial.createMapWindow({element: select('#map'), data: ${JSON.stringify(crossingData)},
             camera: {center: [181, -17], zoom: 5}, box: {x: 0, y: 600, width: 300, height: 200},
             regions: {type: 'FeatureCollection', features: [{type: 'Feature', id: 0,
@@ -49,7 +48,9 @@ test('数据地图经正式Renderer离线及冻结RAF绘制、双图隔离、逆
               geometry: {type: 'Polygon', coordinates: [[[180.6,-17.5],[181.5,-17.5],
                 [181.5,-16.5],[180.6,-16.5],[180.6,-17.5]]]}}]}});
           window.maps = [map, second, crossing];
-          map.overlay.innerHTML = '<circle r="8" fill="red"/><text y="-15">锚点</text>';
+          map.overlay.innerHTML = '<circle r="8" fill="red"/><text class="vox-label vox-text-outline" y="-15">锚点</text>'
+            + '<text id="place" class="vox-label" y="100" font-size="56" fill="#282e27">地点</text>';
+          second.overlay.innerHTML = '<text class="vox-label vox-text-outline" y="60">海面</text>';
           const view = {...box};
           timeline.to(view, {x: 140, width: 520, duration: 1, ease: 'none'}, cue('M001'));
           const state = {progress: 0};
@@ -65,22 +66,38 @@ test('数据地图经正式Renderer离线及冻结RAF绘制、双图隔离、逆
             const p = map.project([132, 33.3]);
             map.overlay.querySelector('circle').setAttribute('cx', p[0]);
             map.overlay.querySelector('circle').setAttribute('cy', p[1]);
+            map.overlay.querySelector('#place').setAttribute('fill', u > .5 ? '#625b4d' : '#282e27');
             window.anchor = map.screenPoint([132, 33.3]);
           });`;
         const segment = {assetRefs: [], renderData: {voxExplainer: {policy: {width: 1920, height: 1080, fps: 60},
           appearance: {palette: {}, fonts: {}}, actionTimings: [{target: 'M001', frame: 0}], durationInFrames: 120,
-          scene: {markup: '<div id="map"></div>', animation}}}};
+          scene: {markup: '<div id="map"></div><svg><text class="vox-label vox-text-outline">锚点</text></svg>', animation}}}};
+        const labelStyle = label => {
+          const style = getComputedStyle(label);
+          return [style.fontSize, style.fill, style.stroke];
+        };
         const read = () => {
           const map = window.maps[0], circle = map.overlay.querySelector('circle');
           const rect = circle.getBoundingClientRect();
+          const stage = element.firstChild;
           return {image: map.host.shadowRoot.querySelector('canvas').toDataURL(),
+            labelStyle: labelStyle(map.overlay.querySelector('text')),
+            placeStyle: labelStyle(map.overlay.querySelector('#place')).slice(0, 2),
+            outerLabelStyle: labelStyle(stage.shadowRoot.querySelector('text')),
+            defaultSurface: getComputedStyle(stage).backgroundColor,
             anchor: window.anchor, centre: [rect.x + rect.width/2, rect.y + rect.height/2],
+            mapSize: map.size, hasPaper: Boolean(map.host.shadowRoot.querySelector('#paper-frame')),
             svg: map.overlay.outerHTML, animationTime: window.annotationAnimation.currentTime,
             animationState: window.annotationAnimation.playState,
             crossing: window.maps[2].project([181,-17])[0] - window.maps[2].size.width/2, second: window.maps[1].host.shadowRoot.querySelector('canvas').toDataURL()};
         };
         let renderer = VoxRenderer.createRenderer({element, segment});
         await renderer.seek(0).catch(error => { throw new Error(error.stack ?? String(error)); }); const first = read();
+        const resized = window.maps[0].seek({box: {x: 140, y: 30, width: 520, height: 400, rotate: .8}});
+        // Let seek begin, but sample before its worker and redraw complete.
+        await Promise.resolve();
+        const resizing = read();
+        await resized;
         await renderer.seek(60); const later = read();
         await renderer.seek(0); const reverse = read();
         const map = window.maps[0], empty = {type: 'FeatureCollection', features: []};
@@ -124,14 +141,44 @@ test('数据地图经正式Renderer离线及冻结RAF绘制、双图隔离、逆
         await renderer.seek(0); const defaultRestored = read().image === first.image;
         const regionChecks = {base, coloured, recoloured, hidden, changedBoundary, removed,
           reverseEqual: colouredImage === restoredImage, regionsIsolated, defaultRestored, crossingPixel};
+        const [,plain] = window.maps;
+        const plainRoot = plain.host.shadowRoot;
+        const pixel = document.createElement('canvas'); pixel.width = pixel.height = 1;
+        const ctx = pixel.getContext('2d');
+        const [seaX, seaY] = plain.project([132,32.6]);
+        ctx.drawImage(plainRoot.querySelector('canvas'), Math.floor(seaX), Math.floor(seaY), 1, 1, 0, 0, 1, 1);
+        const plainView = {size: plain.size, filter: getComputedStyle(plain.host).filter,
+          mapPosition: plain.host.style.transform, hasPaper: Boolean(plainRoot.querySelector('#paper-overlay, #paper-frame')),
+          label: labelStyle(plain.overlay.querySelector('text')), water: [...ctx.getImageData(0,0,1,1).data]};
         const hosts = window.maps.map(map => map.host);
         renderer.dispose(); renderer.dispose();
         const released = hosts.every(host => !host.isConnected && !host.shadowRoot.querySelector('canvas'));
         window.annotationAnimation = null;
         renderer = VoxRenderer.createRenderer({element, segment});
         await renderer.seek(0); const remount = read(); renderer.dispose();
-        return {first, later, reverse, remount, released, regionChecks};
+        window.annotationAnimation = null;
+        segment.renderData.voxExplainer.appearance.palette = {background: '#243440', paper: '#172431', ink: '#f8efe0'};
+        renderer = VoxRenderer.createRenderer({element, segment});
+        await renderer.seek(0); const dark = read(); renderer.dispose();
+        return {first, resizing, later, reverse, remount, dark, released, regionChecks, plainView};
       }, {data, crossingData});
+      assert.equal(result.first.defaultSurface, 'rgb(231, 223, 206)');
+      assert.equal(result.first.hasPaper, true);
+      assert.equal(result.later.hasPaper, true);
+      assert.equal(result.first.mapSize.width, 608);
+      assert.equal(result.first.mapSize.height, 368);
+      assert.ok(result.resizing.image === result.first.image, '重绘完成前保留上一帧底图');
+      assert.deepEqual(result.resizing.mapSize, result.first.mapSize, '重绘完成前保留上一帧纸窗尺寸');
+      assert.deepEqual(result.later.mapSize, {width:490,height:370,pad:15});
+      assert.deepEqual(result.first.labelStyle, ['46px', 'rgb(48, 55, 47)', 'rgb(247, 241, 227)']);
+      assert.deepEqual(result.first.placeStyle, ['56px', 'rgb(40, 46, 39)'], '地图文字保留作者设定的字号和字色');
+      assert.deepEqual(result.later.placeStyle, ['56px', 'rgb(98, 91, 77)'], '地图文字随画面状态改变字色');
+      assert.deepEqual(result.first.labelStyle, result.first.outerLabelStyle);
+      assert.deepEqual(result.dark.outerLabelStyle, ['46px', 'rgb(248, 239, 224)', 'rgb(23, 36, 49)']);
+      assert.deepEqual(result.dark.labelStyle, result.first.labelStyle, '地图字色跟随浅色地图纸面');
+      assert.deepEqual(result.plainView, {size:{width:1920,height:1080,pad:0}, filter:'none',
+        mapPosition:'translate(0px, 0px) rotate(0deg)', hasPaper:false,
+        label:['46px', 'rgb(48, 55, 47)', 'rgb(247, 241, 227)'], water:[190,210,223,255]});
       assert.ok(Math.abs(result.first.crossing) < .1, '跨日期线镜头不被强制夹回单个世界边界');
       assert.notEqual(result.first.image, result.later.image);
       assert.deepEqual(result.first, result.reverse);
@@ -142,7 +189,7 @@ test('数据地图经正式Renderer离线及冻结RAF绘制、双图隔离、逆
       assert.equal(result.later.animationState, 'paused');
       // Body has its default 8px margin; parent renderer fills the viewport.
       for (const frame of [result.first, result.later]) for (let i = 0; i < 2; i++)
-        assert.ok(Math.abs(frame.centre[i] - frame.anchor[i]) < .1, '纸张旋转与移动后锚点同源');
+        assert.ok(Math.abs(frame.centre[i] - frame.anchor[i]) < .1, '地图旋转与移动后锚点同源');
       assert.equal(result.released, true);
       const area = result.regionChecks;
       assert.deepEqual(area.crossingPixel,[68,119,204,255], '创建时区域与数字id=0在日期线另一侧正确绘制');

@@ -12,7 +12,6 @@
         "program-narration-synthesize",
         "ai-subtitles",
         "program-narration-finalize",
-        "ai-understanding",
         "ai-visual-director",
         "ai-beat-treatment",
         "ai-segment",
@@ -24,7 +23,7 @@
       ]
     },
     "projection": {
-      "enum": ["artifact", "understanding", "visual-plan", "treatment", "segment"]
+      "enum": ["artifact", "visual-plan", "treatment", "segment"]
     },
     "reads": {
       "type": "array",
@@ -93,7 +92,6 @@
           "primitive": {
             "enum": [
               "ai-narration",
-              "ai-understanding",
               "ai-visual-director",
               "ai-segment",
               "ai-video-plan"
@@ -113,8 +111,7 @@
         {"properties": {"primitive": {"const": "program-narration-synthesize"}, "projection": {"const": "artifact"}, "writes": {"const": ["tts-result"]}}},
         {"properties": {"primitive": {"const": "ai-subtitles"}, "projection": {"const": "artifact"}, "writes": {"const": ["subtitle-correction"]}}},
         {"properties": {"primitive": {"const": "program-narration-finalize"}, "projection": {"const": "artifact"}, "writes": {"const": ["narration-package"]}}},
-        {"properties": {"primitive": {"const": "ai-understanding"}, "projection": {"const": "understanding"}, "writes": {"const": ["storyboard-understanding-section"]}}},
-        {"properties": {"primitive": {"const": "ai-visual-director"}, "projection": {"const": "visual-plan"}, "writes": {"const": ["storyboard-visual-plan"]}}},
+        {"properties": {"primitive": {"const": "ai-visual-director"}, "projection": {"const": "visual-plan"}, "writes": {"const": ["storyboard-understanding-section", "storyboard-visual-plan"]}}},
         {"properties": {"primitive": {"const": "ai-beat-treatment"}, "projection": {"const": "treatment"}, "writes": {"const": ["storyboard-treatment", "storyboard-feature-result", "storyboard-author-quotes"]}}},
         {"properties": {"primitive": {"const": "ai-segment"}, "projection": {"const": "segment"}, "writes": {"const": ["episode-package-opener"]}}},
         {"properties": {"primitive": {"const": "ai-video-plan"}, "projection": {"const": "artifact"}, "writes": {"const": ["video-plan"]}}},

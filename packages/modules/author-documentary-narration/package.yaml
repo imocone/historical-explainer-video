@@ -56,6 +56,7 @@
   ],
   "runtimeResources": [
     "../author-narration/scripts/author-handoff.mjs",
+    "../author-narration/scripts/agy-run.mjs",
     "../author-narration/references/author-handoff.md",
     "../author-narration/scripts/find-evidence.mjs",
     "references/evidence-and-query.md",

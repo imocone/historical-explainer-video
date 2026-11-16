@@ -5,6 +5,7 @@ import {
 import { frameSpanForMs, VIDEO_SPEC } from "../../video-spec.mjs";
 import { fullframeMotionBudgetForCueOption } from "./cue-policy-runtime.mjs";
 import { FULLFRAME_RENDER_POLICY } from "./render-policy.mjs";
+import { FULLFRAME_VIEWPORT_POLICY } from "./camera/geometry.mjs";
 import { inspectFullframeAuthorability } from "./authorability.mjs";
 import { fullframeTransitionCapacityFor } from "./timing-runtime.mjs";
 import { fullframeRuntimeTimingForAuthorUnits, fullframeTransitionHandoffForAuthorUnit } from "./camera/author-transition-handoff.mjs";
@@ -125,14 +126,22 @@ const projectEpisodeReferences = ({ albumPlan, acceptedBeats, episodeCues, autho
 export const refreshAuthorReferences = async ({ workOrder, workOrderPath }) => {
   const workspaceRoot = deriveCandidateWorkspaceRoot({ workOrder,
     candidatePath: path.join(path.dirname(path.resolve(workOrderPath)), path.basename(workOrder.candidatePath)) });
-  const [storyboard, inspected] = await Promise.all([
+  const [storyboard, inspected, programPlan] = await Promise.all([
     readData(getEpisodePaths(workspaceRoot, workOrder.subject.id).storyboard),
-    inspectP3Input({ root: workspaceRoot, episodeId: workOrder.subject.id })
+    inspectP3Input({ root: workspaceRoot, episodeId: workOrder.subject.id }),
+    readData(getProgramPaths(workspaceRoot).programPlan)
   ]);
+  const authorUnits = authorUnitsForStoryboard(storyboard);
+  const planning = inputs => projectFramePlanning({ beats: storyboard.beats,
+    beforeBeatId: inputs.authorUnit.beatIds[0], episodeCues: inspected.cues,
+    authorUnits, openerTemplate: programPlan.openerTemplate });
   return {
-    templateContext: projectEpisodeReferences({ albumPlan: storyboard.albumPlan, acceptedBeats: storyboard.beats,
-      episodeCues: inspected.cues, authorUnits: authorUnitsForStoryboard(storyboard),
-      beforeBeatId: workOrder.inputs.authorUnit.beatIds[0] }),
+    templateContext: { ...projectEpisodeReferences({ albumPlan: storyboard.albumPlan, acceptedBeats: storyboard.beats,
+      episodeCues: inspected.cues, authorUnits,
+      beforeBeatId: workOrder.inputs.authorUnit.beatIds[0] }), ...planning(workOrder.inputs) },
+    ...(workOrder.inputs.authorBatch ? { authorBatch: { ...workOrder.inputs.authorBatch,
+      members: workOrder.inputs.authorBatch.members.map(member => ({ ...member,
+        inputs: { ...member.inputs, templateContext: { ...member.inputs.templateContext, ...planning(member.inputs) } } })) } } : {}),
     previousTreatment: await readPreviousTreatment({ workspaceRoot, task: workOrder })
   };
 };
@@ -193,7 +202,8 @@ const projectFramePlanning = ({ beats, beforeBeatId, episodeCues, authorUnits, o
   const inspection = inspectFullframeAuthorability({
     cueRange: beat.cueRange,
     cues: episodeCues,
-    label: beat.id
+    label: beat.id,
+    singlePicture: Object.hasOwn(beat, "incomingTransition")
   });
   const firstCueId = beat.cueRange?.[0];
   const range = resolveCueRange({ cueRange: beat.cueRange, cues: episodeCues });
@@ -229,6 +239,7 @@ const projectFramePlanning = ({ beats, beforeBeatId, episodeCues, authorUnits, o
     };
   };
   return {
+    ...(Object.hasOwn(beat, "incomingTransition") ? { directedTransition: beat.incomingTransition } : {}),
     incomingTransitionSupported: boundary > 0 && beats[boundary - 1]?.templateId === "fullframe-narrative",
     cueOptions: {
       frameA: [{
@@ -244,8 +255,11 @@ const projectFramePlanning = ({ beats, beforeBeatId, episodeCues, authorUnits, o
       }))
     },
     motionBudgets: {
+      maximumRenderScale: FULLFRAME_VIEWPORT_POLICY.maximumRenderScale,
+      motionTypes: ["push-in", "pull-out", "traverse"],
       speedRange: {
         minimumRatio: FULLFRAME_RENDER_POLICY.motion.minimumSpeedRatio,
+        maximumRatio: FULLFRAME_RENDER_POLICY.motion.maximumSpeedRatio,
         referenceTraversePerSecond: FULLFRAME_RENDER_POLICY.motion.traverseNormalizedSpeedPerSecond,
         referenceZoomPerSecond: FULLFRAME_RENDER_POLICY.motion.zoomScaleSpeedPerSecond
       },

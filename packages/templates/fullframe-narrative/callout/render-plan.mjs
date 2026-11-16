@@ -253,7 +253,7 @@ export const placeCalloutOverlays = ({ overlays, segments, policy }) => {
     }
     const failedStates = new Set();
     let deepestFailure = componentStart;
-    const place = (at, previous) => {
+    const place = (at, previous, allowEdgePositions) => {
       if (at === componentEnd) return true;
       const entry = entries[at];
       const active = previous.filter((item) => entries[item.at].endFrame > entry.startFrame);
@@ -263,19 +263,23 @@ export const placeCalloutOverlays = ({ overlays, segments, policy }) => {
         ...entry,
         policy,
         excludedRectangles: active.map((item) => item.rectangle),
-        preferFarFrom: entry.pairedWith === null ? null : placements.get(entry.pairedWith)
+        preferFarFrom: entry.pairedWith === null ? null : placements.get(entry.pairedWith),
+        allowEdgePositions: allowEdgePositions && entry.callout.kind !== "historical-quote"
       });
       for (const rectangle of candidates) {
         placements.set(at, rectangle);
-        if (place(at + 1, [...active, { at, rectangle }])) return true;
+        if (place(at + 1, [...active, { at, rectangle }], allowEdgePositions)) return true;
       }
       placements.delete(at);
       deepestFailure = Math.max(deepestFailure, at);
       failedStates.add(state);
       return false;
     };
-    if (!place(componentStart, [])) {
-      throw new Error(`${entries[deepestFailure].label} 四角候选框均与当前显示期间的观看几何或其它解说框冲突；这不是实图主体识别或任意位置无解证明`);
+    if (!place(componentStart, [], false)) {
+      failedStates.clear();
+      if (!place(componentStart, [], true)) {
+        throw new Error(`${entries[deepestFailure].label} 安全区候选位置均与当前显示期间的观看几何或其它解说框冲突；这不是实图主体识别或任意位置无解证明`);
+      }
     }
     componentStart = componentEnd;
   }

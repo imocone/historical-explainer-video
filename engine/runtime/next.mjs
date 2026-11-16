@@ -58,7 +58,8 @@ async function prepareNext({
   adoptCoverExamples = false,
   adoptCoverImages = null,
   coverVariants = [],
-  authorizePaidTts = false
+  authorizePaidTts = false,
+  replaceTtsTask = null
 }) {
   ({ redesignBeatIds } = await validateNextOptions({
     stageId,
@@ -91,6 +92,7 @@ async function prepareNext({
     adoptCoverImages,
     coverVariants,
     authorizePaidTts,
+    replaceTtsTask,
   }));
   if (nodeId && stageId !== "p4") throw new Error("--node只用于P4");
   if (reviseVideo && nodeId && nodeId !== "video") throw new Error("视频重作只能选择video节点");
@@ -135,6 +137,14 @@ async function prepareNext({
     preResolvedP1Replacement
   });
   let preExecuted = [];
+  if (replaceTtsTask !== null) {
+    if (current.kind !== "task" || current.runner !== "program" || current.node.id !== "synthesize-narration")
+      throw new Error("当前不在P2配音提交相位，保留原任务");
+    const entry = await importModule(current.entryPath ?? path.resolve(current.record.directory, current.record.manifest.programEntry));
+    await entry.replaceUnknown({ root: workspaceRoot, episodeId, fingerprint: replaceTtsTask,
+      task: programInvocationTask(current, { authorizePaidTts }) });
+    current = await resolveStageCurrent({ root, workspaceRoot, episodeId, stageId, model });
+  }
   if (replaceCoverTask) {
     if (current.kind === "task" && current.runner === "program" && current.programPhase === "cover") {
       const entry = await importModule(current.entryPath);

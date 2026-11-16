@@ -1,5 +1,4 @@
 import { anchoredFrameForMs, anchoredFrameSpanForMs } from "../../../video-spec.mjs";
-import { endingDurationInFrames } from "./ending.mjs";
 import { boundaryOverlayRuntimeTiming, preEnteredSegmentTiming } from "./transitions.mjs";
 import { isExplainerTemplateId } from "../../../explainer-template-selection.mjs";
 
@@ -25,11 +24,11 @@ export const compositionTimeline = props => {
       :anchoredFrameSpanForMs({startMs:segment.startMs,endMs:segment.endMs,anchorMs,fps:props.fps})};
   });
   if(!Array.isArray(props.transitions))throw new Error('P4 缺少已解析的跨片段转场计划');
-  const durationFrames = Math.max(1, Math.round(props.durationMs * props.fps / 1000));
+  const durationFrames = Math.max(1, frameAt(props.durationMs));
   const fromFrame = props.preview?.fromFrame ?? 0;
   const toFrame = props.preview?.toFrame ?? durationFrames;
   const endingStart = props.ending ? frameAt(props.ending.startMs) : null;
-  const endingEnd = props.ending ? endingStart + endingDurationInFrames(props.ending) : null;
+  const endingEnd = props.ending ? frameAt(props.ending.fadeEndMs) : null;
   const byId = new Map(segments.map(segment => [segment.id, segment]));
   if(props.ending&&!byId.has(props.ending.afterSegmentId))throw new Error(`整集结尾找不到最终片段: ${props.ending.afterSegmentId}`);
   const scenes = segments.map(segment => {
@@ -37,10 +36,9 @@ export const compositionTimeline = props => {
       entranceLeadFrames: segment.appliedEntranceLeadFrames, exitTailFrames: segment.appliedExitTailFrames });
     const handoff = segment.templateId === "cinematic-video" ? props.transitions.find(transition =>
       transition.previousId === segment.id && isExplainerTemplateId(byId.get(transition.nextId)?.templateId)) : null;
-    const endFrame = handoff ? handoff.startFrame + (handoff.explainerPush ? handoff.durationInFrames : 0) : Math.max(timing.from + timing.durationInFrames,
-      segment.id === props.ending?.afterSegmentId ? endingEnd : 0);
+    const endFrame = handoff ? handoff.startFrame + (handoff.explainerPush ? handoff.durationInFrames : 0)
+      : timing.from + timing.durationInFrames;
     return { id: `scene-${scenesId(segment.id)}`, role: "body", fromFrame: timing.from, endFrame,
-      freezeAt: segment.id === props.ending?.afterSegmentId ? timing.durationInFrames - 1 : null,
       segment: { ...segment, runtimeTiming: { semanticFrameOffset: timing.semanticFrameOffset,
         visualFrameOffset: segment.appliedVisualFrameOffset, cameraPrerollFrames: segment.appliedCameraPrerollFrames,
         exitTailFrames: segment.appliedExitTailFrames } } };

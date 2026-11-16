@@ -279,11 +279,11 @@ const assertAudioTracks = ({
       track.segmentType === "body" &&
       ending?.afterSegmentType === "body" &&
       ending.afterSegmentId === segments.at(-1)?.id &&
-      track.endMs === ending.startMs + ending.durationMs;
+      track.endMs === ending.fadeEndMs;
     const validBodyEndingSound = track.kind === 'sound-effect' && track.segmentType === 'body'
       && ending?.afterSegmentType === 'body' && ending.afterSegmentId === segments.at(-1)?.id
       && segments.some(segment => segment.id === track.sourceSegmentId && segment.segmentType === 'body')
-      && track.endMs <= ending.startMs + ending.durationMs;
+      && track.endMs <= ending.fadeEndMs;
     const bodyMusicFadeInMs = (track.fadeInFrames ?? 0) / fps * 1000;
     const validBodyMusicPreroll =
       track.kind === "background-music" &&

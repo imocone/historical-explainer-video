@@ -1,7 +1,10 @@
 import { readFileSync } from 'node:fs';
 import {route} from './geometry.mjs';
+import {gatehouse} from '../artwork/art.mjs';
+import {at, g, P} from '../artwork/drawing.mjs';
+import {guard, rider, rower} from '../artwork/people.mjs';
 
-// Artwork licenses and adaptations are documented in README.md.
+// Artwork licenses and adaptations are documented in docs/resources.md.
 // This helper runs during authoring; the treatment receives only static SVG.
 function unitGlyph(kind) {
   const svg = readFileSync(new URL(`./assets/unit-${kind}.svg`, import.meta.url), 'utf8');
@@ -9,17 +12,37 @@ function unitGlyph(kind) {
     .replaceAll('#303A37', 'var(--ink)');
 }
 
+const drawnUnitSizes = {'ancient-infantry': 220, 'ancient-cavalry': 230, raft: 240};
 const unitSizes = {
   infantry: 220, spearman: 220, archer: 220, cavalry: 210,
   cannon: 175, artillery: 175, machinegun: 170, tank: 210,
   ironclad: 220, warship: 240, destroyer: 230, transport: 225,
-  submarine: 220, aircraft: 190, wagon: 185
+  submarine: 220, aircraft: 190, wagon: 185,
+  ...drawnUnitSizes
 };
-const waterUnits = new Set(['ironclad', 'warship', 'destroyer', 'transport', 'submarine']);
+const waterUnits = new Set(['ironclad', 'warship', 'destroyer', 'transport', 'submarine', 'raft']);
 const infantry = unitGlyph('infantry');
 // A formation reads as a unit. The retained source figure still supplies its period detail.
 const infantryFormation = [[-14, 10, .73], [47, 10, .73], [24, 22, .86]]
   .map(([x, y, scale]) => `<g transform="translate(${x} ${y}) scale(${scale})">${infantry}</g>`).join('');
+
+const ancientInfantry = g('',at(guard({robe:'currentColor',variant:2,stride:42}),38,149,.46),'','opacity=".82"')
+  + at(guard({robe:'currentColor',stride:6}),111,152,.48);
+
+const mountedRider = unitGlyph('horse')
+  + g('',P('M106 60Q124 71 145 68M109 64Q129 76 145 68','none','#604c3c',1.45)
+    + P('M74 82L76 113','none','#9a7958',1.8),'','data-part="reins"')
+  + at(rider({robe:'currentColor'}),72,118.96,.37)
+  + P('M74 112Q71 116 75 117H80Q84 116 81 112','none','#b29a75',1.35,'data-part="stirrup"');
+
+const raft = unitGlyph('raft-hull')
+  + g('',P('M102 43L131 124','none','#6a5038',4.4)
+    + P('M103 43L130 121','none','#dfb780',1.3)
+    + P('M128 113L135 118L142 134Q140 141 134 139L128 123Z','#b48758','#303a37',1.65)
+    + P('M132 121L138 135','none','#e2b981',1.35),'','data-part="oar"')
+  + at(rower({robe:'currentColor'}),72,119,.41);
+
+const authorDrawnUnits = {'ancient-infantry': ancientInfantry, 'ancient-cavalry': mountedRider, raft};
 
 // Shape and local color planes carry the material. No whole-object noise/tint pass.
 let illustrationSequence = 0;
@@ -84,8 +107,9 @@ const barrel = (x,y,s=1) => `<g transform="translate(${x} ${y}) scale(${s})" str
   <path d="M-6-12Q0-9 6-12M-7-4Q0-1 7-4M-3-14Q-5-7-3 0M1-13V1" fill="none" stroke="#5d5941" stroke-width=".55"/>
 </g>`;
 
-const facilitySizes = { settlement: 150, port: 100, station: 90 };
+const facilitySizes = { settlement: 150, port: 100, station: 90, gatehouse: 210 };
 export const symbols = {
+  gatehouse: `<g transform="translate(64 112) scale(.37)">${gatehouse()}</g>`,
   port: `${dock}${warehouse}${barrel(104,87,.85)}${barrel(114,82,.65)}
     <g stroke="var(--ink)" stroke-width=".5" fill="none"><path d="M7 103Q27 108 44 111M32 115L63 122M91 120L117 103" stroke="#7baebe"/><path d="M92 92Q105 89 106 93Q106 98 97 98Q91 96 92 92M94 94Q101 92 103 94" stroke="#5f5940"/></g>`,
   station: `${warehouse}<g stroke="var(--ink)" stroke-width=".65">
@@ -98,7 +122,7 @@ export const symbols = {
     ${house(43,58,.85)}${house(82,66,.9)}${house(19,85,.75)}${house(58,102,1)}${house(102,99,.85)}
     <path d="M5 93l3-5l3 4M34 107l3-4l4 3M104 77l3-6l4 4M88 115l3-4l4 2" fill="none" stroke="#3e713b" stroke-width=".6"/>
   </g>`,
-  ...Object.fromEntries(Object.keys(unitSizes).map(kind => [kind, kind === 'infantry' ? infantryFormation : unitGlyph(kind)]))
+  ...Object.fromEntries(Object.keys(unitSizes).map(kind => [kind, kind === 'infantry' ? infantryFormation : authorDrawnUnits[kind] ?? unitGlyph(kind)]))
 };
 
 // Static treatment data: the ground point stays at (0, 0), including while moving.
@@ -137,7 +161,7 @@ export function unitCounter(kind, color = 'accent', size = 140) {
 }
 
 // Paper separation is a fine edge; there is no second flat-icon branch.
-export function unitSymbol(kind, color = 'accent', size = 210) {
+export function unitSymbol(kind, color = 'accent', size = drawnUnitSizes[kind] ?? 210) {
   if (!unitSizes[kind]) throw new Error(`未知兵种：${kind}`);
   const floating = waterUnits.has(kind), airborne = kind === 'aircraft';
   const anchor = airborne ? 85 : floating ? 119 : 153;

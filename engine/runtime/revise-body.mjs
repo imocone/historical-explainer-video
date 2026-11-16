@@ -51,7 +51,7 @@ export const cancelDirectorRevision = async ({ workspaceRoot, episodeId }) => {
     await assertProjectPaths({ root: workspaceRoot, label: "撤销导演临时材料", files: [scratchPath] });
   } else if (values.get(workPaths.candidate) !== undefined) throw new Error("候选缺少所属工作单，保留现场");
   const cleanup = [workPaths.workOrder, workPaths.candidate, requestPath];
-  if (values.get(bodyPath) !== undefined) {
+  if (request.replacesBodyRedesignSha256 && values.get(bodyPath) !== undefined) {
     if (hashObject(values.get(bodyPath)) !== request.replacesBodyRedesignSha256) {
       throw new Error("另有未被放弃的正文请求，不能随导演修订清理");
     }
@@ -99,6 +99,8 @@ export const prepareDirectorRevision = async ({ root, workspaceRoot, episodeId, 
       throw new Error("已有导演修订范围；请用普通 next --stage p3 续跑，不能覆盖进行中的意见");
     }
   } else {
+    if (await exists(work.returnRequest("understand")))
+      throw new Error("已有合并前的理解返工，请先用普通 next --stage p3 续接到导演");
     for (const file of returnPaths.filter((file) => file !== bodyPath && file !== requestPath)) {
       if (await exists(file)) throw new Error("P3仍有其它返工请求，不能发起导演局部修订");
     }
@@ -111,18 +113,20 @@ export const prepareDirectorRevision = async ({ root, workspaceRoot, episodeId, 
     if (!body && (saved || await exists(work.candidate))) throw new Error("P3仍有未收口工作单或候选，不能发起导演修订");
     for (const segmentWork of await listAuthorWorkPaths(paths)) {
       if (!await exists(segmentWork.workOrder) && !await exists(segmentWork.candidate)) continue;
-      if (!body || !replaceBodyRedesign || !await exists(segmentWork.workOrder))
-        throw new Error("P3仍有未收口分段工作，先完成或明确放弃对应正文重作");
+      if (!await exists(segmentWork.workOrder)) throw new Error("P3分段候选缺少所属工作单，保留现场");
       const signed = await readData(segmentWork.workOrder), revision = signed.inputs?.p3BodyRedesign;
       const { taskDigest, ...base } = signed;
-      if (hashObject(base) !== taskDigest || !revision || revision.reason !== body.reason
-        || revision.baselineVisualPlanSha256 !== body.baselineVisualPlanSha256)
-        throw new Error("分段工作不属于所要替代的正文重作，保留现场");
+      if (hashObject(base) !== taskDigest || signed.stageId !== "p3" || signed.nodeId !== "author"
+        || signed.subject?.id !== episodeId || (body ? (revision?.revisionScope !== P3_BODY_REDESIGN_SCOPE
+          || revision.reason !== body.reason || !body.pendingAuthorUnitIds.includes(signed.inputs.authorUnit?.id))
+          : Boolean(revision))) {
+        throw new Error("分段工作与当前正文任务不一致，保留现场");
+      }
       await assertStageSettled(workspaceRoot, segmentWork.work);
     }
     if (body) {
       assertP3BodyRedesignPreservesVisualPlan({ baselineSha256: body.baselineVisualPlanSha256,
-        candidateSha256: hashObject(visualPlan) });
+        visualPlan });
       if (saved) {
         const { taskDigest, ...base } = saved;
         if (hashObject(base) !== taskDigest || saved.stageId !== "p3" || saved.nodeId !== "author"
@@ -155,7 +159,7 @@ export const prepareDirectorRevision = async ({ root, workspaceRoot, episodeId, 
       throw error;
     }
   }
-  if (await exists(bodyPath)) {
+  if (request.replacesBodyRedesignSha256 && await exists(bodyPath)) {
     if (hashObject(await readData(bodyPath)) !== request.replacesBodyRedesignSha256) {
       throw new Error("待替代的正文请求已变化，保留现场");
     }
@@ -187,6 +191,7 @@ const prepareBodyRedesign = async ({
   current
 }) => {
   if (redesignBody) {
+    if (current.kind === "blocked-upstream") return { current };
     const paths = getEpisodePaths(workspaceRoot, episodeId);
     const workPaths = getStageWorkPaths(paths, "p3");
     const requestPath = workPaths.returnRequest("author");
@@ -239,7 +244,7 @@ const prepareBodyRedesign = async ({
       const storyboard = await readData(paths.storyboard);
       assertP3BodyRedesignPreservesVisualPlan({
         baselineSha256: request.baselineVisualPlanSha256,
-        candidateSha256: hashObject(directorResultSlice(storyboard))
+        visualPlan: directorResultSlice(storyboard)
       });
     } else {
       const storyboard = await readData(paths.storyboard);

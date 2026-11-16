@@ -16,7 +16,7 @@
 | 149.7—171.2秒 | 两个年份与置官关系变化 | `reform` |
 | 171.2秒—结束 | 回到同一封地，收拢场景与问题 | `answer` |
 
-完整字幕、词边界和场景时间保存在[timing.json](timing.json)。
+[timing.json](timing.json)记录字幕和场景起止，词边界在各场景的 `words` 中。用场景名在 `scenes.mjs` 找构图和图件，在 `animate.js` 查各阶段怎样展开。
 
 ## 源码
 
@@ -24,20 +24,18 @@
 |---|---|
 | [scenes.mjs](src/scenes.mjs) | 整片构图、字组、图层与场景 |
 | [animate.js](src/animate.js) | 主体动作、取景、文字时序与交接 |
-| [art.mjs](src/art.mjs) | 建筑、器物、工坊、聚落与环境 |
-| [people.mjs](src/people.mjs)、[animate-people.js](src/animate-people.js) | 人物形体、姿态与动作 |
+| [art.mjs](src/art.mjs) | 本片工坊、聚落、环境和共用图件的场景组合 |
+| [animate-people.js](src/animate-people.js) | 本片人物姿态与动作 |
 | [map.mjs](src/map.mjs)、[map-data.json](assets/map-data.json) | 地图几何、地形与绘制 |
-| [drawing.mjs](src/drawing.mjs) | SVG绘制函数 |
 
-## 预览与复现
+人物、建筑与器物使用模板的[SVG底稿](../../references/art.md#svg底稿与改绘)。
 
-从仓库根目录运行，构建只写指定输出目录：
+## 工程复现
+
+维护案例工程时，可从仓库根目录运行构建，结果写入指定目录。
 
 ```bash
 node packages/templates/vox-explainer/examples/seven-kingdoms/build.mjs /tmp/vox-seven-kingdoms
-npx hyperframes preview /tmp/vox-seven-kingdoms --background
 ```
 
-使用命令返回的完整作品预览地址播放。本仓库保留源码与预览入口，不附MP4。
-
-本机沿原`assetFile`入口使用已有音轨；公开`assets/mix.wav`为同长度静音占位，画面和字幕可独立播放。字体、GSAP和地图样式引用各自已有所有者，来源及许可见[CREDITS.md](CREDITS.md)。
+工程所用音轨、字体、地图数据及许可见[CREDITS.md](CREDITS.md)。

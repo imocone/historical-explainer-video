@@ -1,0 +1,33 @@
+{
+  "kind": "visual",
+  "id": "wet-watercolor",
+  "version": "1.0.0",
+  "catalog": {
+    "displayName": "湿画法水彩",
+    "purpose": "二维手绘叙事。用湿画法晕开远层，以苔绿、墨青和纸灰绿承托朱橙与金黄，在动作和关键器物上保留细笔与浓色。适合日常行动、城镇、风物与强调光色的场面。时代、人物、环境和照明取自当前题材。",
+    "rejectWhen": "节目要求摄影写实、硬边色块、精细工笔，或需要另一套明确设定的主色关系。"
+  },
+  "implements": [
+    {"moduleId": "produce-covers", "slotId": "visual", "majorVersion": 1},
+    {"moduleId": "render-video", "slotId": "visual", "majorVersion": 1},
+    {"moduleId": "author-video", "slotId": "visual", "majorVersion": 1},
+    {"moduleId": "produce-video-assets", "slotId": "visual", "majorVersion": 1},
+    {"moduleId": "author-beat", "slotId": "visual", "majorVersion": 1},
+    {"moduleId": "author-bookend", "slotId": "visual", "majorVersion": 1}
+  ],
+  "style": "style.json",
+  "productionProfiles": {
+    "fullframe-image": {"profileId": "wet-watercolor-fullframe-v1"},
+    "bookend-image": {"profileId": "wet-watercolor-bookend-v1"},
+    "cover-image": {"profileId": "wet-watercolor-cover-v1"}
+  },
+  "render": {"tokens": "render/tokens.json"},
+  "masterReference": {
+    "id": "courtyard",
+    "path": "references/assets/courtyard.png"
+  },
+  "supplementaryReferences": [
+    {"id": "river-landing", "path": "references/assets/river-landing.png"},
+    {"id": "market-stall", "path": "references/assets/market-stall.png"}
+  ]
+}

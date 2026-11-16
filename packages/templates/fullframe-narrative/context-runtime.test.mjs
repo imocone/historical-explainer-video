@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {projectAdjacentTreatment,projectAuthorContext,projectAuthorReferenceView} from './context-runtime.mjs';
 import {hashObject} from '../../program-utils.mjs';
+import {FULLFRAME_RENDER_POLICY} from './render-policy.mjs';
 
 const cues=[{id:1,startMs:0,endMs:6000,text:'看院门。'},
   {id:2,startMs:6000,endMs:12000,text:'看屋内。'}];
@@ -100,4 +101,10 @@ test('前序运动意图实际投递持续变速',()=>{
     acceptedBeats:beats,beforeBeatId:'B002'});
   const projected=context.priorVisuals[0].pictures[0].motionIntent;
   assert.deepEqual(projected.speedChanges,motion.speedChanges);
+  assert.deepEqual(context.motionBudgets.speedRange, {
+    minimumRatio: FULLFRAME_RENDER_POLICY.motion.minimumSpeedRatio,
+    maximumRatio: FULLFRAME_RENDER_POLICY.motion.maximumSpeedRatio,
+    referenceTraversePerSecond: FULLFRAME_RENDER_POLICY.motion.traverseNormalizedSpeedPerSecond,
+    referenceZoomPerSecond: FULLFRAME_RENDER_POLICY.motion.zoomScaleSpeedPerSecond
+  });
 });

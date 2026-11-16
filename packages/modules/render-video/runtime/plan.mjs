@@ -5,12 +5,11 @@ import { collectAuthoredMedia } from "../../../authored-media.mjs";
 import { resolveCueBoundary, resolveCueRange, validateCues } from "../../../cue-boundaries.mjs";
 import { withoutProducer } from "../../../program-utils.mjs";
 import { anchoredFrameForMs, anchoredFrameSpanForMs, VIDEO_SPEC } from "../../../video-spec.mjs";
-import { buildEpisodeEnding } from "./ending.mjs";
+import { buildEpisodeEnding, endingWindowForSegment } from "./ending.mjs";
 import { bodySegmentDescriptorsFor } from "./body-segments.mjs";
 import { featureRenderEntryLoaders } from "./feature-render-entries.mjs";
 import { templateRenderPlanLoaders } from "./template-render-plans.mjs";
-import { crossBeatTransitionPlan, resolveCrossBeatRuntimeTiming, explainerHandoffContext } from "./transitions.mjs";
-import { fullframeBoundaryFieldsFor } from "../../../templates/fullframe-narrative/camera/author-transition-handoff.mjs";
+import { bodyEditOverlapErrors, bodyEditWindows, bodyTransitionFieldsFor, resolveCrossBeatRuntimeTiming, explainerHandoffContext } from "./transitions.mjs";
 import { assertRealizedCameraRelations } from "../../../templates/fullframe-narrative/camera/transition.mjs";
 import { isNarrativeMedia } from "./narrative-transition.mjs";
 import { videoWindow } from "../../../templates/cinematic-video/timing.mjs";
@@ -119,7 +118,8 @@ async function buildRenderPlan({
     ? new Set(assetPreview.segmentIds)
     : null;
   const selected = (id) => !previewSegmentIds || previewSegmentIds.has(id)
-    || (storyboard.templateRuns?.find((run) => run.id === id)?.beatIds.every((beatId) => previewSegmentIds.has(beatId)) ?? false)
+    || (storyboard.templateRuns?.find((run) => run.id === id && isExplainerTemplateId(run.templateId))
+      ?.beatIds.some((beatId) => previewSegmentIds.has(beatId)) ?? false)
     || (videoPlan?.spans.find((span) => span.id === id)?.beatIds.every((beatId) => previewSegmentIds.has(beatId)) ?? false);
   const videoSpanByBeat = new Map();
   const videoWindows = new Map();
@@ -134,12 +134,6 @@ async function buildRenderPlan({
   const contextSegmentIds = new Set();
   let bodyAssetReferences = [];
   if (assetPreview) {
-    let previousMedia = null;
-    for (const segment of bodySegmentDescriptors) {
-      if (["fullframe-narrative", "cinematic-video"].includes(segment.templateId)) previousMedia = segment.id;
-      if (selected(segment.id) && isExplainerTemplateId(segment.templateId) && previousMedia)
-        contextSegmentIds.add(previousMedia);
-    }
     if (selected('opener') && storyboard.opener) {
       const entry = await templateRenderPlanFor(storyboard.opener.templateId);
       bodyAssetReferences = entry.bodyAssetReferencesForTreatment?.({ treatment: storyboard.opener }) ?? [];
@@ -206,14 +200,15 @@ async function buildRenderPlan({
     : 0;
   const bodyOffsetMs = openerDurationMs;
   const bodyEndMs = bodyOffsetMs + media.bodyDurationMs;
-  const contentEndMs = bodyEndMs;
   const ending = buildEpisodeEnding({
-    contentEndMs,
+    bodyOffsetMs,
+    narrationDurationMs: media.bodyDurationMs,
+    lastCueEndMs: cues.at(-1).endMs,
     afterSegmentId: bodySegmentDescriptors.at(-1)?.id,
     afterSegmentType: "body",
     fps
   });
-  const durationMs = contentEndMs + ending.durationMs;
+  const durationMs = ending.endMs;
 
   const assetsFor = ({
     segmentId,
@@ -407,7 +402,9 @@ async function buildRenderPlan({
     localStartMs = 0,
     localEndMs = null,
     beatIds = null,
-    templateRunId = null
+    templateRunId = null,
+    shots = [],
+    directedTransition
   }) => {
     const cleanTreatment = withoutProducer(treatment);
     const targetDurationMs = endMs - startMs;
@@ -428,9 +425,8 @@ async function buildRenderPlan({
         durationInFrames,
         startFrame: anchoredFrameForMs({ milliseconds: startMs, anchorMs: bodyOffsetMs, fps }),
         assetRefs: [],
-        ...fullframeBoundaryFieldsFor(templateId),
-        // Unselected scenes contribute timing, not an authored effect to this window.
-        incomingTransition: null,
+        ...bodyTransitionFieldsFor(templateId),
+        ...(directedTransition !== undefined ? { incomingTransition: directedTransition } : {}),
         ...(segmentType === "opener"
           ? { exitTransition: (await renderPolicyFor(templateId)).exitTransition }
           : {})
@@ -439,7 +435,8 @@ async function buildRenderPlan({
     const templateEntry = await templateRenderPlanFor(templateId);
     const bodyAssetReferences = templateEntry.bodyAssetReferencesForTreatment?.({ treatment: cleanTreatment });
     const assetRefs = templateEntry.authoredAssetsForTreatment
-      ? await templateEntry.authoredAssetsForTreatment({treatment: cleanTreatment, workspaceRoot: root, episodeId, segmentId: id})
+      ? await templateEntry.authoredAssetsForTreatment({treatment: cleanTreatment, workspaceRoot: root,
+        episodeId, segmentId: id, visualPackageId: visualPackage.id})
       : assetsFor({
       segmentId: id,
       treatment: segmentType === "body" ? cleanTreatment : null,
@@ -491,6 +488,7 @@ async function buildRenderPlan({
       fps,
       cues:segmentType==='body'?cues.filter(cue=>cue.startMs>=localStartMs&&cue.endMs<=localEndMs):[],
       cueStartMs:localStartMs??0,
+      shots,
       allowPendingEffectAnchors: Boolean(assetPreview),
       policy: await renderPolicyFor(templateId)
     });
@@ -552,7 +550,8 @@ async function buildRenderPlan({
       ...(templateRunId ? { templateRunId } : {}),
       ...(seriesTitle ? { seriesTitle } : {}),
       ...(entranceLeadFrames > 0 ? { entranceLeadFrames } : {}),
-      ...(incomingTransition ? { incomingTransition } : {}),
+      ...(directedTransition !== undefined ? { incomingTransition: directedTransition }
+        : incomingTransition ? { incomingTransition } : {}),
       ...(exitTransition ? { exitTransition } : {}),
       renderData,
       visualStyle
@@ -584,7 +583,9 @@ async function buildRenderPlan({
   }
   for (const descriptor of bodySegmentDescriptors) {
     if (descriptor.templateId === "cinematic-video") {
-      segments.push(videoSegments.get(descriptor.id));
+      const video = videoSegments.get(descriptor.id);
+      if (Object.hasOwn(descriptor, "incomingTransition")) video.incomingTransition = descriptor.incomingTransition;
+      segments.push(video);
       continue;
     }
     const local = localBodyTimes({ id: descriptor.id, cueRange: descriptor.cueRange, cues });
@@ -599,7 +600,9 @@ async function buildRenderPlan({
         localStartMs: local.startMs,
         localEndMs: local.endMs,
         beatIds: descriptor.templateRunId ? descriptor.beatIds : null,
-        templateRunId: descriptor.templateRunId ?? null
+        templateRunId: descriptor.templateRunId ?? null,
+        shots: descriptor.shots,
+        directedTransition: descriptor.incomingTransition
       })
     );
   }
@@ -611,16 +614,22 @@ async function buildRenderPlan({
   }
 
   const selectedSegment = selected;
-  ending.afterSegmentId = segments.at(-1).id;
   for (const [index, segment] of segments.entries()) {
     if (index > 0 && required(segment.id) && isNarrativeMedia(segments[index - 1]) && isNarrativeMedia(segment)
-      && !segment.incomingTransition) throw new Error(segment.id + " 缺少作者按前后字幕语义选择的全画幅入场转场");
+      && !Object.hasOwn(segment, "incomingTransition")) throw new Error(segment.id + " 缺少已定的全画幅入场接法");
   }
   const transitionResolution = resolveCrossBeatRuntimeTiming({
     segments,
-    transitions: crossBeatTransitionPlan(segments)
+    allowOverlappingEdits: Boolean(assetPreview)
   });
   segments.splice(0, segments.length, ...transitionResolution.segments);
+  const finalSegment = segments.at(-1);
+  finalSegment.appliedExitTailFrames = ending.motionTailFrames;
+  if (finalSegment.renderData?.voxExplainer) {
+    finalSegment.renderData.voxExplainer.ending = endingWindowForSegment({
+      ending, startFrame: finalSegment.startFrame, anchorMs: bodyOffsetMs, fps
+    });
+  }
 
   for (const segment of segments) {
     if (!required(segment.id) || segment.templateId !== "fullframe-narrative") continue;
@@ -696,20 +705,21 @@ async function buildRenderPlan({
       continue;
     }
     if (!isExplainerTemplateId(segment.templateId)) continue;
-    if (!latestFullframeContext) {
+    if (!latestFullframeContext && !assetPreview) {
       throw new Error(`${segment.id} 前置上下文必须能追溯到正文媒体片段`);
     }
     const explainer = segment.renderData.voxExplainer;
     const handoff = explainerHandoffContext({ segment, transitions: transitionResolution.transitions });
     explainer.context = {
-      previous: structuredClone(latestFullframeContext),
+      ...(latestFullframeContext ? { previous: structuredClone(latestFullframeContext) } : {}),
       ...handoff,
       continuesFromExplainer: isExplainerTemplateId(segments[index - 1]?.templateId),
       entranceLeadFrames: segment.appliedEntranceLeadFrames,
       continuesToExplainer: isExplainerTemplateId(segments[index + 1]?.templateId)
     };
-    // The background is also a real asset dependency in a selected Studio window.
-    segment.assetRefs.push({ ...latestFullframeContext.assetRef, requestId: "context-background" });
+    if (latestFullframeContext) {
+      segment.assetRefs.push({ ...latestFullframeContext.assetRef, requestId: "context-background" });
+    }
   }
 
   for (const segment of segments) {
@@ -795,7 +805,8 @@ async function buildRenderPlan({
     const entry = await templateRenderPlanFor("fullframe-narrative");
     entry.placeCalloutOverlays({ overlays, segments, policy: await renderPolicyFor("fullframe-narrative") });
   }
-  assertAnnotationOverlaySchedule({ overlays, bodyStartFrame, bodyEndFrame });
+  const visualEndFrame = anchoredFrameForMs({ milliseconds: ending.fadeEndMs, anchorMs: bodyOffsetMs, fps });
+  assertAnnotationOverlaySchedule({ overlays, bodyStartFrame, bodyEndFrame: Math.max(bodyEndFrame, visualEndFrame) });
 
   const audioTracks = [];
   audioTracks.push({
@@ -839,6 +850,7 @@ async function buildRenderPlan({
     bodyOffsetMs: bodyAudioStartMs,
     bodyEndMs: bodyAudioEndMs,
     bodyEntranceLeadFrames: bodySegments[0]?.appliedEntranceLeadFrames ?? 0,
+    durationMs: ending.fadeEndMs,
     episodeEnding: ending
   });
   for (const { featureId, output } of audioContributions) {
@@ -913,14 +925,14 @@ async function buildRenderPlan({
   }
   if (assetPreview) {
     const selectedSegments = segments.filter(({ id }) => selectedSegment(id));
+    const includeEnding = selectedSegments.at(-1).id === ending.afterSegmentId;
     const visibleSegments = segments.filter(segment => selectedSegment(segment.id)
       || (previewPart === "opener" && segment.id === bodySegmentDescriptors[0]?.id));
     let fromFrame = selectedSegments[0].startFrame;
     let toFrame = selectedSegments.at(-1).startFrame + selectedSegments.at(-1).durationInFrames;
     if (previewPart === "opener" && previewEndMs > selectedPreviewEndMs)
       toFrame = anchoredFrameForMs({ milliseconds: previewEndMs, anchorMs: bodyOffsetMs, fps });
-    if (previewPart === "body") toFrame = anchoredFrameForMs({ milliseconds: ending.startMs, anchorMs: bodyOffsetMs, fps })
-      + ending.holdFrames + ending.fadeFrames;
+    if (includeEnding) toFrame = anchoredFrameForMs({ milliseconds: ending.endMs, anchorMs: bodyOffsetMs, fps });
     for (const boundary of previewPart ? [] : transitionResolution.transitions) {
       if (!selectedSegment(boundary.previousId) && selectedSegment(boundary.nextId)) {
         fromFrame = Math.max(fromFrame, boundary.startFrame + boundary.durationInFrames);
@@ -936,12 +948,14 @@ async function buildRenderPlan({
       (boundary) => visibleSegments.some(segment => segment.id === boundary.previousId)
         && visibleSegments.some(segment => segment.id === boundary.nextId)
     );
+    const overlaps = bodyEditOverlapErrors(bodyEditWindows(plan.transitions));
+    if (overlaps.length) throw new Error(overlaps.join("；"));
     const fromMs = (fromFrame / fps) * 1000;
     const toMs = (toFrame / fps) * 1000;
     plan.audioTracks = audioTracks.filter(
       (track) => track.startMs < toMs && (track.endMs ?? durationMs) > fromMs
     );
-    if (previewPart !== "body") plan.ending = null;
+    if (!includeEnding) plan.ending = null;
   }
   assertRealizedCameraRelations({ segments: plan.segments, transitions: plan.transitions, fps });
   return plan;

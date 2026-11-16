@@ -1,5 +1,5 @@
 import path from "node:path";
-import { rm } from "node:fs/promises";
+import { readFile, rm } from "node:fs/promises";
 import { assertProjectPath, atomicWriteData, hashObject, readData, stableStringify, withoutProducer, withProjectLock } from "../../packages/program-utils.mjs";
 import { getEpisodePaths, getStageWorkPaths } from "../../packages/workspace-paths.mjs";
 import { exists, importModule } from "./files.mjs";
@@ -7,6 +7,9 @@ import { controllerSpecFor } from "./implementations.mjs";
 import { programInvocationTask } from "./tasks.mjs";
 import { withWorkflowWrite } from "./acceptance-commit.mjs";
 import { cleanupEpisodeMedia } from "../../packages/modules/render-video/runtime/cleanup.mjs";
+import { bodyEditOverlapErrors, bodyEditWindows, bodyRuntimeTimingForAuthorUnits, changedBodyViewingUnits } from "../../packages/modules/render-video/runtime/transitions.mjs";
+import { parseSrt } from "../p3-input.mjs";
+import { authorUnitsForStoryboard, directorResultSlice } from "./storyboard.mjs";
 
 const executionPaths = ({ workspaceRoot, episodeId, stageId }) => {
   const work = getStageWorkPaths(getEpisodePaths(workspaceRoot, episodeId), stageId).work;
@@ -14,6 +17,26 @@ const executionPaths = ({ workspaceRoot, episodeId, stageId }) => {
 };
 const readOptional = async (file) => file && await exists(file) ? readData(file) : null;
 const same = (left, right) => stableStringify(left) === stableStringify(right);
+
+export const narrationChanges = ({ before, output, beforeCues, afterCues }) => {
+  const narration = before?.files?.narration?.sha256 !== output.files?.narration?.sha256;
+  const audio = before?.files?.audio?.sha256 !== output.files?.audio?.sha256;
+  const subtitles = before?.files?.subtitles?.sha256 !== output.files?.subtitles?.sha256;
+  const boundaries = subtitles && (!beforeCues || !afterCues || !same(beforeCues.map(cue => cue.text), afterCues.map(cue => cue.text)));
+  const timingCueRefs = !boundaries && beforeCues && afterCues ? afterCues.filter((cue, index) =>
+    cue.startMs !== beforeCues[index]?.startMs || cue.endMs !== beforeCues[index]?.endMs).map(cue => cue.id) : [];
+  if (!boundaries && before?.durationMs !== output.durationMs && afterCues?.length) timingCueRefs.push(afterCues.at(-1).id);
+  return { narration, audio, subtitles, boundaries, timingCueRefs: [...new Set(timingCueRefs)] };
+};
+
+const bodyReferences = (value, refs = new Set()) => {
+  if (!value || typeof value !== "object") return refs;
+  for (const [key, child] of Object.entries(value)) {
+    if (key === "bodyRefs" && Array.isArray(child)) for (const id of child) refs.add(id);
+    else if (key !== "_producer") bodyReferences(child, refs);
+  }
+  return refs;
+};
 const finishProgram = async ({ root, workspaceRoot, episodeId, journalPath, journal, output }) => {
   const paths = getEpisodePaths(workspaceRoot, episodeId);
   const repair = async (stageId, node, reason, extra = {}) => {
@@ -31,10 +54,62 @@ const finishProgram = async ({ root, workspaceRoot, episodeId, journalPath, jour
     await repair("p2", "author-subtitles", "口播音频发生实际修改，更新字幕");
     await repair("p2", "finalize-narration", "口播音频发生实际修改，更新口播交付");
   }
-  if (journal.primitive === "program-narration-finalize" && ["narration", "audio", "subtitles"].some(key => previous?.files?.[key]?.sha256 !== output.files?.[key]?.sha256)) {
-    await repair("p3", "understand", "口播交付发生实际修改，更新受影响的理解与设计");
-    await repair("p4", "opener", "口播交付发生实际修改，更新片头衔接与时长");
-    await repair("p4", "render", "口播交付发生实际修改，更新成片");
+  if (journal.primitive === "program-narration-finalize" && previous) {
+    const afterCues = parseSrt(await readFile(paths.narrationSubtitles, "utf8"));
+    const delta = narrationChanges({ before: previous, output, beforeCues: journal.beforeCues, afterCues });
+    const storyboard = await readOptional(paths.storyboard);
+    if (delta.narration) {
+      await repair("p3", "director", "口播正文发生实际修改，修订受影响的共享理解与分镜",
+        journal.beforeCues ? { previousCues: journal.beforeCues } : {});
+      await repair("p4", "opener", "正文发生实际修改，核对片头实际引用与进入方向");
+    } else if (delta.boundaries) {
+      await repair("p3", "director", "正文未变，字幕分句变化；保留已有语义和画面意图，修正受影响的语义引用与镜头边界", {
+        ...(journal.beforeCues ? { cueRebinding: { previousCues: journal.beforeCues } } : {})
+      });
+      // The director's accepted ranges determine the actual author and P4 consumers.
+    } else if (delta.timingCueRefs.length && storyboard?.beats?.length) {
+      const selected = storyboard.beats.filter(beat => delta.timingCueRefs.some(id => id >= beat.cueRange[0] && id <= beat.cueRange[1]));
+      const selectedIds = new Set(selected.map(beat => beat.id));
+      const authorUnits = authorUnitsForStoryboard(storyboard);
+      // Timing measurements still identify the affected readers when a new
+      // cue is too short to carry the existing camera handles.
+      const timing = cues => bodyRuntimeTimingForAuthorUnits({ authorUnits, cues, requireCameraHandles: false });
+      const newTiming = timing(afterCues);
+      const conflicts = bodyEditOverlapErrors(bodyEditWindows(newTiming.transitions));
+      const changedWindows = new Set(journal.beforeCues ? changedBodyViewingUnits({
+        before: timing(journal.beforeCues), after: newTiming
+      }) : []);
+      const units = authorUnits.filter(unit =>
+        unit.beatIds.some(id => selectedIds.has(id)) || (unit.treatment && changedWindows.has(unit.id)));
+      const selectedAuthorIds = new Set([...selectedIds, ...units.filter(unit => changedWindows.has(unit.id))
+        .flatMap(unit => unit.beatIds)]);
+      if (conflicts.length) {
+        await repair("p3", "director", `口播时间变化后，${conflicts.join("；")}。沿原分镜排开实际转场，保留有效画面和素材`,
+          journal.beforeCues ? { cueRebinding: { previousCues: journal.beforeCues } } : {});
+      } else if (units.length) {
+        const file = getStageWorkPaths(paths, "p3").returnRequest("author");
+        const prior = await readOptional(file);
+        if (prior && prior.revisionScope !== "body-redesign") throw new Error("P3已有其它作者返工；保留P2交付与收口记录，先协调该任务");
+        await atomicWriteData(file, { ...prior, target: "author",
+          reason: prior?.reason ? (prior.reason.includes("口播时间变化") ? prior.reason : `${prior.reason}；口播时间变化，只修实际受影响的时窗与Cue，保留有效画面和素材`)
+            : "正文与字幕分句未变，口播时间变化；只修实际受影响的时窗与Cue，保留有效画面和素材",
+          cueRefs: [], revisionScope: "body-redesign", redesignState: "pending-author",
+          baselineVisualPlanSha256: hashObject(directorResultSlice(storyboard)),
+          selectedBeatIds: [...new Set([...(prior?.selectedBeatIds ?? []), ...selectedAuthorIds])],
+          pendingAuthorUnitIds: [...new Set([...(prior?.pendingAuthorUnitIds ?? []), ...units.map(unit => unit.id)])] });
+      }
+      const opener = (await readOptional(paths.episodePackage))?.opener;
+      const openerRefs = bodyReferences(opener);
+      if (opener && (selectedIds.has(storyboard.beats[0]?.id) || [...selectedIds].some(id => openerRefs.has(id)))) {
+        await repair("p4", "opener", "片头实际引用的正文时间变化，核对衔接与卡点");
+      }
+      const video = await readOptional(paths.videoPlan);
+      if (video?.spans?.some(span => span.beatIds.some(id => selectedIds.has(id)))) {
+        await repair("p4", "video", "已选剧情段的口播时间变化，核对时窗与接镜，保留有效原视频");
+      }
+    }
+    if (delta.narration || delta.audio || delta.subtitles || previous.durationMs !== output.durationMs)
+      await repair("p4", "render", "口播交付发生实际修改，更新成片");
   }
   if (journal.returnRequestPath) {
     const request = await readOptional(journal.returnRequestPath);
@@ -91,6 +166,14 @@ export const executeProgramNode = async ({ root, workspaceRoot, current, authori
       journal = { nodeId: current.node.id, moduleId: current.record.manifest.id, primitive, taskDigest: current.taskDigest,
         outputPath: current.outputPath, before: await readOptional(current.outputPath),
         returnRequestPath: current.returnRequestPath ?? null, returnRequestBefore: request ? hashObject(request) : null };
+      if (primitive === "program-narration-finalize" && journal.before) {
+        const paths = getEpisodePaths(workspaceRoot, episodeId);
+        if (await exists(paths.narrationSubtitles)) {
+          const subtitles = await readFile(paths.narrationSubtitles, "utf8");
+          // Old cues only help compare changes; a damaged delivery must remain repairable.
+          try { journal.beforeCues = parseSrt(subtitles); } catch { /* No usable comparison. */ }
+        }
+      }
       await atomicWriteData(files.journal, journal);
     }
     const pending = await pendingProgramCompletion({ workspaceRoot, episodeId, stageId });

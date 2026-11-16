@@ -6,7 +6,9 @@ import { fileURLToPath } from "node:url";
 import test from "node:test";
 
 import { deriveStatus, hashObject, readData, resolvePublicationCurrent, resolveRenderInputs, runNext, runRange, sha256 } from "./runtime.mjs";
-import { getEpisodePaths, getProgramPaths } from "../packages/workspace-paths.mjs";
+import { prepareSubtitleRevision } from "./runtime/revise-narration.mjs";
+import { narrationDurationFeedback } from "./runtime/status.mjs";
+import { getEpisodePaths, getProgramPaths, getStageWorkPaths } from "../packages/workspace-paths.mjs";
 import { getPublicationPaths } from "../packages/publication-paths.mjs";
 import { projectVideoProduction } from "../packages/templates/cinematic-video/production-projection.mjs";
 import { authorSegmentProgress } from "./runtime/state-video.mjs";
@@ -248,4 +250,31 @@ test('连续范围以P4结束，公开阶段不含P5且不改既有上游',async
  const {options,paths}=await setup(t);const before=await readFile(paths.storyboard);
  await assert.rejects(runRange({...options,fromStage:'p4',toStage:'p5'}),/按顺序|P1|p1|p4|p5|阶段/);
  assert.deepEqual(await readFile(paths.storyboard),before);
+});
+
+
+test("字幕返工能发现P3分段与P4节点中的活动作者", async t => {
+  for (const [stage, segment, node] of [["p3", "TR001", null], ["p4", null, "opener"], ["p4", null, "video"]]) {
+    const f = await setup(t);
+    const work = getStageWorkPaths(f.paths, stage, segment, node);
+    await write(work.workOrder, { active: true });
+    await assert.rejects(prepareSubtitleRevision({ ...f.options, stageId: "p2", reviseSubtitles: true,
+      current: { kind: "complete" } }), /仍有未收口工作单/u);
+    await assert.rejects(readFile(getStageWorkPaths(f.paths, "p2").returnRequest("author-subtitles")), { code: "ENOENT" });
+  }
+});
+
+test("时长反馈采用当前音轨实测，标明不含片头，不沿用旧稿时长", async t => {
+  const f = await setup(t);
+  const { workspaceRoot, episodeId } = f.options;
+  await write(getProgramPaths(workspaceRoot).programPlan, { maxDurationSeconds: 60 });
+  await write(f.paths.scriptPackage, { narration: "当前口播。" });
+  await write(f.paths.ttsResult, { ttsInput: { text: "当前口播。" }, rawAudio: { sha256: "a".repeat(64) }, durationMs: 65000 });
+  assert.deepEqual(await narrationDurationFeedback({ workspaceRoot, episodeId }), {
+    bodyDurationSeconds: 65, includesOpener: false, source: "tts-provider", maxDurationSeconds: 60,
+    remainingSeconds: -5, exceedsLimit: true });
+  await write(f.paths.narrationPackage, { durationMs: 59000, evidence: { audioProcessing: { rawAudioSha256: "a".repeat(64) } } });
+  assert.equal((await narrationDurationFeedback({ workspaceRoot, episodeId })).source, "measured-delivery");
+  await write(f.paths.scriptPackage, { narration: "已换的新稿。" });
+  assert.equal(await narrationDurationFeedback({ workspaceRoot, episodeId }), null);
 });

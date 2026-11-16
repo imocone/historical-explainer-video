@@ -181,6 +181,10 @@ export const selectPartRequest = ({ receipts, proposedRequest, previousReceipt =
     .map(({ request }) => designKey(request)));
   // A reusable replacement still belongs to its original paid chain.
   const matching = exact.length ? exact : receipts.filter(({ request }) => reusableDesigns.has(designKey(request)));
+  if (!matching.length && receipts.some(({ request, submitId }) => submitId
+    && request.frameCount < proposedRequest.frameCount && sourceContentKey(request) === sourceContentKey(proposedRequest))) {
+    throw new Error("原视频分次的活动余量不足；保留原交付，回原视频设计调整末段，勿重复提交原请求");
+  }
   if (receipts.some((receipt) => !matching.includes(receipt) && !["complete", "generated", "failed"].includes(receipt.state)))
     throw new Error("本次已有未收口或结果未知的原任务，不能另建任务");
   const roots = matching.filter(({ request }) => !request.replacesRequestDigest);

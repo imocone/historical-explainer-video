@@ -20,10 +20,10 @@ const output = path.resolve(process.argv[2] ?? path.join(directory, "output"));
 const mode = process.argv[3] ?? "preview";
 const requested = process.env.VIEWING_STUDY_IDS?.split(",");
 const run = async (command, args) => (await runMediaProcess(command, args, { capture: true })).stdout;
-const visualStyle = withVisualFontPaths(JSON.parse(await readFile(path.join(systemRoot, "visuals/modern-editorial/render/tokens.json"))), "modern-editorial");
+const visualStyle = withVisualFontPaths(JSON.parse(await readFile(path.join(systemRoot, "visuals/wet-watercolor/render/tokens.json"))), "wet-watercolor");
 const subtitleFont = visualStyle.p4.subtitle.font;
 visualStyle.p4.subtitle = { ...visualStyle.p4.subtitle, fontName: subtitleFont.family,
-  fontPublicPath: `visuals/modern-editorial/${subtitleFont.file}`, fontFormat: subtitleFont.format,
+  fontPublicPath: `visuals/wet-watercolor/${subtitleFont.file}`, fontFormat: subtitleFont.format,
   fontWeight: subtitleFont.weight, fontStyle: subtitleFont.style };
 const jobs = viewingStudies(visualStyle);
 const schema = JSON.parse(await readFile(path.join(systemRoot, "contracts/fullframe-treatment.schema.json")));

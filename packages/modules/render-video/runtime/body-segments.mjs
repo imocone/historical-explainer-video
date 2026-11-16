@@ -64,6 +64,9 @@ const templateRunMembershipFor = (storyboard, requireTreatment) => {
   return membership;
 };
 
+const directorEntry = beat => Object.hasOwn(beat, "incomingTransition")
+  ? { incomingTransition: beat.incomingTransition } : {};
+
 export const bodySegmentDescriptorsFor = (storyboard, videoPlan = null, requireTreatment = () => true) => {
   const membership = templateRunMembershipFor(storyboard, requireTreatment);
   const beatById = new Map(storyboard.beats.map((beat) => [beat.id, beat]));
@@ -78,6 +81,7 @@ export const bodySegmentDescriptorsFor = (storyboard, videoPlan = null, requireT
         templateId: videoPlan.templateId,
         beatIds: [...video.beatIds],
         cueRange: [beat.cueRange[0], last.cueRange[1]],
+        ...directorEntry(beat),
         treatment: video
       });
       continue;
@@ -92,6 +96,8 @@ export const bodySegmentDescriptorsFor = (storyboard, videoPlan = null, requireT
         templateId: run.templateId,
         beatIds: [...run.beatIds],
         cueRange: [first.cueRange[0], last.cueRange[1]],
+        ...directorEntry(first),
+        shots: run.beatIds.map(id => beatById.get(id)),
         treatment: run.treatment,
         templateRunId: run.id
       });
@@ -108,6 +114,7 @@ export const bodySegmentDescriptorsFor = (storyboard, videoPlan = null, requireT
       templateId: beat.templateId,
       beatIds: [beat.id],
       cueRange: [...beat.cueRange],
+      ...directorEntry(beat),
       treatment: beat.treatment
     });
   }

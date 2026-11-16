@@ -11,6 +11,7 @@ import { prepareRenderPublic } from "../render-video/runtime/public-files.mjs";
 import { compileComposition } from "../render-video/runtime/compile.mjs";
 import { launchComposition, renderComposition } from "../render-video/runtime/hyperframes.mjs";
 import { withMediaResources } from "../render-video/runtime/media-process.mjs";
+import { anchoredFrameForMs } from "../../video-spec.mjs";
 const systemRoot = fileURLToPath(new URL("../../../", import.meta.url));
 
 export const preview = async options => {
@@ -44,8 +45,9 @@ const preparePreview = async ({ workspace, workOrderPath, spanId, exportVideo = 
   const last = neighbors.at(-1);
   // Keep the full scene graph: callouts can start earlier and remain visible in this window.
   renderPlan.preview = { fromFrame: neighbors[0].startFrame,
-    toFrame: last.startFrame + last.durationInFrames + (last.id === renderPlan.ending?.afterSegmentId
-      ? renderPlan.ending.holdFrames + renderPlan.ending.fadeFrames : 0),
+    toFrame: last.id === renderPlan.ending?.afterSegmentId
+      ? anchoredFrameForMs({ milliseconds: renderPlan.ending.endMs, anchorMs: renderPlan.bodyTimelineStartMs, fps: renderPlan.fps })
+      : last.startFrame + last.durationInFrames,
     segmentIds: neighbors.map(({ id }) => id) };
   await assertRenderPlanFiles({ root, systemRoot, renderPlan });
   const directory = path.resolve(root, task.scratchPath, "video-preview", spanId, hashObject(renderPlan));

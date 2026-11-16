@@ -8,8 +8,8 @@
 
 地图数据沿用本作品准备的Natural Earth概化陆地、水系及Mapzen Terrain Tiles地形；GMTED2010 / SRTM数据由USGS提供。现代地形不能证明前154年的海岸、水道或政治边界。署名与许可沿[Natural Earth](https://www.naturalearthdata.com/about/terms-of-use/)和[Mapzen数据提供者说明](https://github.com/tilezen/joerd/blob/master/docs/attribution.md)；样式直接读取本模板的`spatial/map-style.mjs`，几何绘制为SVG。
 
-本机音轨沿用独立作品的合成旁白、配乐与效果混音，不重新生成。配乐为Kevin MacLeod的“Dreams Become Real”，署名incompetech.com，CC BY 4.0：[原作品页](https://incompetech.com/wordpress/2015/04/dreams-become-real/)与[许可](https://creativecommons.org/licenses/by/4.0/)。音效来自原项目Lemo声音资源，沿[MIT许可](../../../../features/sound-effects/lemo/LICENSE)。原混音仅保存在`local-media/private-assets/`，公开`assets/mix.wav`是本项目制作的190.898秒静音占位。
+独立作品的既有音轨包含合成旁白、配乐和音效，保存在`local-media/private-assets/`。配乐为Kevin MacLeod的“Dreams Become Real”，署名incompetech.com，采用CC BY 4.0。音效来自原项目Lemo声音资源，公开`assets/mix.wav`为本项目制作的190.898秒静音占位。[原作品页](https://incompetech.com/wordpress/2015/04/dreams-become-real/) · [配乐许可](https://creativecommons.org/licenses/by/4.0/) · [音效许可](../../../../features/sound-effects/lemo/LICENSE)
 
 字体使用本模板的Noto Sans SC Medium与Noto Sans CJK SC Black，沿[SIL OFL](../../fonts/Noto-OFL.txt)。GSAP、HyperFrames、esbuild等安装依赖沿项目[第三方声明](../../../../../THIRD_PARTY_NOTICES.md)。
 
-`src/`保存完整作品源码，地图样式导入使用仓库相对路径。
+`src/` 保存本片场景与动作。基础造型与绘制函数从模板的 [SVG底稿](../../references/art.md#svg底稿与改绘)导入，地图样式使用仓库相对路径。

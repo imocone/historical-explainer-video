@@ -11,6 +11,7 @@ import {
 import { readObjectResource, readTextResource, readResourceBytes, relative } from "./files.mjs";
 import { controllerSpecFor, implementationIds } from "./implementations.mjs";
 import { sourcesExtend } from "../../packages/p3-sources.mjs";
+import { currentP3DirectorInputs, currentP3ReturnTargets } from "../../packages/p3-task-view.mjs";
 import { restartToken } from "./stage-restart.mjs";
 const workflowIdentityForNode = ({ model, node }) => {
   const registeredNode = model.workflowModel.nodeById.get(node.id);
@@ -219,7 +220,6 @@ const aiTask = async ({
     const scratchPath = [
       "ai-narration",
       "ai-subtitles",
-      "understanding",
       "visual-plan",
       "treatment",
       "author-quotes",
@@ -509,7 +509,7 @@ const continuityInputs = (workOrder) => {
   if (workOrder.stageId === "p3" && workOrder.moduleId === "direct-episode"
     && Array.isArray(workOrder.inputs?.templates)) {
     // Catalog prose is a live rule; package identities remain task inputs.
-    return { ...workOrder.inputs, templates: workOrder.inputs.templates.map(({ id }) => ({ id })) };
+    return { ...currentP3DirectorInputs(workOrder.inputs), templates: workOrder.inputs.templates.map(({ id }) => ({ id })) };
   }
   if (workOrder.stageId === "p3" && workOrder.moduleId === "author-beat"
     && workOrder.inputs?.templateContext) {
@@ -518,6 +518,8 @@ const continuityInputs = (workOrder) => {
     delete templateContext.calloutAvailability;
     delete templateContext.episodeContext;
     if (workOrder.inputs.authorUnit?.templateId === "vox-explainer") {
+      // The selected package is already pinned by the assembly slot. This is its live reference view.
+      delete templateContext.visual;
       templateContext.renderContext = { ...templateContext.renderContext };
       // Caption appearance comes from the live renderer, not an authored business choice.
       delete templateContext.renderContext.subtitle;
@@ -539,6 +541,8 @@ const continuityInputs = (workOrder) => {
       pendingAuthorUnitIds: inputs.p3BodyRedesign.pendingAuthorUnitIds.filter(id => id === inputs.authorUnit.id),
       selectedBeatIds: inputs.p3BodyRedesign.selectedBeatIds.filter(id => inputs.authorUnit.beatIds.includes(id))
     };
+    // The engine verifies the live Director baseline separately. Compare the signed unit's actual inputs here.
+    if (inputs.p3BodyRedesign) delete inputs.p3BodyRedesign.baselineVisualPlanSha256;
     return inputs;
   }
   if (
@@ -561,7 +565,8 @@ const taskContinuity = (workOrder) => ({
   moduleId: workOrder.moduleId,
   runner: workOrder.runner,
   candidatePath: workOrder.candidatePath,
-  allowedReturnTargets: workOrder.allowedReturnTargets,
+  allowedReturnTargets: workOrder.workflowId === "video"
+    ? currentP3ReturnTargets(workOrder) : workOrder.allowedReturnTargets,
   allowedWrite: workOrder.allowedWrite,
   selections: workOrder.resolvedAssembly.slots.map(({ id, selection }) => ({ id, selection })),
   inputs: continuityInputs(workOrder)

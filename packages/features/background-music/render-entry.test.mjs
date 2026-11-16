@@ -36,6 +36,18 @@ test('个人音乐沿原上下文和音轨交付；文件不冒充许可，显�
   const bytes=Buffer.from('本地测试音频身份');await writeFile(file,bytes);
   configure(t,{BACKGROUND_MUSIC_FILE:file,BACKGROUND_MUSIC_SOURCE:'本地测试自制配乐',BACKGROUND_MUSIC_RIGHTS:'public-domain'});
   const playback=musicPlaybackContext({featureData:{}});
+  const {projectAuthorContext} = await import('../sound-effects/author-context.mjs');
+  const authorUnit = {id:'B001', paragraph:{id:'TR001'}};
+  const context = projectAuthorContext({episodeId:'ep01', authorUnit, authorUnits:[authorUnit], acceptedFeatures:{}});
+  assert.deepEqual(context.music, playback, 'P3初次派工尚无音乐字段时读取P4同一默认配乐');
+  const {specifiedMusicForWindow} = await import('../../modules/render-video/runtime/candidate-audio.mjs');
+  const {audioTracksForWindow} = await import('../../modules/render-video/runtime/scene-preview.mjs');
+  const window = {fromFrame:180, toFrame:300, fps:60};
+  const bodyStartMs = 43;
+  const bodyTracks = contribute({phase:'audio-tracks',featureData:{},bodyOffsetMs:bodyStartMs,bodyEndMs:6000,fps:60}).audioTracks;
+  const previewTracks = specifiedMusicForWindow({...window,episodeId:'ep01',bodyStartMs,bodyEndMs:6000,
+    audioContext:context,muteEffects:true});
+  assert.deepEqual(previewTracks,audioTracksForWindow({tracks:bodyTracks,...window}),'音效对照使用同一配乐与播放位置');
   assert.equal(playback.source.sha256,createHash('sha256').update(bytes).digest('hex'));
   assert.equal(playback.source.sourceCitation,'本地测试自制配乐');
   const result=contribute({phase:'audio-tracks',featureData:{},bodyOffsetMs:1000,bodyEndMs:6000,fps:60});

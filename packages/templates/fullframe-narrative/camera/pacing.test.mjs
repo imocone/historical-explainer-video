@@ -12,7 +12,14 @@ import { withVisualFontPaths } from "../../../visual-fonts.mjs";
 import { fullframeFramingFor } from "./framing.mjs";
 import { cameraAtFrame } from "./runtime-layer.mjs";
 import { viewportForCamera } from "./geometry.mjs";
-import { deriveMotionCameras, motionRouteViewportsAtFrames } from "./p4-runtime.mjs";
+import { deriveMotionCameras, motionRouteViewportsAtFrames, motionSpeedRatioAtFrame } from "./p4-runtime.mjs";
+import { measureCameraDesign } from "./inspect-design.mjs";
+import { projectAuthorContext } from "../context-runtime.mjs";
+import { inspectDirectorAuthorability } from "../../../modules/direct-episode/authorability.mjs";
+import { projectDirectorInspection } from "../../../modules/direct-episode/inspect-authorability.mjs";
+import { authorUnitsForStoryboard } from "../../../../engine/runtime/storyboard.mjs";
+import * as fullframeCuePolicy from "../cue-policy.mjs";
+import * as explainerCuePolicy from "../../vox-explainer/cue-policy.mjs";
 import { fullframeRuntimeTimingForAuthorUnits } from "./author-transition-handoff.mjs";
 import { fullframeRuntimePlansForSegments } from "./p3-preflight.mjs";
 import { fullframeCameraRelationErrors } from "./transition.mjs";
@@ -23,6 +30,91 @@ import { DOCUMENTARY_OPENER_RENDER_POLICY } from "../../documentary-opener/rende
 import { CROSS_FIRE } from "../../crossfire-opener/render-policy.mjs";
 
 const policy = FULLFRAME_RENDER_POLICY.motion;
+
+test("未选速规划只有真实时窗与行程范围，不把最低速或其它档位当成作者答案",()=>{
+  const args={durationInFrames:480,fps:60,runtimeTiming:{cameraPrerollFrames:54,exitTailFrames:54}};
+  const [frame]=fullframeMotionBudgetForCueOption(args);
+  for(const key of ["speedRatio","runtimeCameraTravel","visibleCameraTravel","maximumRuntimeCameraTravel"])
+    assert.equal(Object.hasOwn(frame,key),false,key);
+  close(frame.runtimeDurationMs,(479+108)/60*1000);
+  for(const [family,base] of [["zoom",policy.zoomScaleSpeedPerSecond],["traverse",policy.traverseNormalizedSpeedPerSecond]]){
+    close(frame.runtimeTravelRange[family].minimum,base*frame.runtimeDurationMs/1000*policy.minimumSpeedRatio);
+    close(frame.runtimeTravelRange[family].maximum,base*frame.runtimeDurationMs/1000*policy.maximumSpeedRatio);
+  }
+  assert.throws(()=>fullframeMotionBudgetForCueOption({...args,speedRatios:[undefined]}),/必须在/);
+  assert.throws(()=>fullframeMotionBudgetForCueOption({...args,motions:[{}]}),/必须在/);
+  assert.throws(()=>fullframeMotionBudgetForCueOption({...args,speedRatios:[1.2],motions:[{speedRatio:1.3}]}),/一致/);
+  assert.throws(()=>fullframeMotionBudgetForCueOption({...args,speedRatios:[]}),/逐图/);
+});
+
+test("无预填规划进入测量与P4后，作者任意恒速和短时高速均原样执行",async()=>{
+  const cues=[{id:1,startMs:0,endMs:8000,text:"让重点逐渐取得分量。"}];
+  const plans=fullframeMotionBudgetForCueOption({durationInFrames:480,fps:60,
+    runtimeTiming:{cameraPrerollFrames:54,exitTailFrames:54}});
+  const templateContext={cueOptions:{frameA:[{cueId:1,edge:"start"}]},motionBudgets:{options:[{binding:null,frames:plans}]}};
+  const style=withVisualFontPaths(JSON.parse(await readFile(new URL("../../../../visuals/wet-watercolor/render/tokens.json",import.meta.url))),"wet-watercolor");
+  for(const selection of [{speedRatio:1.27},{speedRatio:1,speedChanges:[{timeMs:500,speedRatio:3},{timeMs:1000,speedRatio:1}]}]){
+    const motion={type:"push-in",...selection,startViewport:{x:0,y:0,width:1,height:1},routeWaypoints:[],
+      semanticEndViewport:{x:.15,y:.1,width:2/3,height:2/3},safeEndViewport:{x:.15,y:.1,width:2/3,height:2/3}};
+    const treatment={templateId:"fullframe-narrative",assetRequests:[{requestId:"AR001",frameId:"A",motion}],
+      calloutGate:{"historical-quote":"not-triggered","person-intro":"not-triggered","term-gloss":"not-triggered"}};
+    const featureResults={"cue-sync":{items:[{target:"AR001",action:"start-frame-motion",cueId:1,edge:"start"}]}};
+    const before=structuredClone({treatment,featureResults,templateContext,cues});
+    const result=measureCameraDesign({treatment,featureResults,templateContext,cues});
+    assert.equal(result.ok,true,JSON.stringify(result));
+    assert.equal(result.targets[0].speedRatio,selection.speedRatio);
+    assert.deepEqual(result.targets[0].speedChanges,selection.speedChanges);
+    const data=renderData({segmentId:"B001",treatment,actionTimings:[{target:"AR001",action:"start-frame-motion",frame:0}],
+      assetRefs:[{requestId:"AR001",kind:"fullframe-image",framing:fullframeFramingFor({request:{spec:treatment.assetRequests[0]}})}],
+      targetDurationMs:8000,durationInFrames:480,policy:createRenderPolicy({visualStyle:style,...VIDEO_SPEC}),
+      runtimeTiming:{cameraPrerollFrames:54,exitTailFrames:54}});
+    const actual=data.fullframe[0].motion;
+    assert.equal(actual.runtimeEndFrame,587);
+    assert.equal(actual.speedRatio,selection.speedRatio);assert.deepEqual(actual.speedChanges,selection.speedChanges);
+    close(actual.travelDistance,result.motionBudgets[0].runtimeCameraTravel.zoom);
+    const frames=[0,67,279,480,587];
+    const measured=motionRouteViewportsAtFrames({motion,motionStartFrame:0,frames,fps:60,motionPolicy:policy});
+    frames.forEach((frame,index)=>{
+      const rendered=viewportForCamera(cameraAtFrame({motion:actual,frame}));
+      for(const key of ["x","y","width","height"])close(rendered[key],measured[index][key]);
+    });
+    assert.deepEqual({treatment,featureResults,templateContext,cues},before);
+    delete motion.speedRatio;
+    assert.throws(()=>measureCameraDesign({treatment,featureResults,templateContext,cues}),/必须在/);
+  }
+});
+
+test("Director与作者在片头、模板邻接、Cue间隔及A/B参考上共享无预选速度的真实规划",async()=>{
+  const cues=Array.from({length:8},(_,i)=>({id:i+1,startMs:Math.floor(i/2)*9500+i%2*4000,
+    endMs:Math.floor(i/2)*9500+(i%2+1)*4000,text:"当前观看任务。"}));
+  const beats=Array.from({length:4},(_,i)=>({id:`B00${i+1}`,cueRange:[i*2+1,i*2+2],templateId:i===1?"vox-explainer":"fullframe-narrative"}));
+  const result={beats,templateRuns:[{id:"TR001",templateId:"fullframe-narrative",beatIds:["B001"]},
+    {id:"TR002",templateId:"vox-explainer",beatIds:["B002"]},{id:"TR003",templateId:"fullframe-narrative",beatIds:["B003","B004"]}]};
+  for(const openerTemplate of ["episode-opener","documentary-opener","crossfire-opener","opposed-opener","glass-opener"]){
+    const inspection=await inspectDirectorAuthorability({result,cues,openerTemplate,includePlanning:true,
+      loadCuePolicy:async id=>id==="fullframe-narrative"?fullframeCuePolicy:explainerCuePolicy});
+    assert.deepEqual(inspection.errors, []);
+    const published=projectDirectorInspection(inspection);
+    for(const id of ["B001","B003","B004"]){
+      const director=published.units.find(unit=>unit.id===id).planning;
+      const author=projectAuthorContext({programPlan:{openerTemplate},authorUnits:authorUnitsForStoryboard(result),episodeCues:cues,
+        albumPlan:{},acceptedBeats:beats,beforeBeatId:id});
+      assert.ok(director.options.some(option=>option.binding));
+      for(const option of director.options){
+        const original=author.motionBudgets.options.find(item=>JSON.stringify(item.binding)===JSON.stringify(option.binding));
+        if(option.binding)assert.deepEqual(option.transitionCapacity,original.transitionCapacity);
+        for(const [i,d] of option.frames.entries()){
+          const a=original.frames[i];
+          for(const key of ["runtimeDurationMs","cameraPrerollFrames","exitTailFrames"])close(d[key],a[key]);
+          assert.deepEqual(d.runtimeTravelRange,a.runtimeTravelRange);
+          assert.equal(Object.hasOwn(a,"speedRatio"),false);assert.equal(Object.hasOwn(d,"speedRatio"),false);
+        }
+      }
+      assert.equal(director.maximumRenderScale,1.5);
+      assert.deepEqual(director.motionTypes,["push-in","pull-out","traverse"]);
+    }
+  }
+});
 const motionFor = () => ({ type: "push-in", speedRatio: 1,
   speedChanges: [{ timeMs: 2000, speedRatio: 3 }, { timeMs: 4000, speedRatio: 1 }],
   startViewport: { x: 0, y: 0, width: 1, height: 1 }, routeWaypoints: [],
@@ -43,20 +135,34 @@ test("长Beat同时提供单A与可读A/B，图数交给创作", () => {
   assert.equal(result.allowsAB, true);
 });
 
-test("新合同接受高速度与作者节奏，运动下限及变化顺序仍有效", async () => {
+test("合同与执行使用同一上下限，区间内自由选速并连续变速", async () => {
   const schema = JSON.parse(await readFile(new URL("../../../../contracts/fullframe-treatment.schema.json", import.meta.url)));
   const validate = new Ajv().compile({ $defs: schema.$defs, $ref: "#/$defs/motion" });
   assert.equal(validate(motionFor()), true, JSON.stringify(validate.errors));
-  assert.equal(validate({ ...motionFor(), speedRatio: .9 }), false);
-  assert.throws(() => timed({ ...motionFor(), speedChanges: [{ timeMs: 1000, speedRatio: .9 }] }), /不低于/);
+  for (const speedRatio of [policy.minimumSpeedRatio, 1.37, 2.42, policy.maximumSpeedRatio]) {
+    assert.equal(validate({ ...motionFor(), speedRatio, speedChanges: undefined }), true);
+    assert.doesNotThrow(() => timed({ ...motionFor(), speedRatio, speedChanges: undefined }, 0, 59, 119));
+  }
+  for (const speedRatio of [.9, 3.01, 20]) {
+    assert.equal(validate({ ...motionFor(), speedRatio }), false);
+    assert.equal(validate({ ...motionFor(), speedChanges: [{ timeMs: 1000, speedRatio }] }), false);
+    assert.throws(() => timed({ ...motionFor(), speedRatio }), /必须在 1—3/);
+    assert.throws(() => timed({ ...motionFor(), speedChanges: [{ timeMs: 1000, speedRatio }] }), /必须在 1—3/);
+  }
   assert.throws(() => timed({ ...motionFor(), speedChanges: [{ timeMs: 2000, speedRatio: 2 }, { timeMs: 1000, speedRatio: 3 }] }), /严格递增/);
   assert.equal(validate({ ...motionFor(), holdAfterMs: 6000 }), false);
   assert.throws(() => timed({ ...motionFor(), holdAfterMs: 6000 }), /必须持续运动/);
-  assert.throws(() => timed({ ...motionFor(), speedRatio: 20, speedChanges: undefined }), /路线会/);
+  assert.throws(() => timed({ ...motionFor(), speedRatio: 3, speedChanges: undefined }), /路线会/);
   // This route covered the old six-second hold, but cannot cover the full moving window.
   const shortEnd = { x: .15, y: .1, width: .75, height: .75 };
   assert.throws(() => timed({ ...motionFor(), semanticEndViewport: shortEnd, safeEndViewport: shortEnd }), /路线会/);
   assert.doesNotThrow(() => timed(motionFor()), "调整路线后覆盖完整时窗");
+  const maximum = { ...motionFor(), speedRatio: policy.maximumSpeedRatio, speedChanges: undefined };
+  for (const frame of [0, 101, 539]) {
+    const sampled = motionSpeedRatioAtFrame({ motion: maximum, motionStartFrame: 0, frame });
+    assert.ok(sampled <= policy.maximumSpeedRatio);
+    close(sampled, policy.maximumSpeedRatio);
+  }
 });
 
 test("变速积分、全程持续运动及乱序取帧沿同一相机时钟", () => {
@@ -99,14 +205,14 @@ test("叠化显露、P3预算和渲染取景共同消费速度变化", () => {
 test("只改变速度不改变静态图片生产输入", () => {
   const treatment = { templateId: "fullframe-narrative", assetRequests: [{ requestId: "AR001", motion: motionFor() }] };
   const other = structuredClone(treatment);
-  Object.assign(other.assetRequests[0].motion, { speedRatio: 2, speedChanges: [{ timeMs: 1000, speedRatio: 4 }] });
+  Object.assign(other.assetRequests[0].motion, { speedRatio: 2, speedChanges: [{ timeMs: 1000, speedRatio: 3 }] });
   assert.deepEqual(projectAssetPlanTreatment(treatment), projectAssetPlanTreatment(other));
   other.assetRequests[0].motion.startViewport.x = .01;
   assert.notDeepEqual(projectAssetPlanTreatment(treatment), projectAssetPlanTreatment(other));
 });
 
 test("正式渲染投影保留作者变速，持续运动至末帧", async () => {
-  const visualStyle = withVisualFontPaths(JSON.parse(await readFile(new URL("../../../../visuals/modern-editorial/render/tokens.json", import.meta.url))), "modern-editorial");
+  const visualStyle = withVisualFontPaths(JSON.parse(await readFile(new URL("../../../../visuals/wet-watercolor/render/tokens.json", import.meta.url))), "wet-watercolor");
   const request = { requestId: "AR001", frameId: "A", motion: motionFor() };
   const treatment = { templateId: "fullframe-narrative", assetRequests: [request],
     calloutGate: { "historical-quote": "not-triggered", "person-intro": "not-triggered", "term-gloss": "not-triggered" } };
@@ -148,6 +254,24 @@ test("首镜预算消费所选片头，与节目形式无关", () => {
   assert.throws(() => fullframeRuntimeTimingForAuthorUnits({ ...input, programForm: "historical-explainer" }), /片头选择/);
 });
 
+test("导演可读时间按讲解实际推入和推出计算，字幕间隙可容纳推移", () => {
+  const authorUnits = ["fullframe-narrative", "vox-explainer", "fullframe-narrative"].map((templateId, index) => ({
+    id: `B00${index + 1}`, templateId, beats: [{ cueRange: [index + 1, index + 1] }]
+  }));
+  const viewing = gap => {
+    const cues = [[0, 3000], [3000 + gap, 9000 + gap], [9000 + 2 * gap, 12000 + 2 * gap]]
+      .map(([startMs, endMs], index) => ({ id: index + 1, startMs, endMs, text: `观察第${index + 1}处变化` }));
+    return [0, 2].map(index => inspectFullframeAuthorability({
+      label: authorUnits[index].id, authorUnits, cues, cueRange: authorUnits[index].beats[0].cueRange,
+      openerTemplate: "episode-opener", includePlanning: true, singlePicture: true
+    }).planning.clearViewingMs);
+  };
+  const [beforePush, afterPush] = viewing(0);
+  close(beforePush, 2500);
+  close(afterPush, 3000 - 29 * 1000 / VIDEO_SPEC.fps);
+  for (const value of viewing(500)) close(value, 3000);
+});
+
 test("偏心幅度不改变同方向推近的接镜判定，反向仍被拒绝", () => {
   const sample = offset => motionRouteViewportsAtFrames({ motion: {
     type: "push-in", speedRatio: 1, startViewport: { x: 0, y: 0, width: 1, height: 1 }, routeWaypoints: [],
@@ -165,7 +289,7 @@ test("偏心幅度不改变同方向推近的接镜判定，反向仍被拒绝",
 });
 
 test("预算、候选、交接和P4共用单A及两种A/B转场的实际时窗", async () => {
-  const visualStyle = withVisualFontPaths(JSON.parse(await readFile(new URL("../../../../visuals/modern-editorial/render/tokens.json", import.meta.url))), "modern-editorial");
+  const visualStyle = withVisualFontPaths(JSON.parse(await readFile(new URL("../../../../visuals/wet-watercolor/render/tokens.json", import.meta.url))), "wet-watercolor");
   const renderPolicy = createRenderPolicy({ visualStyle, ...VIDEO_SPEC });
   const transitions = [null,
     { type: "dissolve", durationMs: 600 },

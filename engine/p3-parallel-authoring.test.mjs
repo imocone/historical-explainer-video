@@ -14,6 +14,8 @@ import { getEpisodePaths, getProgramPaths, getStageWorkPaths } from "../packages
 import { createAppearance } from "../packages/templates/vox-explainer/appearance.mjs";
 import { submitAuthorCandidate } from "../packages/modules/author-beat/submit.mjs";
 import { pendingAcceptance, recoverAcceptance } from "./runtime/acceptance-commit.mjs";
+import { recoverProgramCompletion } from "./runtime/program-execution.mjs";
+import { parseSrt } from "./p3-input.mjs";
 import {registerP3Source, readP3Sources} from "../packages/p3-sources.mjs";
 import {publishHistoricalContext, bindHistoricalContext} from "../packages/modules/direct-episode/historical-context/handoff.mjs";
 import {preflightAuthorCandidate} from "../packages/modules/author-beat/preflight.mjs";
@@ -79,6 +81,276 @@ const cli = async (options, command, ...flags) => {
   return JSON.parse(stdout);
 };
 
+const deliverRetimedCues = async ({ options, paths, before, after }) => {
+  const prior = await readData(paths.narrationPackage);
+  const output = structuredClone(prior);
+  output.files.subtitles.sha256 = sha256(after);
+  await write(paths.narrationSubtitles, after);
+  await write(paths.narrationPackage, output);
+  const work = getStageWorkPaths(paths, "p2");
+  await write(path.join(work.work, "program-execution.yaml"), {
+    before: prior, beforeCues: parseSrt(before), phase: "completed",
+    primitive: "program-narration-finalize", moduleId: "finalize-narration",
+    outputPath: paths.narrationPackage, outputSha256: hashObject(output)
+  });
+  assert.equal(await recoverProgramCompletion({ ...options, stageId: "p2" }), "finalize-narration");
+};
+
+test("导演在制作前看见两个不同切点挤占同一批帧，并在原分镜排开", async t => {
+  const { options, paths } = await setup(t, ["fullframe-narrative", "fullframe-narrative", "vox-explainer"]);
+  const { understanding, albumPlan, beats, templateRuns } = await readData(paths.storyboard);
+  for (const [index, beat] of beats.entries()) {
+    Object.assign(beat.directorBrief, { entryFocus: "认出同一对象", reveal: "看清变化", exitHold: "留下结果",
+      relationFromPrevious: index ? "沿同一对象承接" : null });
+  }
+  beats[0].incomingTransition = null;
+  beats[1].incomingTransition = { type: "dissolve", durationMs: 1600, reason: "延续同一处境，叠化让观众追认上一镜的对象" };
+  await rm(paths.storyboard);
+  const subtitles = (await readFile(paths.narrationSubtitles, "utf8")).replaceAll("00:00:12,000", "00:00:07,100");
+  await write(paths.narrationSubtitles, subtitles);
+  const narrationPackage = await readData(paths.narrationPackage);
+  narrationPackage.files.subtitles.sha256 = sha256(subtitles);
+  await write(paths.narrationPackage, narrationPackage);
+  const director = await cli(options, "next");
+  const work = getStageWorkPaths(paths, "p3");
+  const candidate = { taskDigest: director.taskDigest, result: { understanding, albumPlan, beats, templateRuns } };
+  await write(work.candidate, candidate);
+  const inspect = () => inspectCurrentDirectorCandidate({ workOrderPath: work.workOrder, candidatePath: work.candidate });
+  const collision = await inspect();
+  assert.deepEqual(collision.editWindows, [
+    { boundaryId: "B001->B002", type: "dissolve", startFrame: 312, endFrame: 408 },
+    { boundaryId: "B002->TR003", type: "vox-push", startFrame: 396, endFrame: 426 }
+  ]);
+  assert.deepEqual(collision.errors, ["B001->B002 和 B002->TR003 的转场重叠 12 帧"]);
+  beats[1].incomingTransition.durationMs = 600;
+  await write(work.candidate, candidate);
+  const repaired = await inspect();
+  assert.equal(repaired.authorable, true);
+  assert.equal(repaired.editWindows[1].startFrame - repaired.editWindows[0].endFrame, 18);
+  for (const name of ["inspect-boundaries", "lock-boundaries"]) {
+    await exec(process.execPath, [path.join(root, `packages/modules/direct-episode/${name}.mjs`), work.workOrder, work.candidate]);
+  }
+  assert.equal((await cli(options, "accept")).kind, "accepted");
+
+  const left = await cli(options, "next", "--claim", "fullframe");
+  const right = await cli(options, "next", "--claim", "fullframe");
+  const leftWork = getStageWorkPaths(paths, "p3", left.segmentId);
+  const rightWork = getStageWorkPaths(paths, "p3", right.segmentId);
+  const rightDraft = { taskDigest: right.taskDigest, result: { items: [] } };
+  await write(rightWork.candidate, rightDraft);
+  const rightProject = path.join(options.workspaceRoot, right.scratchPath, "work-in-progress.txt");
+  await write(rightProject, "切点调整前已经做好的画面材料");
+  const revision = await cli(options, "next", "--revise-director", "--beat", "B001", "--beat", "B002",
+    "--revision-reason", "再给第二镜留出一点清楚显露的时间");
+  const updated = (await readData(work.workOrder)).inputs.currentVisualPlan;
+  updated.beats[1].incomingTransition.durationMs = 500;
+  await write(work.candidate, { taskDigest: revision.taskDigest, result: updated });
+  assert.equal((await inspect()).authorable, true);
+  for (const name of ["inspect-boundaries", "lock-boundaries"]) {
+    await exec(process.execPath, [path.join(root, `packages/modules/direct-episode/${name}.mjs`), work.workOrder, work.candidate]);
+  }
+  assert.equal((await cli(options, "accept")).kind, "accepted");
+  assert.equal((await readData(leftWork.workOrder)).taskDigest, left.taskDigest);
+  assert.equal((await readData(rightWork.workOrder)).taskDigest, right.taskDigest);
+  assert.deepEqual(await readData(rightWork.candidate), rightDraft);
+  const resumed = await cli(options, "next", "--segment", right.segmentId);
+  assert.notEqual(resumed.taskDigest, right.taskDigest);
+  const parked = path.join(rightWork.work, "held-work", right.taskDigest + ".json");
+  assert.deepEqual((await readData(parked)).candidate, rightDraft);
+  assert.equal(await readFile(rightProject, "utf8"), "切点调整前已经做好的画面材料");
+});
+
+test("口播改时造成实际转场冲突时先回导演，保留原分镜", async t => {
+  const { options, paths } = await setup(t, ["fullframe-narrative", "fullframe-narrative", "vox-explainer"]);
+  const work = getStageWorkPaths(paths, "p3");
+  const storyboard = await readData(paths.storyboard);
+  storyboard.beats[0].incomingTransition = null;
+  storyboard.beats[1].incomingTransition = { type: "dissolve", durationMs: 1600, reason: "沿同一对象承接" };
+  await write(paths.storyboard, storyboard);
+  const before = await readFile(paths.narrationSubtitles, "utf8");
+  const after = before.replaceAll("00:00:12,000", "00:00:07,100");
+  await deliverRetimedCues({ options, paths, before, after });
+  const repair = await readData(work.returnRequest("director"));
+  assert.match(repair.reason, /B001->B002 和 B002->TR003 的转场重叠 12 帧/);
+  assert.deepEqual(repair.cueRebinding.previousCues, parseSrt(before));
+  assert.deepEqual(await readData(paths.storyboard), storyboard);
+  assert.equal((await cli(options, "next")).taskId, "ep01/director");
+});
+
+test("讲解实际推移经导演定稿交给原章作者，续领保留段内设计", async t => {
+  const { options, paths } = await setup(t, ["fullframe-narrative", "vox-explainer", "fullframe-narrative"]);
+  const storyboard = await readData(paths.storyboard);
+  const { understanding, albumPlan, beats, templateRuns } = storyboard;
+  for (const [index, beat] of beats.entries()) {
+    Object.assign(beat.directorBrief, { entryFocus: "认出同一对象", reveal: "看清变化", exitHold: "留下结果",
+      relationFromPrevious: index ? "沿同一对象承接" : null });
+    if (beat.templateId === "fullframe-narrative") beat.incomingTransition = null;
+  }
+  await rm(paths.storyboard);
+  const subtitles = (await readFile(paths.narrationSubtitles, "utf8"))
+    .replaceAll("00:00:06,000", "00:00:00,200")
+    .replace("00:00:12,000 -->", "00:00:12,150 -->");
+  await write(paths.narrationSubtitles, subtitles);
+  const narrationPackage = await readData(paths.narrationPackage);
+  narrationPackage.files.subtitles.sha256 = sha256(subtitles);
+  await write(paths.narrationPackage, narrationPackage);
+
+  const director = await cli(options, "next");
+  const directorWork = getStageWorkPaths(paths, "p3");
+  await write(directorWork.candidate, { taskDigest: director.taskDigest,
+    result: { understanding, albumPlan, beats, templateRuns } });
+  const inspect = async name => JSON.parse((await exec(process.execPath,
+    [path.join(root, `packages/modules/direct-episode/${name}.mjs`), directorWork.workOrder, directorWork.candidate])).stdout);
+  const planned = (await inspect("inspect-authorability")).units.find(unit => unit.id === "TR002").planning.viewingWindow;
+  assert.deepEqual(planned, {
+    entryPush: { startFrame: -12, endFrame: 18 },
+    exitPush: { startFrame: 707, endFrame: 737 },
+    clearViewing: { startFrame: 18, endFrame: 707 }
+  });
+  await inspect("inspect-boundaries");
+  await inspect("lock-boundaries");
+  assert.equal((await cli(options, "accept")).kind, "accepted");
+  const accepted = await readData(paths.storyboard);
+  assert.deepEqual(accepted.templateRuns.find(run => run.id === "TR002").beatIds, ["B002"]);
+
+  await cli(options, "next", "--sound-effects", "off");
+  const claim = await cli(options, "next", "--claim", "explainer");
+  const work = getStageWorkPaths(paths, "p3", "TR002");
+  const result = resultFor(2);
+  result.treatment.scene.animation += "\ntimeline.to(select('#state'),{x:100,duration:1},cue('M001'));";
+  const candidate = { taskDigest: claim.taskDigest, result };
+  await write(work.candidate, candidate);
+  const signed = await readFile(work.workOrder);
+  assert.equal(JSON.parse(signed).inputs.templateContext.viewingWindow, undefined);
+  const { stdout } = await exec(process.execPath, [path.join(root, "packages/p3-task-view.mjs"), work.workOrder]);
+  assert.deepEqual(JSON.parse(stdout).inputs.templateContext.viewingWindow, planned);
+  assert.equal((await cli(options, "next", "--segment", "TR002")).taskDigest, claim.taskDigest);
+  assert.deepEqual(await readFile(work.workOrder), signed);
+  assert.deepEqual(await readData(work.candidate), candidate);
+
+  const draftFile = path.join(options.workspaceRoot, claim.scratchPath, "scene-source.js");
+  await write(draftFile, "const originalScene = true;");
+  await write(work.candidate, { ...candidate,
+    returnTo: { target: "director", reason: "请确认讲解段首是否保留当前承接", cueRefs: [2] } });
+  assert.equal((await cli(options, "accept", "--segment", "TR002")).kind, "returned");
+  const request = await readData(directorWork.returnRequest("director"));
+  assert.equal(request.revisionScope, "director-revision");
+  assert.deepEqual(request.selectedBeatIds, ["B002"]);
+  assert.equal(await readFile(draftFile, "utf8"), "const originalScene = true;");
+  const held = path.join(work.work, "held-work", claim.taskDigest + ".json");
+  assert.deepEqual((await readData(held)).candidate, candidate);
+  const review = await cli(options, "next");
+  const reviewOrder = await readData(directorWork.workOrder);
+  await write(directorWork.candidate, { taskDigest: review.taskDigest, result: reviewOrder.inputs.currentVisualPlan });
+  await inspect("inspect-authorability");
+  await inspect("inspect-boundaries");
+  await inspect("lock-boundaries");
+  assert.equal((await cli(options, "accept")).kind, "accepted");
+  assert.equal((await cli(options, "next", "--segment", "TR002")).taskDigest, claim.taskDigest);
+  assert.deepEqual(await readData(work.candidate), candidate);
+  assert.equal(await readFile(draftFile, "utf8"), "const originalScene = true;");
+
+  await submitAuthorCandidate({ workOrderPath: work.workOrder, candidatePath: work.candidate,
+    workspace: options.workspaceRoot, episode: "ep01" });
+  assert.equal((await cli(options, "accept", "--segment", "TR002")).kind, "accepted");
+  const completed = await readData(paths.storyboard);
+  assert.deepEqual(completed.beats.map(({ id, cueRange }) => ({ id, cueRange })),
+    accepted.beats.map(({ id, cueRange }) => ({ id, cueRange })));
+  assert.equal(completed.templateRuns.find(run => run.id === "TR002").treatment.scene.animation,
+    result.treatment.scene.animation);
+
+  const retimed = subtitles.replaceAll("00:00:00,200", "00:00:00,600");
+  await deliverRetimedCues({ options, paths, before: subtitles, after: retimed });
+  const repair = await readData(directorWork.returnRequest("author"));
+  assert.deepEqual(repair.pendingAuthorUnitIds, ["B001", "TR002"]);
+  assert.deepEqual(repair.selectedBeatIds, ["B001", "B002"]);
+  assert.deepEqual((await readData(paths.storyboard)).templateRuns.find(run => run.id === "TR002"),
+    completed.templateRuns.find(run => run.id === "TR002"));
+
+  const redo = await cli(options, "next", "--segment", "TR002");
+  const redoFile = path.join(options.workspaceRoot, redo.scratchPath, "scene-source.js");
+  await write(redoFile, "const keepDuringRedesign = true;");
+  const redoDraft = { taskDigest: redo.taskDigest, result };
+  const returnForDirector = async () => {
+    await write(work.candidate, { ...redoDraft,
+      returnTo: { target: "director", reason: "重作时发现章首观看目标需要导演确认", cueRefs: [2] } });
+    assert.equal((await cli(options, "accept", "--segment", "TR002")).kind, "returned");
+    assert.deepEqual(await readData(directorWork.returnRequest("author")), repair);
+    return cli(options, "next");
+  };
+  await returnForDirector();
+  assert.equal((await cli(options, "next", "--cancel-director-revision")).kind, "revision-cancelled");
+  assert.equal((await cli(options, "next", "--segment", "TR002")).taskDigest, redo.taskDigest);
+  assert.deepEqual(await readData(work.candidate), redoDraft);
+
+  const directorRedo = await returnForDirector();
+  const directorDraft = (await readData(directorWork.workOrder)).inputs.currentVisualPlan;
+  directorDraft.beats.find(beat => beat.id === "B002").directorBrief.reveal = "让观众先认出遮挡，再看清作用位置";
+  await write(directorWork.candidate, { taskDigest: directorRedo.taskDigest, result: directorDraft });
+  await inspect("inspect-authorability");
+  await inspect("inspect-boundaries");
+  await inspect("lock-boundaries");
+  assert.equal((await cli(options, "accept")).kind, "accepted");
+  const resumed = await readData(directorWork.returnRequest("author"));
+  assert.notEqual(resumed.baselineVisualPlanSha256, repair.baselineVisualPlanSha256);
+  assert.equal(resumed.reason, repair.reason);
+  assert.deepEqual(resumed.pendingAuthorUnitIds, ["B001", "TR002"]);
+  assert.notEqual((await cli(options, "next", "--segment", "TR002")).taskDigest, redo.taskDigest);
+  assert.deepEqual((await readData(path.join(work.work, "held-work", redo.taskDigest + ".json"))).candidate, redoDraft);
+  assert.equal(await readFile(redoFile, "utf8"), "const keepDuringRedesign = true;");
+});
+
+test("合并前的理解返工和同源候选沿当前导演接纳，双请求一并收口", async t => {
+  const {options, paths} = await setup(t, ["fullframe-narrative", "vox-explainer"]);
+  const work = getStageWorkPaths(paths, "p3");
+  const original = await readData(paths.storyboard);
+  const current = await cli(options, "status");
+  assert.equal(current.nodeId, "author");
+  const {parseSrt} = await import("./p3-input.mjs");
+  const previousCues = parseSrt(await readFile(paths.narrationSubtitles, "utf8"));
+  const legacy = {target: "understand", reason: "旧理解请求核对字幕引用", cueRefs: [],
+    cueRebinding: {understanding: original.understanding, previousCues}};
+  await write(work.returnRequest("understand"), legacy);
+  assert.equal((await cli(options, "status")).nodeId, "director");
+  await write(work.returnRequest("director"), {target: "director", reason: "同一次字幕引用修订", cueRefs: [],
+    cueRebinding: {previousCues}});
+  await cli(options, "next");
+  const {taskDigest: _digest, ...oldOrder} = await readData(work.workOrder);
+  Object.assign(oldOrder, {taskId: "ep01/understand", moduleId: "understand-episode", nodeId: "understand",
+    allowedWrite: oldOrder.allowedWrite + "#understanding"});
+  oldOrder.resolvedAssembly.node = {id: "understand", moduleId: "understand-episode"};
+  oldOrder.resolvedAssembly.module.id = "understand-episode";
+  oldOrder.inputs.returnRequest = legacy;
+  oldOrder.scratchPath = path.relative(options.workspaceRoot, path.join(work.work, "attempt-legacy"));
+  const scratch = path.join(options.workspaceRoot, oldOrder.scratchPath, "original-note.txt");
+  await write(scratch, "原工作材料");
+  const signed = {...oldOrder, taskDigest: hashObject(oldOrder)};
+  const draft = {taskDigest: signed.taskDigest, result: {understanding: original.understanding}};
+  await write(work.workOrder, signed);
+  await write(work.candidate, draft);
+
+  const continued = await cli(options, "next");
+  assert.equal(continued.taskId, "ep01/director");
+  assert.deepEqual(await readData(work.candidate), {taskDigest: continued.taskDigest, result: draft.result});
+  const held = await readData(path.join(work.work, "held-work", signed.taskDigest + ".json"));
+  assert.deepEqual(held, {workOrder: signed, candidate: draft});
+  assert.equal(await readFile(scratch, "utf8"), "原工作材料");
+  assert.deepEqual(await readData(work.returnRequest("understand")), legacy);
+  assert.equal((await cli(options, "next")).taskDigest, continued.taskDigest);
+
+  const beats = structuredClone(original.beats);
+  beats[1].directorBrief.relationFromPrevious = "继续观察同一变化";
+  await write(work.candidate, {taskDigest: continued.taskDigest, result: {understanding: draft.result.understanding,
+    albumPlan: original.albumPlan, beats, templateRuns: original.templateRuns}});
+  await inspectCurrentDirectorCandidate({workOrderPath: work.workOrder, candidatePath: work.candidate});
+  for (const name of ["inspect-boundaries", "lock-boundaries"]) await exec(process.execPath,
+    [path.join(root, `packages/modules/direct-episode/${name}.mjs`), work.workOrder, work.candidate]);
+  assert.equal((await cli(options, "accept")).kind, "accepted");
+  for (const target of ["understand", "director"]) await assert.rejects(readFile(work.returnRequest(target)), {code: "ENOENT"});
+  assert.equal((await cli(options, "status")).nodeId, "author");
+  assert.deepEqual(await readData(path.join(work.work, "held-work", signed.taskDigest + ".json")), held);
+});
+
 test("其它CLI渲染期间仍能查询P3和领取原作者工作单", {timeout: 330000}, async t => {
   const {options, paths} = await setup(t, ['fullframe-narrative']);
   const storyboard = await readFile(paths.storyboard, 'utf8');
@@ -139,20 +411,30 @@ test("导演历史视觉组件经接纳、正文追加、实图请求贯通，�
   const viewFor = async file => JSON.parse((await exec(process.execPath,
     [path.join(root, "packages/p3-task-view.mjs"), file], {maxBuffer: 8 * 1024 * 1024})).stdout);
   const original = await readData(paths.storyboard);
-  const plan = {albumPlan: original.albumPlan, beats: original.beats, templateRuns: [
+  const plan = {understanding: original.understanding, albumPlan: original.albumPlan, beats: original.beats, templateRuns: [
     {id: "TR001", templateId: "fullframe-narrative", beatIds: ["B001", "B002"]},
     {id: "TR002", templateId: "vox-explainer", beatIds: ["B003"]}
   ]};
-  await write(paths.storyboard, {understanding: original.understanding});
+  await rm(paths.storyboard);
   await runNext(options);
   const directorWork = getStageWorkPaths(paths, "p3");
   const director = await readData(directorWork.workOrder);
+  assert.equal(director.nodeId, "director");
+  const semanticDraft = {taskDigest: director.taskDigest, result: {understanding: plan.understanding}};
+  await write(directorWork.candidate, semanticDraft);
+  await runNext(options);
+  assert.deepEqual(await readData(directorWork.candidate), semanticDraft);
+  assert.equal(await readFile(directorWork.workOrder, "utf8").then(JSON.parse).then(task => task.taskDigest), director.taskDigest);
   const directorView = await viewFor(directorWork.workOrder);
   assert.equal(directorView.scratchPath, director.scratchPath);
   const sourceFile = path.join(options.workspaceRoot, directorView.scratchPath, "period.md");
   const evidence = "适用范围：测试时期院门。可见特征：门闩为横向木条。依据：离线自制样本。限定：不证明任何历史形制。";
   await write(sourceFile, evidence);
   for (const [index, beat] of plan.beats.entries()) {
+    if (beat.templateId === "fullframe-narrative") {
+      beat.incomingTransition = index > 0 ? {type: "dissolve", durationMs: 600, reason: "保持同一院门的观察连续"} : null;
+    }
+    Object.assign(beat.directorBrief, {entryFocus: "看清院门", reveal: "观察木闩的方位", exitHold: "留住院门和木闩的关系"});
     beat.directorBrief.mustShow = "看清当前院门结构";
     beat.directorBrief.relationFromPrevious = index ? "沿前项继续观察结构" : null;
   }
@@ -165,17 +447,37 @@ test("导演历史视觉组件经接纳、正文追加、实图请求贯通，�
     environment: [{subject: "院门", features: "门闩为横向木条", evidence: ["gate"], limits: "不推断其它历史形制"}], limits: "独立测试"}]});
   const published = await publishHistoricalContext({workOrderPath: directorWork.workOrder, researchPath});
   const source = published.source, evidenceSource = published.sourceAssets[0];
+  plan.understanding.evidence = [{id: "E001", cueRefs: [1], source: "registered-source",
+    text: "测试原件说明院门门闩为横向木条", sourceAssetRefs: [evidenceSource.id]}];
+  plan.understanding.facts = [{id: "F001", cueRefs: [1], claim: "测试院门带横向木闩", evidenceRefs: ["E001"]}];
+  await write(directorWork.candidate, {taskDigest: director.taskDigest, result: plan});
   await bindHistoricalContext({workOrderPath: directorWork.workOrder, sourceId: source.id});
+  const bounded = await readData(directorWork.candidate);
+  const wrongCut = structuredClone(bounded);
+  wrongCut.result.beats[2].incomingTransition = {type: "dissolve", durationMs: 600, reason: "错误的讲解进场要求"};
+  await write(directorWork.candidate, wrongCut);
+  await assert.rejects(inspectCurrentDirectorCandidate({workOrderPath: directorWork.workOrder,
+    candidatePath: directorWork.candidate}), /讲解章不交付 incomingTransition/);
+  await write(directorWork.candidate, bounded);
   await inspectCurrentDirectorCandidate({workOrderPath: directorWork.workOrder, candidatePath: directorWork.candidate});
   for (const name of ["inspect-boundaries", "lock-boundaries"]) await exec(process.execPath,
     [path.join(root, `packages/modules/direct-episode/${name}.mjs`), directorWork.workOrder, directorWork.candidate]);
   await acceptCandidate(options);
+  const directed = await readData(paths.storyboard);
+  assert.equal(directed.understanding._producer.moduleId, "direct-episode");
+  assert.ok(directed.understanding._producer.inputs.includes(evidenceSource.sha256));
   await runNext({...options, claim: "fullframe"});
   await runNext({...options, claim: "explainer"});
   const work = getStageWorkPaths(paths, "p3", "TR001"), other = getStageWorkPaths(paths, "p3", "TR002");
   const task = await readData(work.workOrder), otherTask = await readData(other.workOrder);
   const signed = await readFile(work.workOrder), otherSigned = await readFile(other.workOrder);
+  assert.deepEqual(otherTask.inputs.authorUnitBeats.map(beat => [beat.id, beat.cueRange, beat.incomingTransition]),
+    [["B003", [3, 3], undefined]]);
+  assert.equal(otherTask.inputs.authorUnitBeats[0].directorBrief.reveal, "观察木闩的方位");
   assert.match(task.inputs.authorBatch.members[0].inputs.beat.directorBrief.mustShow, /SA001/);
+  assert.deepEqual(task.inputs.authorBatch.members[1].inputs.templateContext.directedTransition, plan.beats[1].incomingTransition);
+  assert.deepEqual(task.inputs.authorBatch.members[1].inputs.templateContext.cueOptions.frameB, []);
+  assert.equal(task.inputs.authorBatch.members[0].inputs.semanticContext.facts[0].id, "F001");
   const visual = await readData(path.join(root, "visuals/meiji-state-machine/visual-package.json"));
   const image = path.join(root, "visuals/meiji-state-machine", visual.masterReference.path);
   const photo = await registerP3Source({workOrderPath: work.workOrder, source: {
@@ -191,7 +493,7 @@ test("导演历史视觉组件经接纳、正文追加、实图请求贯通，�
   assert.deepEqual(historical.contexts[0].environment[0].evidence, [evidenceSource.id]);
   assert.deepEqual((await viewFor(other.workOrder)).inputs.sourceAssets, view.inputs.sourceAssets);
   const result = {items: [1, 2].map(id => ({beatId: `B00${id}`, treatment: {
-    templateId: "fullframe-narrative", incomingTransition: id === 1 ? null : {type: "dissolve", durationMs: 600, reason: "换观察位置"},
+    templateId: "fullframe-narrative", incomingTransition: plan.beats[id - 1].incomingTransition,
     continuity: {period: "测试时期", location: "院落", continuesPreviousScene: false, subjects: [], props: ["院门"], carryToNext: {subjects: [], props: []}},
     calloutGate: {"historical-quote": "not-triggered", "person-intro": "not-triggered", "term-gloss": "not-triggered"},
     assetRequests: [{requestId: "AR001", frameId: "A", cameraRelation: id === 1 ? "first" : "reset",
@@ -238,11 +540,17 @@ test("导演历史视觉组件经接纳、正文追加、实图请求贯通，�
   assert.deepEqual(await readFile(other.workOrder), otherSigned);
   const otherResult = resultFor(3);
   otherResult.treatment.moments[0].sourceRefs.push(source.id, photo.id);
+  otherResult.treatment.scene.events = [{id: "E001", target: "M001", offsetSeconds: .75}];
+  otherResult.treatment.scene.animation = "timeline.set(select('#state'),{opacity:1},eventTime('E001'));";
   otherResult.featureResults["sound-effects"] = {events: []};
   await write(other.candidate, {taskDigest: otherTask.taskDigest, result: otherResult});
+  assert.equal((await preview({workOrderPath: other.workOrder, candidatePath: other.candidate, validateOnly: true})).moments, 1);
   await preflightAuthorCandidate({workOrderPath: other.workOrder, candidatePath: other.candidate});
   await acceptCandidate({...options, segmentId: "TR002"});
-  assert.deepEqual((await readData(paths.storyboard)).features["sound-effects"].units.TR002.events, []);
+  const finalStory = await readData(paths.storyboard);
+  assert.deepEqual(finalStory.features["sound-effects"].units.TR002.events, []);
+  assert.deepEqual(finalStory.templateRuns.find(run => run.id === "TR002").treatment.scene.events,
+    otherResult.treatment.scene.events);
   await runNext({...options, redesignBody: true, redesignBeatIds: ["B001"], revisionReason: "测试单Beat补充依据"});
   const revision = await readData(work.workOrder), revisionSigned = await readFile(work.workOrder);
   assert.equal(revision.inputs.authorBatch, undefined);
@@ -352,7 +660,7 @@ const authorProcess = t => {
   return send;
 };
 
-test("正式命令驱动最多三路进程，每章换新作者且各段互不覆盖", { timeout: 180_000 }, async t => {
+test("讲解B2交回先留候选再补派，收齐后沿原单精修并接纳", { timeout: 180_000 }, async t => {
   const { options, paths } = await setup(t, Array(4).fill("vox-explainer"));
   const requests = await Promise.allSettled(Array.from({ length: 3 }, () => cli(options, "next", "--claim", "explainer")));
   const assigned = [];
@@ -367,31 +675,59 @@ test("正式命令驱动最多三路进程，每章换新作者且各段互不�
   const workers = Array.from({ length: 3 }, () => authorProcess(t));
   const assign = (worker, id) => worker({ action: "assign", segmentId: `TR00${id}`,
     ...getStageWorkPaths(paths, "p3", `TR00${id}`), result: resultFor(id) });
+  const submit = async work => submitAuthorCandidate({
+    workOrderPath: work.workOrder, candidatePath: work.candidate,
+    workspace: options.workspaceRoot, episode: options.episodeId
+  });
   const active = await Promise.all(workers.map((worker, index) => assign(worker, index + 1)));
   assert.equal(new Set(active.map(value => value.pid)).size, 3);
   assert.deepEqual(active.map(value => value.segmentId), assigned);
   t.diagnostic(`三路同时持有 TR001、TR002、TR003；进程 ${active.map(value => value.pid).join("、")}`);
   const untouched = await Promise.all([1, 2].map(id => readFile(getStageWorkPaths(paths, "p3", `TR00${id}`).workOrder)));
+  const before = await readFile(paths.storyboard);
+  const work = getStageWorkPaths(paths, "p3", "TR003");
   await workers[2]({ action: "finish" });
-  assert.equal((await cli(options, "accept", "--segment", "TR003")).taskId, "ep01/TR003/author");
-  assert.deepEqual(await Promise.all([1, 2].map(id => readFile(getStageWorkPaths(paths, "p3", `TR00${id}`).workOrder))), untouched);
+  assert.equal((await submit(work)).preflight.ok, true);
+  const draft = await readFile(work.candidate);
+  const signed = await readFile(work.workOrder);
   await workers[2].stop();
   assert.equal((await cli(options, "next", "--claim", "explainer")).segmentId, "TR004");
+  assert.deepEqual(await readFile(work.candidate), draft);
+  assert.deepEqual(await Promise.all([1, 2].map(id => readFile(getStageWorkPaths(paths, "p3", `TR00${id}`).workOrder))), untouched);
   workers[2] = authorProcess(t);
   const replacement = await assign(workers[2], 4);
   assert.ok(active.every(value => value.pid !== replacement.pid));
   const continuing = await Promise.all(workers.map(worker => worker({ action: "inspect" })));
   assert.deepEqual(continuing.map(value => value.segmentId), ["TR001", "TR002", "TR004"]);
   assert.deepEqual(continuing.slice(0, 2), active.slice(0, 2));
-  t.diagnostic("TR003先完成并接纳，结束其进程后为TR004新建进程；另两路原进程仍在处理TR001、TR002");
+  t.diagnostic("TR003交回候选后释放名额，TR004由新进程接手，TR001和TR002继续");
   assert.equal((await cli(options, "next", "--claim", "explainer")).kind, "author-queue-empty");
   await Promise.all(workers.map(worker => worker({ action: "finish" })));
-  const remaining = new Map();
   for (const id of [1, 2, 4]) {
+    assert.equal((await submit(getStageWorkPaths(paths, "p3", `TR00${id}`))).preflight.ok, true);
+  }
+  const ready = await cli(options, "status");
+  assert.ok(ready.authorSegments.every(segment => segment.state === "in-progress"));
+  assert.equal(ready.queue.find(item => item.nodeId === "author").units.completed, 0);
+  assert.deepEqual(await readFile(paths.storyboard), before);
+
+  assert.equal((await cli(options, "next", "--segment", "TR003")).segmentId, "TR003");
+  assert.deepEqual(await readFile(work.workOrder), signed);
+  assert.deepEqual(await readFile(work.candidate), draft);
+  const edited = await readData(work.candidate);
+  const polishedMarkup = '<div id="state">变化后的状态</div>';
+  edited.result.treatment.scene.markup = polishedMarkup;
+  await write(work.candidate, edited);
+  assert.equal((await submit(work)).preflight.ok, true);
+  await preview({workOrderPath: work.workOrder, candidatePath: work.candidate, validateOnly: true});
+  assert.deepEqual(await readFile(paths.storyboard), before);
+
+  const remaining = new Map();
+  for (const id of [1, 2, 3, 4]) {
     const work = getStageWorkPaths(paths, "p3", `TR00${id}`);
     remaining.set(id, { work, order: await readFile(work.workOrder), candidate: await readFile(work.candidate) });
   }
-  for (const id of [4, 2, 1]) {
+  for (const id of [1, 2, 3, 4]) {
     assert.equal((await cli(options, "accept", "--segment", `TR00${id}`)).taskId, `ep01/TR00${id}/author`);
     remaining.delete(id);
     for (const { work, order, candidate } of remaining.values()) {
@@ -400,10 +736,11 @@ test("正式命令驱动最多三路进程，每章换新作者且各段互不�
     }
   }
   const story = await readData(paths.storyboard);
+  assert.equal(story.templateRuns[2].treatment.scene.markup, polishedMarkup);
   assert.deepEqual(story.templateRuns.map(run => run.treatment.moments[0].sourceRefs), [["C001"], ["C002"], ["C003"], ["C004"]]);
   assert.deepEqual(Object.keys(story.features["cue-sync"].bindings).sort(), ["TR001", "TR002", "TR003", "TR004"]);
   assert.equal((await cli(options, "status")).queue.find(item => item.nodeId === "author").units.completed, 4);
-  t.diagnostic("接纳顺序TR003→TR004→TR002→TR001；四段成果齐全，其余工作单及候选逐字节未变");
+  t.diagnostic("原单精修后通过B2与预演接口，四段接纳齐全，接纳时其余候选保持原值");
 });
 
 test("正式accept恢复事务后只返回指定段的结果", { timeout: 180_000 }, async t => {

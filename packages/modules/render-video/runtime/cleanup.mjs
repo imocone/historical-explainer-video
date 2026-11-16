@@ -22,8 +22,11 @@ export async function readRetainedDelivery({ workspaceRoot, episodeId, verifyVid
     throw new Error('成片清理回执身份或内容不符，保留素材');
   await assertProjectPath({ root: workspaceRoot, file: paths.finalVideo, label: '清理前正式成片' });
   const info = await stat(paths.finalVideo).catch(missing);
-  if (!info?.isFile() || !info.size || (verifyVideo && await fileSha256(paths.finalVideo) !== receipt.sha256))
-    throw new Error('正式成片缺失或与回执不符，保留素材，不自动重压');
+  if (!info?.isFile() || !info.size || (verifyVideo && await fileSha256(paths.finalVideo) !== receipt.sha256)) {
+    const error = new Error('正式成片缺失或与回执不符，保留素材，不自动重压');
+    error.code = 'retained-video-unavailable';
+    throw error;
+  }
   return receipt;
 }
 
@@ -108,13 +111,13 @@ export async function cleanupEpisodeMedia({ workspaceRoot, systemRoot, episodeId
     }
   }
   const histories = await ownedPreviewHistories(projects, historyRoot);
-  const [{ loadStudioRuntime }, { stopComposition }] = await Promise.all([import('./browser-session.mjs'), import('./hyperframes.mjs')]);
-  const { scanActiveServers } = await loadStudioRuntime();
+  const [{ loadStudioRuntime }, { stopStudioPreview }] = await Promise.all([import('./browser-session.mjs'), import('./hyperframes.mjs')]);
+  const { scanActiveServers, activeServerOnPort } = await loadStudioRuntime();
   for (const server of await scanActiveServers()) {
     const relative = path.relative(paths.episode, path.resolve(server.projectDir));
     const insideEpisode = relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative));
     if (insideEpisode || projects.some(project => path.resolve(project) === path.resolve(server.projectDir)))
-      await stopComposition(server.projectDir);
+      await stopStudioPreview(server, activeServerOnPort);
   }
   // All paths are checked before the first deletion; no shared/global clean sweep.
   for (const file of files) await rm(file, { force: true });

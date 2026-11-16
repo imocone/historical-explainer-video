@@ -1,6 +1,5 @@
 import { anchoredFrameForMs } from "../../../video-spec.mjs";
 import { bodyTimelineStartMsFor } from "./timeline.mjs";
-import { endingDurationInFrames } from "./ending.mjs";
 
 export const buildSegmentPreviewProps = ({ episodeProps, segmentType }) => {
   if (!["body", "opener"].includes(segmentType)) throw new Error(`未知片段预览类型: ${segmentType}`);
@@ -20,7 +19,7 @@ export const buildSegmentPreviewProps = ({ episodeProps, segmentType }) => {
   const ending = episodeProps.ending?.afterSegmentId === last.id ? episodeProps.ending : null;
   return { ...episodeProps, preview: {
     fromFrame: first.startFrame,
-    toFrame: ending ? anchoredFrameForMs({milliseconds:ending.startMs,anchorMs,fps:episodeProps.fps}) + endingDurationInFrames(ending)
+    toFrame: ending ? anchoredFrameForMs({milliseconds:ending.endMs,anchorMs,fps:episodeProps.fps})
       : last.startFrame + last.durationInFrames,
     segmentIds: segments.map(segment => segment.id)
   } };

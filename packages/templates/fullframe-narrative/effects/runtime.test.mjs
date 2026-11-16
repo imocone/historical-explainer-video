@@ -17,8 +17,8 @@ import { assertEffectAnchors, effectOpacityAtFrame, effectSampleFrame, projected
 import { resolveCrossBeatRuntimeTiming } from "../../../modules/render-video/runtime/transitions.mjs";
 import { narrativeVisibility } from "../../../modules/render-video/runtime/narrative-transition.mjs";
 
-const tokens = JSON.parse(await readFile(new URL("../../../../visuals/modern-editorial/render/tokens.json", import.meta.url)));
-const policy = createRenderPolicy({ visualStyle: withVisualFontPaths(tokens, "modern-editorial"), ...VIDEO_SPEC });
+const tokens = JSON.parse(await readFile(new URL("../../../../visuals/wet-watercolor/render/tokens.json", import.meta.url)));
+const policy = createRenderPolicy({ visualStyle: withVisualFontPaths(tokens, "wet-watercolor"), ...VIDEO_SPEC });
 const emotion = { type: "emotion", intensity: "medium", timing: "cue", durationMs: 1200,
   symbol: "question", anchorFocus: "军官头顶", reason: "旁白表达疑惑" };
 const request = (id, frameId = "A") => ({ requestId: id, frameId, kind: "fullframe-image", cameraRelation: frameId === "A" ? "first" : "reset",
@@ -58,14 +58,14 @@ test("开关七种效果不改变相机，也不改变静态生图投影", () =>
   effects.push(emotion);
   const withEffects = treatmentFor([{ ...req, effects }]), without = treatmentFor([req]);
   assert.deepEqual(projectAssetPlanTreatment(withEffects), projectAssetPlanTreatment(without));
-  const args = { segmentId: "B001", durationInFrames: 600, targetDurationMs: 10000, policy,
+  const args = { segmentId: "B001", durationInFrames: 540, targetDurationMs: 9000, policy,
     runtimeTiming: { cameraPrerollFrames: 24, exitTailFrames: 36 } };
   const baseline = renderData({ ...args, treatment: without, assetRefs: [asset], actionTimings: [start] });
   const executed = renderData({ ...args, treatment: withEffects,
     assetRefs: [{ ...asset, effectAnchors: { 4: {anchorFocus:"左上窗户",x:.19,y:.12}, 6: { anchorFocus: emotion.anchorFocus, x: 0.65, y: 0.24 } } }],
     actionTimings: [start, { target: "AR001.effect.6", action: "show-effect", frame: 180 }] });
   assert.deepEqual(executed.fullframe[0].motion, baseline.fullframe[0].motion);
-  for (let localFrame = -24; localFrame <= 635; localFrame++) {
+  for (let localFrame = -24; localFrame <= args.durationInFrames + 36 - 1; localFrame++) {
     const runtimeTiming = { visualFrameOffset: 24, semanticFrameOffset: 0 };
     assert.deepEqual(cameraStateAtRuntimeFrame({ frames: executed.fullframe, transitions: [], localFrame, runtimeTiming }),
       cameraStateAtRuntimeFrame({ frames: baseline.fullframe, transitions: [], localFrame, runtimeTiming }));
@@ -115,12 +115,12 @@ test("跨Beat预入与A/B叠化中，场景效果不再二次淡入淡出", () =
   const req = { ...request("AR001"), effects: [snow] };
   const incomingTransition = { type: "dissolve", durationMs: 1000, reason: "换景" };
   const timed = resolveCrossBeatRuntimeTiming({ segments: [
-    { id: "B001", templateId: "fullframe-narrative", startFrame: 0, durationInFrames: 600 },
-    { id: "B002", templateId: "fullframe-narrative", startFrame: 600, durationInFrames: 600, incomingTransition }
+    { id: "B001", templateId: "fullframe-narrative", startFrame: 0, durationInFrames: 540 },
+    { id: "B002", templateId: "fullframe-narrative", startFrame: 540, durationInFrames: 540, incomingTransition }
   ] });
   const segment = timed.segments[1];
   const data = renderData({ segmentId: segment.id, treatment: treatmentFor([req]), assetRefs: [assetFor(req)],
-    actionTimings: [start], durationInFrames: 600, targetDurationMs: 10000, policy,
+    actionTimings: [start], durationInFrames: 540, targetDurationMs: 9000, policy,
     runtimeTiming: { cameraPrerollFrames: segment.appliedCameraPrerollFrames, exitTailFrames: segment.appliedExitTailFrames } });
   const effect = data.fullframe[0].effects[0];
   assert.ok(segment.appliedCameraPrerollFrames > 0);

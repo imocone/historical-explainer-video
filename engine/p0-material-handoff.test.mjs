@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { atomicWrite, atomicWriteData, fileSha256, hashObject, readData } from "../packages/program-utils.mjs";
 import { expectedEpisodeBrief, materializeEpisodeBriefs, narrationEpisodeProjection } from "../packages/program-brief.mjs";
+import { episodeReferenceVideos } from "../packages/reference-program.mjs";
 import { getProgramPaths, getEpisodePaths, getStageWorkPaths } from "../packages/workspace-paths.mjs";
 import { getPublicationPaths } from "../packages/publication-paths.mjs";
 import { validate, validateCommon, validateAcceptance } from "../packages/modules/plan-program/validate.mjs";
@@ -18,8 +19,8 @@ import { prepareNarrationReplacement } from "./runtime/revise-narration.mjs";
 const root = fileURLToPath(new URL("..", import.meta.url));
 const researchLibrary = { notebookId: "notebook", requiredSourceIds: ["source"] };
 const episode = { episodeId: "ep01", episodeTitle: "局面为何改变", episodeQuestion: "什么使局面改变？",
-  episodeAnswer: "关键条件改变了各方的选择。", episodeCreativeBrief: "解释条件与行动。材料：报道 https://example.com/report，正文第二节。",
-  episodeScope: "本次事件", episodeBenefit: "理解选择改变的原因。" };
+  episodeAnswer: "关键条件改变了各方的选择。", episodeCreativeBrief: "解释条件与行动，保留起始局面、实际做法、回应及结果。\n\n委托要求：YouTube标题逐字保留“为什么条件改变后，各方作出了与过去不同的选择”；目标12分钟，不是必须写满；本集不写动机猜测。\n\n材料：报道 https://example.com/report，正文第二节。",
+  episodeScope: "本次事件，到已经确认的结果为止，不抢讲相邻集。", episodeBenefit: "理解选择改变的原因。" };
 const basePlan = { schemaVersion: "7.3", programId: "test-program", programForm: "historical-explainer", explainerType: "general",
   seriesTitle: "测试节目", audience: "普通观众", editorialDirection: "解释真实变化", viewerBenefit: "理解原因",
   narrativeTone: "平实", seriesFramework: "围绕条件变化展开", openerTemplate: "episode-opener",
@@ -42,14 +43,15 @@ async function fixture(t) {
 }
 
 test("P0来源组合通过实际合同、接纳检查并投递到P1", async (t) => {
-  for (const kind of ["web", "book", "video", "query", "video-query"]) await t.test(kind, async (t) => {
+  for (const kind of ["web", "book", "video", "query", "video-query", "topic-video", "book-video", "topic-video-query", "mixed-video"]) await t.test(kind, async (t) => {
     const { workspaceRoot, referenceProgram } = await fixture(t);
-    const video = kind.startsWith("video"), query = kind.includes("query");
+    const video = kind.includes("video"), query = kind.includes("query");
     const plan = { ...structuredClone(basePlan), explainerType: video ? "current-affairs" : "general" };
-    const planningBasis = video ? { kind: "video-led", referenceProgram }
-      : kind === "book" ? { kind: "book-led", book: { path: "/local/book.txt", sha256: "c".repeat(64) } } : { kind: "topic-led" };
+    const planningBasis = kind.startsWith("video") ? { kind: "video-led", referenceProgram }
+      : kind.startsWith("book") ? { kind: "book-led", book: { path: "/local/book.txt", sha256: "c".repeat(64) } } : { kind: "topic-led" };
     if (kind === "book") plan.episodes[0].episodeCreativeBrief = "解释原指定书的中心关系。材料：指定书 /local/book.txt，第2章，摘要 " + "c".repeat(64);
     if (video) { plan.referenceProgram = referenceProgram; plan.episodes[0].referenceVideoIds = ["video"]; }
+    if (kind === "mixed-video") plan.episodes.push({ ...episode, episodeId: "ep02", episodeTitle: "文献独立策划的一集" });
     if (query) plan.researchLibrary = researchLibrary;
     const request = {...requestFor(planningBasis),openerTemplate:plan.openerTemplate};
     if (query) request.researchLibrary = { notebookId: researchLibrary.notebookId };
@@ -74,11 +76,48 @@ test("P0来源组合通过实际合同、接纳检查并投递到P1", async (t) 
     const inputs = workOrder.inputs;
     assert.equal((await readData(getEpisodePaths(workspaceRoot, "ep01").episodeBrief)).explainerType, plan.explainerType);
     assert.equal(inputs.episodeBrief.explainerType, plan.explainerType);
-    assert.equal(inputs.episodeBrief.episodeTitle, plan.episodes[0].episodeTitle);
-    assert.equal(inputs.episodeBrief.episodeCreativeBrief, plan.episodes[0].episodeCreativeBrief);
+    const contentFields = ["episodeTitle", "episodeQuestion", "episodeAnswer", "episodeCreativeBrief", "episodeScope", "episodeBenefit"];
+    assert.deepEqual(Object.fromEntries(contentFields.map(field => [field, inputs.episodeBrief[field]])),
+      Object.fromEntries(contentFields.map(field => [field, plan.episodes[0][field]])));
+    assert.equal(inputs.programPlan.editorialDirection, plan.editorialDirection);
+    assert.equal(inputs.programPlan.narrativeTone, plan.narrativeTone);
     assert.deepEqual(inputs.programPlan.researchLibrary, query ? { notebookId: "notebook" } : undefined);
     assert.equal(inputs.programPlan.referenceVideos?.[0].transcript.text, video ? "参考节目的完整底稿。" : undefined);
+    if (kind === "mixed-video") {
+      const independent = await resolveNarrationCurrent({ root, workspaceRoot, episodeId: "ep02", model: await loadStageModel(root, { stageId: "p1" }) });
+      assert.equal(independent.kind, "task", JSON.stringify(independent));
+      const independentInputs = independent.createWorkOrder(independent.allowedReturnTargets).inputs;
+      assert.equal(independentInputs.episodeBrief.referenceProgram, undefined);
+      assert.equal(independentInputs.episodeBrief.referenceVideoIds, undefined);
+      assert.equal(independentInputs.programPlan.referenceVideos, undefined);
+      assert.equal(await episodeReferenceVideos(plan, "ep02"), undefined);
+    }
   });
+});
+
+test("P0合并用户参考与检索节目，保留原材料身份并拒绝丢失依据", async (t) => {
+  const { workspaceRoot, referenceProgram } = await fixture(t);
+  const original = await readData(referenceProgram.path);
+  const combined = { path: path.join(workspaceRoot, "combined-references.json") };
+  const added = { ...structuredClone(original.videos[0]), id: "found-video", title: "检索所得的互补节目", url: "https://example.com/found-video" };
+  await atomicWriteData(combined.path, { videos: [...original.videos, added] });
+  const plan = { ...structuredClone(basePlan), referenceProgram: combined,
+    episodes: [{ ...episode, referenceVideoIds: ["video", "found-video"] }] };
+  const context = contextFor({ ...requestFor({ kind: "video-led", referenceProgram }), openerTemplate: plan.openerTemplate });
+  assert.deepEqual(validate({ result: plan, context }), []);
+  assert.deepEqual(await validateAcceptance({ result: plan, context }), []);
+  assert.deepEqual((await episodeReferenceVideos(plan, "ep01")).map(video => video.id), ["video", "found-video"]);
+
+  await atomicWriteData(combined.path, { videos: [added] });
+  assert.ok((await validateAcceptance({ result: plan, context })).some(error => error.includes("原视频内容身份")));
+  await atomicWriteData(combined.path, { videos: [{ ...original.videos[0], title: "被修改的原视频" }, added] });
+  assert.ok((await validateAcceptance({ result: plan, context })).some(error => error.includes("原视频内容身份")));
+  await atomicWriteData(combined.path, { videos: original.videos.map(video => ({ ...video,
+    transcript: { ...video.transcript, sha256: "0".repeat(64) } })) });
+  assert.ok((await validateAcceptance({ result: plan, context })).some(error => error.includes("口播文件缺失或已变化")));
+  assert.ok(validate({ result: { ...basePlan, episodes: plan.episodes }, context: contextFor(requestFor({ kind: "topic-led" })) })
+    .some(error => error.includes("材料清单")));
+  assert.equal((await readData(referenceProgram.path)).videos[0].title, original.videos[0].title);
 });
 
 test("纪录片P0正式标题进入P1作者工作单", async (t) => {

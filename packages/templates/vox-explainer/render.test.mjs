@@ -41,21 +41,39 @@ test('Three.js与SVG共用Cue和定位时间，真实像素可重放且资源随
             renderer.forceContextLoss(); window.released.renderer++;
           });
           timeline.to(model.position, {x: .8, duration: 1, ease: 'none'}, cue('M001'));
+          timeline.to(camera.position, {x: .25, duration: 1, ease: 'none'}, cue('M001'));
+          timeline.to(model.position, {x: 2, duration: .4, ease: 'none'}, cue('M001') + 1.1);
+          const leader = select('line');
+          const local = new THREE.Vector3(.125, 0, .3), world = new THREE.Vector3();
           onFrame(({time}) => {
-            select('text').textContent = String(time);
+            select('#timed-label').textContent = String(time);
+            const point = spatial.projectAnchor(model.localToWorld(world.copy(local)), camera,
+              {x: 100, y: 60, width: 64, height: 64});
+            leader.setAttribute('visibility', point ? 'visible' : 'hidden');
+            leader.setAttribute('x1', point?.x ?? 0);
+            leader.setAttribute('y1', point?.y ?? 0);
             renderer.render(scene3, camera);
           });
         `;
         const segment = {assetRefs: [], runtimeTiming: {semanticFrameOffset: 3},
           renderData: {voxExplainer: {policy: {width: 1920, height: 1080, fps: 60},
-            appearance: {palette: {background: '#fff'}, fonts: {}},
+            appearance: {palette: {background: '#243440', paper: '#172431', ink: '#f8efe0'}, fonts: {}},
             actionTimings: [{target: 'M001', frame: 3}], durationInFrames: 120,
-            scene: {markup: '<canvas></canvas><svg><text></text></svg>', animation}}}};
+            scene: {markup: `<canvas></canvas><svg><line x2="190" y2="40" stroke="black"/>
+              <text id="timed-label" class="vox-label vox-text-outline"></text>
+              <text id="small-label" class="vox-label" font-size="20">北陆</text>
+              <text id="short-title" class="vox-title" font-size="40">不止一路</text>
+              </svg>`, animation}}}};
         const read = () => {
           const root = element.firstChild.shadowRoot, canvas = root.querySelector('canvas');
           const gl = canvas.getContext('webgl2'), pixel = new Uint8Array(4);
           gl.readPixels(32, 32, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
-          return {background: getComputedStyle(element.firstChild).backgroundColor, image: canvas.toDataURL(), label: root.querySelector('text').textContent, pixel: [...pixel]};
+          const surface = getComputedStyle(element.firstChild), label = root.querySelector('#timed-label');
+          const style = getComputedStyle(label), leader = root.querySelector('line');
+          return {background: surface.backgroundColor, texture: surface.backgroundImage, image: canvas.toDataURL(),
+            label: label.textContent, textStyle: [style.fontSize, style.fill, style.stroke], pixel: [...pixel],
+            authoredFontSizes: ['#small-label', '#short-title'].map(id => getComputedStyle(root.querySelector(id)).fontSize),
+            anchor: ['visibility', 'x1', 'y1'].map(attr => leader.getAttribute(attr))};
         };
         let renderer = VoxRenderer.createRenderer({element, segment});
         await renderer.seek(-20); const before = read();
@@ -72,11 +90,17 @@ test('Three.js与SVG共用Cue和定位时间，真实像素可重放且资源随
       });
       assert.equal(result.before.label, '0', '转场预进入保持首态，不提前推进Cue');
       assert.equal(result.after.label, String(119 / 60), '转场接出保持末态，不重复播放');
-      assert.equal(result.first.background, 'rgb(231, 223, 206)', '底板不随场景传入的白色改换');
+      assert.equal(result.first.background, 'rgb(36, 52, 64)', '渲染选定的底色');
+      assert.equal(result.first.texture, 'none', '自选底色不叠加默认纸纹');
+      assert.deepEqual(result.first.textStyle, ['46px', 'rgb(248, 239, 224)', 'rgb(23, 36, 49)']);
+      assert.deepEqual(result.first.authoredFontSizes, ['20px', '40px'], 'SVG自定字号优先于模板默认字号');
       assert.deepEqual(result.first.pixel, [255, 0, 0, 255], '首帧有真实三维像素');
       assert.deepEqual(result.later.pixel, [255, 255, 255, 255], 'Cue驱动的主体确实移开');
       assert.equal(result.first.label, '0.05', 'SVG包含相同语义帧偏移');
       assert.equal(result.later.label, '1.05');
+      assert.deepEqual(result.first.anchor, ['visible', '136', '92']);
+      assert.deepEqual(result.later.anchor, ['visible', '153.6', '92'], '局部画布中的引线随模型和相机一起更新');
+      assert.deepEqual(result.after.anchor, ['hidden', '0', '0'], '部件出画时隐藏引线');
       assert.notEqual(result.first.image, result.later.image);
       assert.deepEqual(result.first, result.reverse, '逆序定位复原三维与SVG');
       assert.deepEqual(result.first, result.remount, '重进得到相同画面');

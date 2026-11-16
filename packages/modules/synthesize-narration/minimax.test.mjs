@@ -59,14 +59,17 @@ test('MiniMax 保留原默认地址，本机配置可选择账号对应区域且
 
 test("生僻姓名用供应商原生读音覆盖，正文和无关请求保持原样", () => {
   const text = "秦熺问相位，万俟卨承办。";
-  const payload = miniMaxPayload({ text, contract });
+  const pronunciations = [{ text: "秦熺", reading: "(qin2)(xi1)" }, { text: "万俟卨", reading: "(mo4)(qi2)(xie4)" }];
+  const payload = miniMaxPayload({ text, contract, pronunciations });
   assert.equal(payload.text, text);
   assert.deepEqual(payload.pronunciation_dict, {
-    tone: ["秦熺/(qin2)(xi1)", "万俟卨/(mo4)(qi2)(xie4)"]
+    tone: ["万俟卨/(mo4)(qi2)(xie4)", "秦熺/(qin2)(xi1)"]
   });
   assert.equal(payload.voice_setting.voice_id, contract.voice);
   assert.equal(payload.model, contract.model);
   assert.equal(Object.hasOwn(miniMaxPayload({ text: "甲。", contract }), "pronunciation_dict"), false);
+  assert.equal(Object.hasOwn(miniMaxPayload({ text, contract }), "pronunciation_dict"), false, "没有本集输入时不暗加个别人名");
+  assert.throws(() => miniMaxPayload({ text, contract, pronunciations: [...pronunciations, pronunciations[0]] }), /不重复/u);
 });
 
 test("MiniMax 只把确定未创建与远端结果未知区分开", async () => {

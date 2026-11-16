@@ -1,4 +1,4 @@
-import {gait,workingPose,rotatePoint,limbPath} from './people.mjs';
+import {gait,workingPose,rotatePoint,limbPath} from '../../../artwork/people.mjs';
 export function makePeopleAnimator(){
  const cache=new Map();
  const get=id=>{if(!cache.has(id)){const root=document.getElementById(id);if(!root)return null;const parts={};root.querySelectorAll('[data-part]').forEach(p=>parts[p.dataset.part]=p);cache.set(id,{root,parts,role:root.dataset.actor,tilt:Number(parts.head?.parentElement?.dataset.headTilt||0)});}return cache.get(id)};

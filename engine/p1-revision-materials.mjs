@@ -269,14 +269,26 @@ export const compactAcceptedNarrationMaterials = async ({
       continue;
     }
     const children = await readdir(attempt, { withFileTypes: true });
-    const retried = (await Promise.all([1, 2, 3].map(async route => {
+    const drafts = await Promise.all([1, 2, 3].map(async route => {
       const file = path.join(attempt, `author-${route}.json`);
-      const draft = await readData(file).catch(error => error.code === "ENOENT" ? null : Promise.reject(error));
-      return Array.isArray(draft?.failures) && draft.failures.length > 0;
-    }))).some(Boolean);
+      return readData(file).catch(error => error.code === "ENOENT" ? null : Promise.reject(error));
+    }));
+    const retried = drafts.some(draft => Array.isArray(draft?.failures) && draft.failures.length > 0);
+    const receipts = new Set(drafts.map(draft => draft?.chapterLocationReceipt).filter(file =>
+      typeof file === "string" && path.dirname(file) === attempt).map(file => path.basename(file)));
     for (const child of children) {
-      if (child.isFile() && (retained.has(child.name) || (retried
-        && /^author-[123](?:\.retry-\d+)?(?:\.agy\.json|\.stderr\.log|\.json)$/u.test(child.name)))) continue;
+      if (!child.isFile() || !child.name.endsWith(".agy.json")) continue;
+      const receipt = await readData(path.join(attempt, child.name)).catch(() => null);
+      if (receipt?.status === "ERROR" && typeof receipt.response === "string" && receipt.response.trim()) receipts.add(child.name);
+    }
+    for (const name of [...receipts]) {
+      for (const suffix of [".stderr.log", ".exit.txt", ".partial.txt"]) receipts.add(name.replace(/\.json$/u, suffix));
+      receipts.add(name.replace(/\.agy\.json$/u, ".stderr.log"));
+    }
+    for (const child of children) {
+      if (child.isFile() && (retained.has(child.name) || receipts.has(child.name)
+        || /^author-recovery-[a-f0-9]{64}\.json$/u.test(child.name) || (retried
+        && /^author-[123](?:\.retry-\d+|\.publication)?(?:\.agy\.(?:json|stderr\.log|exit\.txt|partial\.txt)|\.stderr\.log|\.json)$/u.test(child.name)))) continue;
       await rm(path.join(attempt, child.name), { recursive: true, force: true });
     }
   }

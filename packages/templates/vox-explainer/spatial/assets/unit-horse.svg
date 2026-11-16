@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 170 170">
+  <!-- Ground (85,153), saddle seat (72,79), bit ring (145,68), stirrup (76,113). -->
+  <g data-part="horse" stroke="#303A37" stroke-linecap="round" stroke-linejoin="round">
+    <g data-part="far-legs" fill="#967253" stroke-width="1.8">
+      <path d="M48 93c9-3 17 4 18 14l-2 8 5 8c0 3-1 5-2 7l3 10 5 4-2 4-10-2-3-14c-1-3 0-5 1-7l-8-8c-5-5-8-13-5-24Z"/>
+      <path d="M106 99c4-5 12-3 15 1 1 7-4 15-7 23l-4 16 3 3-2 5-10-1 1-7 4-18-1-9Z"/>
+      <path d="M54 110q4 9 10 13m4 7 2 10m45-29-4 10-4 15" fill="none" stroke="#c1946b" stroke-width="1.35"/>
+      <path d="M63 141q5 2 9 0l5 4v4l-13-1-2-2Zm40-1 7 1 4 4-1 3-13-1v-3Z" fill="#65564b" stroke-width="1.55"/>
+    </g>
+    <g data-part="tail">
+      <path d="M39 85c-8-6-14-4-19 1-6 6-6 15-11 26 5-1 10-4 13-8l-1 3c4-3 6-7 9-12 3-3 7-5 12-4Z" fill="#595044" stroke-width="1.9"/>
+      <path d="M34 85c-10-2-16 7-19 19m11-13q-2 6-6 10" fill="none" stroke="#a18365" stroke-width="1.3"/>
+    </g>
+    <path d="M35 92c2-9 10-15 21-16 13-1 23 5 39 3 8-1 12-9 17-17 5-8 10-13 18-16 6-2 13-2 17 2 4 4 7 9 11 12 3 3 4 6 3 9-2 4-8 5-13 3l-10-5c-6 4-9 12-12 22-2 8-6 16-12 21-9 5-20 4-30 3-10-1-21-1-32-3-12-2-20-8-17-18Z" fill="#b58861" stroke-width="2.15"/>
+    <path d="M38 92c6-10 17-14 28-12 9 2 16 5 28 3 8-1 13-7 18-16 5-9 10-16 18-18l5 1c-6 4-9 11-13 17l-14 18c-10 8-21 10-35 8-11-3-25-3-35-1Z" fill="#cea479" stroke="none"/>
+    <path d="M46 103c10 1 17-4 24-4 10 1 20 6 32 1 8-3 15-10 20-21l9-12 6-1c-5 4-9 14-12 25-3 10-8 16-14 19-8 3-17 3-27 2-15-2-25-1-34-4Z" fill="#956e53" stroke="none"/>
+    <path d="M112 69c3-9 11-16 18-18l3 3-6 12-12 15-11 7Z" fill="#d9b28a" stroke="none"/>
+    <path d="M46 83q7-3 14-1m25 25q10 2 18-2" fill="none" stroke="#80624e" stroke-width="1.1"/>
+    <g data-part="near-legs">
+      <path d="M40 87c-7 8-5 16 2 24l3 5c-1 4-7 9-9 14l-4 14-1 7 14 1 2-4-5-5 4-12c6-7 13-12 14-19 2-7-1-12-4-15" fill="#b58861" stroke-width="2.1"/>
+      <path d="M42 92c-3 7 2 17 6 21l1 4-9 15-4 12 4 1 5-14 9-12c4-8 1-18-5-23Z" fill="#c99c73" stroke="none"/>
+      <path d="M115 86c-8 3-11 10-10 18 1 8 7 13 13 19l10 16 5 10 2 3h12l1-4-7-4-4-10-10-18-4-12 1-6" fill="#b58861" stroke-width="2.1"/>
+      <path d="M112 93c-6 11 1 19 11 29l8 15 6 9 3-1-5-11-10-18-3-10-1-9Z" fill="#c99c73" stroke="none"/>
+      <path d="M109 95q-4 10 3 17m16 12 8 14" fill="none" stroke="#d6af86" stroke-width="1.35"/>
+      <path d="M31 145q6 2 12-1l5 4-1 4H30v-4Zm102 1q4 1 8-2l8 4-1 4h-14l-2-3Z" fill="#48473d" stroke-width="1.7"/>
+      <path d="M41 129l4 1m-9 10-1 4m86-22 4-1m7 17 3 5" fill="none" stroke="#82614c" stroke-width="1.3"/>
+      <path d="M33 149h10m93 0 8 1" fill="none" stroke="#9e866b" stroke-width="1.05"/>
+    </g>
+    <g data-part="mane">
+      <path d="M130 46c3-4 5-8 7-13 4 4 4 9 2 14Z" fill="#8e6c54" stroke-width="1.65"/>
+      <path d="M137 46c2-4 4-8 8-11 1 5 0 9-2 13Z" fill="#c09269" stroke-width="1.75"/>
+      <path d="m143 39-2 5" fill="none" stroke="#785844" stroke-width="1.1"/>
+      <path d="M136 44c-10-2-19 4-25 11-7 8-11 17-22 22l4 5 5-4 1 3 7-8 1 1 6-10 1 2c5-6 8-14 18-16 3-1 7 1 10 3 0-5-3-8-6-9Z" fill="#565044" stroke-width="1.75"/>
+      <path d="M134 47q-12 0-20 12l-10 13m17-17-9 12m-11 4-6 6m30-30 5-1" fill="none" stroke="#a28665" stroke-width="1.2"/>
+    </g>
+    <g data-part="head">
+      <path d="M145 49c4 4 7 8 12 12l2 5-6 1-7-8-6-6Z" fill="#dfbd96" stroke="none"/>
+      <path d="M150 64c4 0 7 1 11 1 1 4-2 7-6 8l-6-1-4-3Z" fill="#896955" stroke="none"/>
+      <path d="M137 55q2-2 5-1m12 11 2 1m-6 4q5 1 9-1" fill="none" stroke-width="1.6"/>
+      <ellipse cx="140" cy="55.5" rx="1.25" ry="1.1" fill="#303A37" stroke="none"/>
+      <path d="M135 58q-1 4 1 7" fill="none" stroke="#82614c" stroke-width="1.15"/>
+    </g>
+    <g data-part="tack">
+      <path d="M61 80c9 2 20 2 29 0l3 8-2 12c-8 4-22 6-33 3l-3-7Z" fill="#d9c6a2" stroke-width="1.65"/>
+      <path d="M58 96q14 3 32-2l-1 5q-16 7-30 3Z" fill="currentColor" stroke="none"/>
+      <path d="M59 99q14 4 29-2" fill="none" stroke="#f0dbad" stroke-width="1.05"/>
+      <path d="M58 81q-2-6 1-8c4 4 8 5 13 6 5 0 9 0 13-4 3-3 5-2 7 1l-2 9c-11 4-23 3-32-4Z" fill="#735742" stroke-width="1.75"/>
+      <path d="M60 77q14 11 29 1" fill="none" stroke="#c5a278" stroke-width="1.35"/>
+      <path d="M84 86q-4 13-1 25l4 1q-3-14 2-28Z" fill="#8b6c51" stroke-width="1.15"/>
+      <path d="M140 48q-6 3-6 8c0 5 5 8 11 12m0-9q6 3 8 11" fill="none" stroke="#6b5241" stroke-width="2.05"/>
+      <path d="M135 55q-1 6 8 11m4-6q4 3 5 7" fill="none" stroke="#c6a37c" stroke-width=".9"/>
+      <circle cx="145" cy="68" r="2.2" fill="#87674d" stroke="#e1bf82" stroke-width="1.3"/>
+    </g>
+  </g>
+</svg>

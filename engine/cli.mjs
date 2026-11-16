@@ -52,6 +52,10 @@ const parseArgs = (argv) => {
     else if (flag === "--opener-text" && command === "next") options.openerText = rest[++index];
     else if (flag === "--revise-narration" && command === "next") options.reviseNarration = true;
     else if (flag === "--revise-subtitles" && command === "next") options.reviseSubtitles = true;
+    else if (flag === "--replace-tts-task" && command === "next") {
+      options.replaceTtsTask = rest[++index];
+      if (!/^[a-f0-9]{64}$/u.test(options.replaceTtsTask ?? "")) throw new Error("--replace-tts-task 须提供原提交摘要");
+    }
     else if (flag === "--replace-narration-revision" && command === "next") options.replaceNarrationRevision = true;
     else if (flag === "--rerun-narration" && command === "next") options.rerunNarration = true;
     else if (flag === "--replace-full-rerun" && command === "next") options.replaceFullRerun = true;

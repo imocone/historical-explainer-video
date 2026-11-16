@@ -1,9 +1,11 @@
 import {
   isExplainerTemplateId
 } from "../../../explainer-template-selection.mjs";
-import { VIDEO_SPEC } from "../../../video-spec.mjs";
+import { resolveCueRange } from "../../../cue-boundaries.mjs";
+import { frameForMs, frameSpanForMs, VIDEO_SPEC } from "../../../video-spec.mjs";
 import { isNarrativeMedia, narrativeBoundary } from "./narrative-transition.mjs";
 import { VOX_EXPLAINER_TIMING } from "../../../templates/vox-explainer/cue-policy.mjs";
+import { episodeEndingReserveFrames } from "./ending.mjs";
 
 const framesForSeconds = (seconds) => Math.round(seconds * VIDEO_SPEC.fps);
 const ordinaryTransitionLimitFrames = framesForSeconds(0.4);
@@ -23,9 +25,13 @@ const centeredTransitionHalfFrames = (duration) => Math.max(
 const explainerTiming = () => VOX_EXPLAINER_TIMING;
 const lastExplainerActionFrame = segment => Math.max(0, segment.durationInFrames - 1);
 
+const explainerPushesFor = ({ segment, transitions }) => ({
+  incoming: transitions.find(item => item.nextId === segment.id && item.explainerPush),
+  outgoing: transitions.find(item => item.previousId === segment.id && item.explainerPush)
+});
+
 export const explainerHandoffContext = ({ segment, transitions }) => {
-  const incoming = transitions.find(item => item.nextId === segment.id && item.explainerPush);
-  const outgoing = transitions.find(item => item.previousId === segment.id && item.explainerPush);
+  const { incoming, outgoing } = explainerPushesFor({ segment, transitions });
   const entry = explainerTiming(segment).entry;
   const breathFrames = entry.breathFrames;
   const contentStart = incoming ? -incoming.entranceLeadFrames + incoming.durationInFrames + breathFrames : 0;
@@ -39,6 +45,24 @@ export const explainerHandoffContext = ({ segment, transitions }) => {
       startFrame: outgoing.startFrame - segment.startFrame,
       durationInFrames: outgoing.durationInFrames
     } } : {})
+  };
+};
+
+export const explainerViewingWindow = ({ segment, transitions }) => {
+  const { incoming, outgoing } = explainerPushesFor({ segment, transitions });
+  const localWindow = (push) => {
+    if (!push) return null;
+    const startFrame = push.startFrame - segment.startFrame;
+    return { startFrame, endFrame: startFrame + push.durationInFrames };
+  };
+  const entryPush = localWindow(incoming);
+  const exitPush = localWindow(outgoing);
+  const startFrame = Math.max(0, entryPush?.endFrame ?? 0);
+  const endFrame = Math.min(segment.durationInFrames, exitPush?.startFrame ?? segment.durationInFrames);
+  return {
+    entryPush,
+    exitPush,
+    clearViewing: endFrame > startFrame ? { startFrame, endFrame } : null
   };
 };
 
@@ -158,9 +182,9 @@ export const boundaryOverlayRuntimeTiming = ({
   };
 };
 
-export const crossBeatTransitionPlan = (segments) => segments.slice(1).flatMap((segment, index) => {
+export const crossBeatTransitionPlan = (segments, { requireCameraHandles = true } = {}) => segments.slice(1).flatMap((segment, index) => {
   const previous = segments[index];
-  if (narrativeMedia(previous) && narrativeMedia(segment)) return [narrativeBoundary({ previous, next: segment })];
+  if (narrativeMedia(previous) && narrativeMedia(segment)) return [narrativeBoundary({ previous, next: segment, requireCameraHandles })];
   const incomingExplainer = isExplainerTemplateId(segment.templateId);
   const outgoingExplainer = isExplainerTemplateId(previous.templateId);
   if ((incomingExplainer && (narrativeMedia(previous) || outgoingExplainer))
@@ -274,12 +298,39 @@ export const crossBeatTransitionPlan = (segments) => segments.slice(1).flatMap((
   }];
 });
 
+export const bodyEditWindows = transitions => transitions
+  .filter(edit => (edit.mode === "narrative" || edit.explainerPush) && edit.durationInFrames > 0)
+  .map(edit => ({
+    boundaryId: edit.boundaryId,
+    type: edit.explainerPush ? "vox-push" : edit.entryTransition.type,
+    startFrame: edit.startFrame,
+    endFrame: edit.startFrame + edit.durationInFrames
+  }));
+
+export const bodyEditOverlapErrors = windows => {
+  const errors = [];
+  let previousEdit = null;
+  for (const edit of [...windows].sort((a, b) => a.startFrame - b.startFrame)) {
+    if (previousEdit && edit.startFrame < previousEdit.endFrame) {
+      const overlap = Math.min(previousEdit.endFrame, edit.endFrame) - edit.startFrame;
+      errors.push(`${previousEdit.boundaryId} 和 ${edit.boundaryId} 的转场重叠 ${overlap} 帧`);
+    }
+    if (!previousEdit || edit.endFrame > previousEdit.endFrame) previousEdit = edit;
+  }
+  return errors;
+};
+
 export const resolveCrossBeatRuntimeTiming = ({
   segments,
-  transitions = crossBeatTransitionPlan(segments)
+  transitions = crossBeatTransitionPlan(segments),
+  allowOverlappingEdits = false
 }) => {
   if (!Array.isArray(segments) || !Array.isArray(transitions)) {
     throw new Error("P4 跨片段运行计时必须提供片段和转场数组");
+  }
+  if (!allowOverlappingEdits) {
+    const overlaps = bodyEditOverlapErrors(bodyEditWindows(transitions));
+    if (overlaps.length) throw new Error(overlaps.join("；"));
   }
   const entranceLeadById = new Map(transitions.map((transition) => [
     transition.nextId,
@@ -325,4 +376,65 @@ export const resolveCrossBeatRuntimeTiming = ({
     };
   });
   return { transitions, segments: resolvedSegments };
+};
+
+export const bodyTransitionFieldsFor = (templateId) => {
+  if (!isExplainerTemplateId(templateId)) return {};
+  const timing = VOX_EXPLAINER_TIMING;
+  return {
+    entranceLeadFrames: timing.entry.leadFrames,
+    renderData: {
+      voxExplainer: {
+        transition: {
+          incomingLeadFrames: timing.exit.backgroundSwapLeadFrames,
+          exitTailFrames: timing.exit.tailFrames
+        }
+      }
+    }
+  };
+};
+
+// Body-relative frames use the same Cue origin as the anchored P4 body.
+export const bodyRuntimeTimingForAuthorUnits = ({ authorUnits, cues, requireCameraHandles = true }) => {
+  if (!Array.isArray(authorUnits)) throw new Error("正文接镜计时缺少作者单元序列");
+  const segments = authorUnits.map((unit) => {
+    const firstBeat = unit.beats?.[0];
+    const lastBeat = unit.beats?.at(-1);
+    if (!firstBeat || !lastBeat) throw new Error(`${unit.id} 缺少接镜边界Beat范围`);
+    const cueRange = [firstBeat.cueRange[0], lastBeat.cueRange[1]];
+    const { startMs, endMs } = resolveCueRange({ cueRange, cues });
+    return {
+      id: unit.id,
+      templateId: unit.templateId,
+      segmentType: "body",
+      cueRange,
+      startFrame: frameForMs({ milliseconds: startMs }),
+      durationInFrames: frameSpanForMs({ startMs, endMs }),
+      ...bodyTransitionFieldsFor(unit.templateId),
+      ...(Object.hasOwn(firstBeat, "incomingTransition") ? { incomingTransition: firstBeat.incomingTransition } : {})
+    };
+  });
+  const resolved = resolveCrossBeatRuntimeTiming({
+    segments,
+    transitions: crossBeatTransitionPlan(segments, { requireCameraHandles }),
+    allowOverlappingEdits: true
+  });
+  const last = resolved.segments.at(-1);
+  if (last?.templateId === "fullframe-narrative" && last.cueRange[1] === cues.at(-1)?.id)
+    last.appliedExitTailFrames = episodeEndingReserveFrames();
+  return resolved;
+};
+
+export const changedBodyViewingUnits = ({ before, after }) => {
+  const previousById = new Map(before.segments.map(segment => [segment.id, segment]));
+  return after.segments.filter(segment => {
+    const previous = previousById.get(segment.id);
+    if (!previous || previous.templateId !== segment.templateId) return false;
+    if (isExplainerTemplateId(segment.templateId)) {
+      return JSON.stringify(explainerViewingWindow({ segment: previous, transitions: before.transitions }))
+        !== JSON.stringify(explainerViewingWindow({ segment, transitions: after.transitions }));
+    }
+    return previous.appliedCameraPrerollFrames !== segment.appliedCameraPrerollFrames
+      || previous.appliedExitTailFrames !== segment.appliedExitTailFrames;
+  }).map(({ id }) => id);
 };

@@ -5,7 +5,7 @@ import {markupAssetIds, resolveMarkupAssets, runAnimation} from '../scene.mjs';
 import * as spatialTools from '../spatial/scene.mjs';
 import {createMapWindow} from '../spatial/map-window.mjs';
 import {MAP_WORKER_FILES} from '../spatial/map-style.mjs';
-import {stageBackground, SURFACE_PALETTE} from '../appearance.mjs';
+import {resolveVoxPalette, stageBackground, VOX_TEXT_STYLES} from '../appearance.mjs';
 
 const fontLoads = new Map();
 const loadFont = font => {
@@ -18,13 +18,19 @@ const loadFont = font => {
   return fontLoads.get(key);
 };
 
+export const prepareFonts = segment => Promise.all(
+  Object.values(segment.renderData.voxExplainer.appearance.fonts).map(loadFont)
+);
+
 export const createRenderer = ({element, segment, signal}) => {
   const data = segment.renderData.voxExplainer;
   const {width, height, fps} = data.policy;
+  const ending = data.ending ?? null;
+  const palette = resolveVoxPalette(data.appearance.palette);
   const host = document.createElement('div');
   Object.assign(host.style, {position: 'absolute', inset: '0', overflow: 'hidden',
-    background: SURFACE_PALETTE.background, backgroundImage: stageBackground()});
-  for (const [name, value] of Object.entries({...data.appearance.palette, ...SURFACE_PALETTE})) host.style.setProperty(`--${name}`, value);
+    backgroundColor: palette.background, backgroundImage: stageBackground(palette)});
+  for (const [name, value] of Object.entries(palette)) host.style.setProperty(`--${name}`, value);
   for (const [role, font] of Object.entries(data.appearance.fonts)) {
     host.style.setProperty(`--font-${role}`, font.family);
     host.style.setProperty(`--font-${role}-weight`, font.weight);
@@ -32,7 +38,7 @@ export const createRenderer = ({element, segment, signal}) => {
   element.append(host);
   const root = host.attachShadow({mode: 'open'});
   const assets = new Map(segment.assetRefs.map(asset => [asset.requestId, asset]));
-  root.innerHTML = `<style>:host{display:block;font-family:var(--font-body);font-weight:var(--font-body-weight);color:var(--ink);font-variant-numeric:tabular-nums}*,*::before,*::after{box-sizing:border-box}</style>`
+  root.innerHTML = `<style>:host{display:block}*,*::before,*::after{box-sizing:border-box}${VOX_TEXT_STYLES}</style>`
     + resolveMarkupAssets(data.scene.markup, assets, asset => mediaUrl(asset.file));
   const updates = [], cleanups = [], maps = [];
   // getAnimations does not cross the map's shadow boundary.
@@ -41,10 +47,27 @@ export const createRenderer = ({element, segment, signal}) => {
   const seekAnimations = time => {
     for (const animation of animations()) { animation.pause(); animation.currentTime = time * 1000; }
   };
-  const spatial = {...spatialTools, createMapWindow(options) {
-    const map = createMapWindow({...options, workerUrl: mediaUrl(MAP_WORKER_FILES[0])});
-    maps.push(map); cleanups.push(() => map.dispose()); return map;
-  }};
+  const stageView = {x: 0, y: 0, width, height};
+  const spatial = {
+    ...spatialTools,
+    createMapWindow({box, ...options}) {
+      const map = createMapWindow({...options, paper: box !== undefined,
+        box: box === undefined ? stageView : box,
+        workerUrl: mediaUrl(MAP_WORKER_FILES[0])});
+      maps.push(map); cleanups.push(() => map.dispose()); return map;
+    },
+    projectAnchor(worldPoint, camera, view = stageView) {
+      camera.updateWorldMatrix(true, false);
+      const point = worldPoint.clone().applyMatrix4(camera.matrixWorldInverse);
+      if (point.z >= 0) return null;
+      point.applyMatrix4(camera.projectionMatrix);
+      if (Math.abs(point.x) > 1 || Math.abs(point.y) > 1 || Math.abs(point.z) > 1) return null;
+      return {
+        x: view.x + (point.x + 1) * view.width / 2,
+        y: view.y + (1 - point.y) * view.height / 2
+      };
+    }
+  };
   const timeline = gsap.timeline({paused: true});
   const anchors = new Map(data.actionTimings.map(item => [item.target, item.frame / fps]));
   const select = selector => {
@@ -64,7 +87,7 @@ export const createRenderer = ({element, segment, signal}) => {
   let disposed = false;
   const imageUrls = new Set(markupAssetIds(data.scene.markup).map(id => mediaUrl(assets.get(id).file)));
   const ready = Promise.all([
-    ...Object.values(data.appearance.fonts).map(loadFont),
+    prepareFonts(segment),
     ...[...imageUrls].map(src => {
       const image = new Image();
       image.src = src;
@@ -74,7 +97,7 @@ export const createRenderer = ({element, segment, signal}) => {
     if (disposed || signal?.aborted) throw new Error('Vox场景已取消');
     runAnimation(data.scene.animation, {root, select, gsap, timeline, cue, eventTime, assets, spatial, THREE,
       onFrame: callback => updates.push(callback), onCleanup: callback => cleanups.push(callback),
-      width, height, fps, duration: data.durationInFrames / fps});
+      width, height, fps, duration: data.durationInFrames / fps, ending});
     for (const animation of animations()) animation.pause();
     await Promise.all(maps.map(map => map.ready));
   });
@@ -83,7 +106,8 @@ export const createRenderer = ({element, segment, signal}) => {
       await ready;
       if (disposed || signal?.aborted) throw new Error('Vox场景已取消');
       const semanticFrame = frame + (segment.runtimeTiming?.semanticFrameOffset ?? 0);
-      const current = Math.max(0, Math.min(data.durationInFrames - 1, semanticFrame));
+      const lastFrame = data.durationInFrames + (ending?.motionTailFrames ?? 0) - 1;
+      const current = Math.max(0, Math.min(lastFrame, semanticFrame));
       const time = current / fps;
       timeline.totalTime(time, false);
       seekAnimations(time);

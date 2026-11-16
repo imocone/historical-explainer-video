@@ -1,5 +1,5 @@
 import { execFile, spawn } from "node:child_process";
-import { mkdir, mkdtemp, open as openFile, readFile, rm, statfs } from "node:fs/promises";
+import { lstat, mkdir, mkdtemp, open as openFile, readFile, rm, statfs } from "node:fs/promises";
 import { promisify } from "node:util";
 import path from "node:path";
 import os from "node:os";
@@ -8,14 +8,55 @@ import { fileURLToPath } from "node:url";
 import { once } from "node:events";
 import { setTimeout as delay } from "node:timers/promises";
 import { VIDEO_SPEC } from "../../../video-spec.mjs";
-import { hyperframesCli, hyperframesEnv, loadStudioRuntime, studioBuildSignature } from "./browser-session.mjs";
+import { hyperframesCli, hyperframesEnv, loadStudioRuntime, studioBuildHeader, studioBuildSignature } from "./browser-session.mjs";
 import { runMediaProcess } from "./media-process.mjs";
 import { runtimeValue } from "../../../runtime-config.mjs";
 
 const exec = promisify(execFile);
 
-export const stopComposition = projectDirectory => exec(process.execPath,
-  [hyperframesCli, 'preview', projectDirectory, '--stop', '--json'], { env: hyperframesEnv, timeout: 15000 });
+export async function stopStudioPreview(server, activeServerOnPort) {
+  const { port, projectDir } = server;
+  const current = await activeServerOnPort(port);
+  if (current?.projectDir !== projectDir) return;
+  const projectDirectory = path.resolve(projectDir);
+  const compositionExists = () => lstat(path.join(projectDirectory, 'index.html')).then(() => true, error => {
+    if (error.code === 'ENOENT') return false;
+    throw error;
+  });
+  if (current.proven && await compositionExists()) {
+    try {
+      return await exec(process.execPath, [hyperframesCli, 'preview', projectDirectory, '--port', String(port),
+        '--stop', '--json'], { env: hyperframesEnv, timeout: 15000 });
+    } catch (error) {
+      if (await compositionExists()) throw error;
+    }
+  }
+  // Our detached server can outlive its project or an upgrade. Identify the
+  // actual listener and this checkout's launcher before asking it to shut down.
+  const pid = Number(current.pid);
+  if (current.pidSource !== 'os' || !Number.isSafeInteger(pid) || pid <= 1)
+    throw new Error(`无法确认预演的进程归属: ${projectDirectory}`);
+  const studio = fileURLToPath(new URL('./studio-server.mjs', import.meta.url));
+  const { stdout } = await exec('/bin/ps', ['-p', String(pid), '-o', 'uid=,command='], { timeout: 3000 });
+  const [, uid, command] = stdout.match(/^\s*(\d+)\s+(.+)$/mu) ?? [];
+  if (Number(uid) !== process.getuid() || !command?.includes(` ${studio} ${projectDirectory} `))
+    throw new Error(`预演的进程身份不符: ${projectDirectory}`);
+  try { process.kill(pid, 'SIGTERM'); }
+  catch (error) { if (error.code !== 'ESRCH') throw error; }
+  for (let attempt = 0; attempt < 25; attempt++) {
+    if ((await activeServerOnPort(port))?.projectDir !== projectDir) return;
+    await delay(100);
+  }
+  throw new Error(`预演未退出: ${projectDirectory}`);
+}
+
+export async function stopComposition(projectDirectory) {
+  const { scanActiveServers, activeServerOnPort } = await loadStudioRuntime();
+  for (const server of await scanActiveServers()) {
+    if (path.resolve(server.projectDir) === path.resolve(projectDirectory))
+      await stopStudioPreview(server, activeServerOnPort);
+  }
+}
 
 export const launchComposition = async (projectDirectory, { open = false } = {}) => {
   projectDirectory = path.resolve(projectDirectory);
@@ -28,16 +69,16 @@ export const launchComposition = async (projectDirectory, { open = false } = {})
     catch (error) { if (error.code !== 1) throw error; await delay(100); }
   }
   try {
-    const { scanActiveServers } = await loadStudioRuntime();
+    const { scanActiveServers, activeServerOnPort } = await loadStudioRuntime();
     const existing = (await scanActiveServers()).filter(server => path.resolve(server.projectDir) === projectDirectory);
     const signature = await studioBuildSignature();
-    if (existing.length === 1) {
+    if (existing.length === 1 && existing[0].proven) {
       const response = await fetch(`http://127.0.0.1:${existing[0].port}/__hyperframes_config`, { signal: AbortSignal.timeout(3000) }).catch(() => null);
-      if (response?.ok && (await response.json()).serverBuildSignature === signature)
+      if (response?.ok && response.headers.get(studioBuildHeader) === signature)
         return reportStudio(projectDirectory, existing[0].port, logPath);
     }
     // Replace only stale adapters; ordinary content edits use the native watcher.
-    await stopComposition(projectDirectory);
+    for (const server of existing) await stopStudioPreview(server, activeServerOnPort);
     return await startComposition(projectDirectory, logPath, open);
   } finally { await rm(lock, { force: true }); }
 };

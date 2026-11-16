@@ -2,21 +2,19 @@ import { CROSS_FIRE } from "../../crossfire-opener/render-policy.mjs";
 import { OPPOSED_POLICY } from "../../opposed-opener/render-policy.mjs";
 import { GLASS_POLICY } from "../../glass-opener/render-policy.mjs";
 import { resolveCueBindingsToFrames, resolveCueRange } from "../../../cue-boundaries.mjs";
-import { frameForMs, frameSpanForMs, VIDEO_SPEC } from "../../../video-spec.mjs";
+import { VIDEO_SPEC } from "../../../video-spec.mjs";
 import {
   DOCUMENTARY_OPENER_RENDER_POLICY
 } from "../../documentary-opener/render-policy.mjs";
 import {
   OPENER_RENDER_POLICY
 } from "../../episode-opener/render-policy.mjs";
-import { VOX_EXPLAINER_TIMING } from "../../vox-explainer/cue-policy.mjs";
 import {
-  crossBeatTransitionPlan,
+  bodyRuntimeTimingForAuthorUnits,
   incomingCameraPrerollFrames,
   incomingVisualFrameOffset,
   openerEntranceLeadFramesFor,
-  preEnteredSegmentTiming,
-  resolveCrossBeatRuntimeTiming
+  preEnteredSegmentTiming
 } from "../../../modules/render-video/runtime/transitions.mjs";
 import { narrativeHandleFrames } from "../../../modules/render-video/runtime/narrative-transition.mjs";
 import { FULLFRAME_RENDER_POLICY } from "../render-policy.mjs";
@@ -25,27 +23,7 @@ import { viewportForCamera } from "./geometry.mjs";
 import { fullframeRuntimePlansForSegments } from "./p3-preflight.mjs";
 import { cameraStateAtRuntimeFrame } from "./runtime-layer.mjs";
 
-import { isExplainerTemplateId } from "../../../explainer-template-selection.mjs";
-
 const epsilon = 1e-9;
-
-export const fullframeBoundaryFieldsFor = (templateId) => {
-  if (isExplainerTemplateId(templateId)) {
-    const timing = VOX_EXPLAINER_TIMING;
-    return {
-      entranceLeadFrames: timing.entry.leadFrames,
-      renderData: {
-        voxExplainer: {
-          transition: {
-            incomingLeadFrames: timing.exit.backgroundSwapLeadFrames,
-            exitTailFrames: timing.exit.tailFrames
-          }
-        }
-      }
-    };
-  }
-  return {};
-};
 
 const fullframeActionTimingsForSegment = ({ storyboard, cues, segment }) => {
   const bindingSet = storyboard.features?.["cue-sync"]?.bindings?.[segment.id];
@@ -60,33 +38,8 @@ const fullframeActionTimingsForSegment = ({ storyboard, cues, segment }) => {
   });
 };
 
-export const fullframeRuntimeTimingForAuthorUnits = ({ authorUnits, cues, openerTemplate }) => {
-  if (!Array.isArray(authorUnits)) throw new Error("全画幅接镜计时缺少作者单元序列");
-  const bodySegments = authorUnits.map((authorUnit) => {
-    const firstBeat = authorUnit.beats?.[0];
-    const lastBeat = authorUnit.beats?.at(-1);
-    if (!firstBeat || !lastBeat) throw new Error(`${authorUnit?.id ?? "unknown"} 缺少接镜边界Beat范围`);
-    const cueRange = [firstBeat.cueRange[0], lastBeat.cueRange[1]];
-    const range = resolveCueRange({ cueRange, cues });
-    return {
-      id: authorUnit.id,
-      templateId: authorUnit.templateId,
-      segmentType: "body",
-      cueRange,
-      startFrame: frameForMs({ milliseconds: range.startMs, fps: VIDEO_SPEC.fps }),
-      durationInFrames: frameSpanForMs({
-        startMs: range.startMs,
-        endMs: range.endMs,
-        fps: VIDEO_SPEC.fps
-      }),
-      ...fullframeBoundaryFieldsFor(authorUnit.templateId)
-    };
-  });
-  const segments = bodySegments;
-  const resolved = resolveCrossBeatRuntimeTiming({
-    segments,
-    transitions: crossBeatTransitionPlan(segments)
-  });
+export const fullframeRuntimeTimingForAuthorUnits = ({ authorUnits, cues, openerTemplate, requireCameraHandles = true }) => {
+  const resolved = bodyRuntimeTimingForAuthorUnits({ authorUnits, cues, requireCameraHandles });
   // Body-relative coordinates keep camera handoff independent of the later opener duration.
   // Its fixed exit policy already determines the first body camera preroll.
   const first = resolved.segments[0];

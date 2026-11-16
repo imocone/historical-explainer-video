@@ -24,7 +24,7 @@ const publicFiles = (renderPlan) => {
   return [...files].sort();
 };
 
-const sourceRootFor = ({ workspaceRoot, systemRoot, relative }) => (
+export const sourceRootFor = ({ workspaceRoot, systemRoot, relative }) => (
   relative.startsWith("visuals/")
     || (relative.startsWith('local-media/background-music/') || relative.startsWith('local-media/private-assets/'))
     || (relative.startsWith("node_modules/maplibre-gl/dist/") || relative === "node_modules/maplibre-gl/LICENSE.txt")

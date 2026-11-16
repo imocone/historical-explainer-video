@@ -1,5 +1,6 @@
-import {C,N,g,at,P,R,L,E,T,U,trace,title,tag,tree,human,roof,hall,house,coin,sack,furnace,saltpan,flag,castle,terrain,landscape,defs,residence} from './art.mjs';
-import {person,worker,official,traveller,guard} from './people.mjs';
+import {C,N,g,at,P,R,L,E,T,U,trace,title,tag,tree,human,roof,hall,house,coin,sack,furnace,saltpan,flag,castle,residence} from '../../../artwork/art.mjs';
+import {terrain,landscape,defs} from './art.mjs';
+import {person,worker,official,traveller,guard} from '../../../artwork/people.mjs';
 import {mapDefs,mapBase,mapDot,mapText,mapFooter,geo,city,GP,point} from './map.mjs';
 const actor=(role,id,x,y,k=1,opts={})=>at(person({role,id,...opts}),x,y,k);
 const cm=(s,x,y,c=C.ink,size=35)=>T(s,x,y,size,c,'body','middle');

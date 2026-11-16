@@ -1,10 +1,14 @@
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {mkdir, mkdtemp, readFile, writeFile, rename, rm} from 'node:fs/promises';
-import {readData, hashObject, fileSha256, assertProjectPath} from '../../program-utils.mjs';
+import {readData, hashObject, fileSha256, assertProjectPath, resolveContainedPath, sha256} from '../../program-utils.mjs';
+import {readP3Sources} from '../../p3-sources.mjs';
+import {assertSourceRightsForExternalProduction} from '../../source-rights.mjs';
+import {getEpisodePaths} from '../../workspace-paths.mjs';
 import {deriveAuthorWorkspaceRoot} from '../../modules/author-beat/candidate-validation.mjs';
 import {runMediaProcess} from '../../modules/render-video/runtime/media-process.mjs';
 import {pythonCommand, runtimeEnvironment} from '../../runtime-config.mjs';
+import recordings from './recordings/catalog.json' with {type:'json'};
 
 export const generateSound = async ({workOrderPath, recipePath}) => {
   const workOrder = await readData(workOrderPath);
@@ -26,9 +30,39 @@ export const generateSound = async ({workOrderPath, recipePath}) => {
   }
   const source = fileURLToPath(new URL('./synthesize.py', import.meta.url));
   const sourceFiles = ['synthesize.py','build-library.py','lemo/sfx.py','lemo/ink_wash.py','lemo/watercolor.py'];
+  const sourceIds = new Set();
+  for (const layer of Array.isArray(recipe.layers) ? recipe.layers : []) {
+    if (layer?.generator !== 'recording') continue;
+    const {name, sourceAssetId} = layer.parameters ?? {};
+    if (sourceAssetId !== undefined) {
+      if (name !== undefined) throw new Error('实录只填写 name 或 sourceAssetId 其中之一');
+      sourceIds.add(sourceAssetId);
+      continue;
+    }
+    if (!Object.hasOwn(recordings, name)) throw new Error(`未登记实录音效: ${name}`);
+    const file = `recordings/${recordings[name]}`;
+    if (!sourceFiles.includes(file)) sourceFiles.push(file);
+  }
+  const inputRecordings = [];
+  if (sourceIds.size) {
+    const sources = await readP3Sources({workspaceRoot, workOrder});
+    const {input} = getEpisodePaths(workspaceRoot, workOrder.subject.id);
+    for (const id of sourceIds) {
+      const source = sources.find(item => item.id === id && item.mediaType === 'audio');
+      if (!source) throw new Error(`未登记本集实录音频: ${id}`);
+      const label = `实录音频 ${id}`;
+      assertSourceRightsForExternalProduction({rightsStatus:source.rightsStatus, label});
+      const file = resolveContainedPath({directory:input, relativePath:source.path, label});
+      await assertProjectPath({root:workspaceRoot, file, label});
+      const bytes = await readFile(file);
+      if (sha256(bytes) !== source.sha256) throw new Error(`${label}与登记文件不一致`);
+      inputRecordings.push({source, bytes});
+    }
+  }
   const version = await Promise.all(sourceFiles.map(file => fileSha256(fileURLToPath(new URL(file, import.meta.url)))));
   const definition = {...recipe};
   if (authoredSource !== undefined) definition.sourceFile = 'authored.py';
+  if (inputRecordings.length) definition.recordingSources = inputRecordings.map(({source}) => source);
   const identity = hashObject({recipe:definition, authoredSource, version});
   const file = path.posix.join(workOrder.subject.id, '制作/p3/assets/sound-effects', `${identity}.wav`);
   const destination = path.resolve(workspaceRoot, file);
@@ -38,6 +72,9 @@ export const generateSound = async ({workOrderPath, recipePath}) => {
   const temporary = path.join(temporaryDirectory, 'sound.wav');
   try {
     if (authoredSource !== undefined) await writeFile(path.join(temporaryDirectory, 'authored.py'), authoredSource);
+    // Synthesis reads the same bytes that were checked against the registered digest.
+    for (const {source, bytes} of inputRecordings)
+      await writeFile(path.join(temporaryDirectory, `${source.id}.audio`), bytes);
     const snapshot = path.join(temporaryDirectory, 'recipe.json');
     await writeFile(snapshot, JSON.stringify(definition));
     const {stdout} = await runMediaProcess(pythonCommand(), [source, snapshot, temporary],

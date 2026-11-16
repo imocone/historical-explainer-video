@@ -39,8 +39,8 @@ const treatment = () => ({templateId:'fullframe-narrative',incomingTransition:nu
 const setup = async (t, episodeCues = cues) => {
   const workspace = await mkdtemp(path.join(os.tmpdir(),'direct-media-'));
   t.after(()=>rm(workspace,{recursive:true,force:true}));
-  const manifest = await readData(path.join(root,'visuals/modern-editorial/visual-package.json'));
-  const image = path.join(root,'visuals/modern-editorial',manifest.masterReference.path);
+  const manifest = await readData(path.join(root,'visuals/wet-watercolor/visual-package.json'));
+  const image = path.join(root,'visuals/wet-watercolor',manifest.masterReference.path);
   await write(path.join(workspace,'program.yaml'),{openerTemplate:'documentary-opener',visualPackage:{visualPackageId:manifest.id,version:manifest.version}});
   const paths = getEpisodePaths(workspace,'ep01');
   await write(paths.sourceAssets,{schemaVersion:'1.0',assets:[]});
@@ -374,6 +374,28 @@ test('Studio从作者实图直接装配；不需要素材计划或图片清单',
   assert.equal(jointPreview.renderPlan.transitions.find(boundary=>boundary.nextId==='TR001').explainerPush,true,'讲解入口沿专用整幅推入');
   assert.equal(mapPreview.renderPlan.segments.find(segment=>segment.id==='TR001').appliedEntryTransition,null,'不套用全画幅叠化或闪黑');
   const previewBaseline = await readData(paths.storyboard);
+  const pendingQuote = structuredClone(previewBaseline);
+  const reserveQuote = (beat, cueId) => {
+    beat.treatment.calloutGate["historical-quote"] = "reserved";
+    beat.treatment.assetRequests[0].callouts = [
+      {kind:'historical-quote', request:'核实该句来源', anchorFocus:'画面主体'}
+    ];
+    pendingQuote.features['cue-sync'].bindings[beat.id] = {items:[
+      {...binding, cueId}, {target:'AR001.callout.0', action:'show-callout', cueId, edge:'start'}
+    ]};
+  };
+  pendingQuote.beats[2].treatment = structuredClone(body);
+  reserveQuote(pendingQuote.beats[2], 3);
+  await write(paths.storyboard,pendingQuote);
+  const previewWithPendingQuote = await prepareStudio({episodeId:'ep01',workspaceRoot:workspace,systemRoot:root,previewSegmentIds:['B001','B002']});
+  assert.deepEqual(previewWithPendingQuote.renderPlan.transitions,jointPreview.renderPlan.transitions);
+  await assert.rejects(prepareStudio({episodeId:'ep01',workspaceRoot:workspace,systemRoot:root}), /B003 引文尚未收口/);
+  reserveQuote(pendingQuote.beats[0], 1);
+  await write(paths.storyboard,pendingQuote);
+  const selectedPending = await prepareStudio({episodeId:'ep01',workspaceRoot:workspace,systemRoot:root,previewSegmentIds:['B001','B002']});
+  assert.deepEqual(selectedPending.renderPlan.segments[0].renderData,jointPreview.renderPlan.segments[0].renderData);
+  assert.deepEqual(await readData(paths.storyboard),pendingQuote,'试看不写回引文决议');
+  await write(paths.storyboard,previewBaseline);
   const isolatedBaseline = await prepareStudio({episodeId:'ep01',workspaceRoot:workspace,systemRoot:root,previewSegmentIds:['B001']});
   const outsideWindow = structuredClone(previewBaseline);
   const obsoleteBody = structuredClone(body);
@@ -395,15 +417,63 @@ test('Studio从作者实图直接装配；不需要素材计划或图片清单',
   assert.deepEqual(openerPreview.renderPlan.preview.segmentIds,['opener'],'片头预览保留引用的正文图片');
   for (const id of ['B003','B004']) await assert.rejects(
     prepareStudio({episodeId:'ep01',workspaceRoot:workspace,systemRoot:root,previewSegmentIds:[id]}),/缺少.*treatment/);
-  await assert.rejects(prepareStudio({episodeId:'ep01',workspaceRoot:workspace,systemRoot:root}),/TR002 缺少.*treatment/);
+  await assert.rejects(prepareStudio({episodeId:'ep01',workspaceRoot:workspace,systemRoot:root}),/B003 尚未交付画面/);
   await assert.rejects(collectAuthoredMedia({storyboard:await readData(paths.storyboard),
     cues:[...cues,{id:2,startMs:6000,endMs:12000,text:mapText},{id:3,startMs:12000,endMs:18000,text:'后续场景。'}],
     bodyDurationMs:24000}),/B003 尚未交付画面/);
   const missingBackground=await readData(paths.storyboard);
   delete missingBackground.beats[0].treatment.assetRequests[0].asset;
   await write(paths.storyboard,missingBackground);
-  await assert.rejects(prepareStudio({episodeId:'ep01',workspaceRoot:workspace,systemRoot:root,previewSegmentIds:['B002']}),
+  const isolated = await prepareStudio({episodeId:'ep01',workspaceRoot:workspace,systemRoot:root,previewSegmentIds:['B002']});
+  assert.deepEqual(isolated.renderPlan.preview.segmentIds, ['TR001']);
+  const isolatedScene = isolated.renderPlan.segments.find(segment => segment.id === 'TR001');
+  assert.equal(isolatedScene.renderData.voxExplainer.scene.markup, map.scene.markup);
+  assert.equal(isolatedScene.assetRefs.some(asset => asset.requestId === 'context-background'), false);
+  await assert.rejects(prepareStudio({episodeId:'ep01',workspaceRoot:workspace,systemRoot:root,previewSegmentIds:['B001','B002']}),
     /B001\/AR001 尚未交付实际图片/);
+
+  const directed = structuredClone(previewBaseline);
+  const dissolve = {type:'dissolve',durationMs:600,reason:'沿同一观察对象进入演示'};
+  const dip = {type:'dip-to-black',durationMs:600,reason:'演示结束，转到新的处境'};
+  Object.assign(directed.beats[0], {incomingTransition:null});
+  Object.assign(directed.beats[1], {incomingTransition:dissolve});
+  directed.beats[2] = {...directed.beats[2],templateId:'vox-explainer',incomingTransition:null};
+  directed.beats[3] = {...directed.beats[3],templateId:'fullframe-narrative',incomingTransition:dip,
+    treatment:{...body,incomingTransition:dip}};
+  const chapter = directed.templateRuns[0];
+  chapter.beatIds.push('B003');
+  directed.templateRuns = [chapter];
+  chapter.treatment.scene = {
+    markup:'<svg viewBox="0 0 1920 1080"><rect id="surface" width="1920" height="1080" fill="#cc0000"/></svg>',
+    animation:'timeline.set(select("#surface"), {attr:{fill:"#0044cc"}}, eventTime("B003"));'
+  };
+  directed.features['cue-sync'].bindings.B004 = {items:[{...binding,cueId:4}]};
+  await write(paths.storyboard,directed);
+  const directedStudio = await prepareStudio({episodeId:'ep01',workspaceRoot:workspace,systemRoot:root});
+  const directedPlan = directedStudio.renderPlan;
+  const directedChapter = directedPlan.segments.find(segment => segment.id === 'TR001');
+  assert.deepEqual(directedChapter.beatIds,['B002','B003']);
+  assert.deepEqual(directedChapter.renderData.eventTimings,[{id:'B003',frame:360}]);
+  assert.deepEqual(directedPlan.transitions.filter(edit => edit.explainerPush)
+    .map(edit => [edit.previousId,edit.nextId,edit.durationInFrames]),[
+    ['B001','TR001',30], ['TR001','B004',30]
+  ]);
+  const memberPreview = await prepareStudio({episodeId:'ep01',workspaceRoot:workspace,systemRoot:root,previewSegmentIds:['B003']});
+  assert.deepEqual(memberPreview.renderPlan.preview.segmentIds,['TR001']);
+  assert.deepEqual(memberPreview.renderPlan.segments.find(segment => segment.id === 'TR001').renderData.eventTimings,
+    directedChapter.renderData.eventTimings);
+  directed.beats[1].cueRange = [2, 3];
+  delete directed.beats[1].incomingTransition;
+  directed.beats.splice(2, 1);
+  chapter.beatIds = ['B002'];
+  chapter.treatment.scene.events = [{id:'E001',target:'M001',offsetSeconds:.75}];
+  chapter.treatment.scene.animation = 'timeline.set(select("#surface"), {attr:{fill:"#0044cc"}}, eventTime("E001"));';
+  await write(paths.storyboard,directed);
+  const authorCutStudio = await prepareStudio({episodeId:'ep01',workspaceRoot:workspace,systemRoot:root});
+  const authorCutChapter = authorCutStudio.renderPlan.segments.find(segment => segment.id === 'TR001');
+  assert.deepEqual(authorCutChapter.renderData.eventTimings,[{id:'E001',frame:45}]);
+  assert.equal(authorCutChapter.startFrame,directedChapter.startFrame);
+  assert.equal(authorCutChapter.durationInFrames,directedChapter.durationInFrames);
 });
 
 test('剧情视频首图来自原作者，未知远端仍恢复原任务', async t => {

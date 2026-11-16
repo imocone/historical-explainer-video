@@ -1,7 +1,7 @@
 import { mkdir, readdir, rename } from "node:fs/promises";
 import path from "node:path";
 import { assertProjectPath, atomicWriteData, fileSha256, hashObject, readData } from "../../../program-utils.mjs";
-import { prepareRenderPublic } from "../../../modules/render-video/runtime/public-files.mjs";
+import { prepareRenderPublic, sourceRootFor } from "../../../modules/render-video/runtime/public-files.mjs";
 import { motionRouteViewports, viewportForCamera } from "./geometry.mjs";
 import { cameraAtFrame } from "./runtime-layer.mjs";
 import { VIDEO_SPEC, frameSpanForMs } from "../../../video-spec.mjs";
@@ -10,7 +10,7 @@ import { runMediaProcess, withMediaResources } from "../../../modules/render-vid
 import {previewFeatureResults, candidateEffectTracks, specifiedMusicForWindow, candidateAudioContext} from '../../../modules/render-video/runtime/candidate-audio.mjs';
 import {readP3Sources} from '../../../p3-sources.mjs';
 import {audioTracksForWindow} from '../../../modules/render-video/runtime/scene-preview.mjs';
-import {getEpisodePaths} from '../../../workspace-paths.mjs';
+import {inspectP3Input} from '../../../../engine/p3-input.mjs';
 import {frameForMs} from '../../../video-spec.mjs';
 
 const routeFor = ({ props: { motion }, viewingWindow }) => {
@@ -95,7 +95,7 @@ const clipInputDigest = async ({ workspaceRoot, systemRoot, view }) => {
   if (subtitleFont) files.add(subtitleFont);
   const resources = [];
   for (const relative of [...files].sort()) {
-    const root = /^(visuals|packages\/(templates|features))\//.test(relative) ? systemRoot : workspaceRoot;
+    const root = sourceRootFor({ workspaceRoot, systemRoot, relative });
     const file = path.resolve(root, relative);
     let sha256;
     try {
@@ -246,7 +246,7 @@ export const candidateCameraViews = async ({ workOrder, candidate, visualStyle =
 };
 
 // The current author sees the exact route on the actual image before callouts.
-export const renderCandidateCamera = async ({workspaceRoot, systemRoot, workOrder, candidate, clipRequestId = null, bgmSourceAssetId = null, muteEffects = false}) => {
+export const renderCandidateCamera = async ({workspaceRoot, systemRoot, workOrder, candidate, clipRequestId = null, bgmSourceAssetId = null, muteEffects = false, batch = null}) => {
   const {loadProgramVisualPackage} = await import('../../../visual-package.mjs');
   const {withVisualFontPaths} = await import('../../../visual-fonts.mjs');
   const visual = clipRequestId ? await loadProgramVisualPackage(systemRoot,workspaceRoot,{roles:['render']}) : null;
@@ -261,22 +261,25 @@ export const renderCandidateCamera = async ({workspaceRoot, systemRoot, workOrde
     const segment = {id:authorUnit.id, templateId:'fullframe-narrative', startMs:0, actionTimings,
       durationInFrames:frameSpanForMs({startMs,endMs,fps}), renderData:{}};
     const sourceAssets = await readP3Sources({workspaceRoot,workOrder});
-    const audioContext = await candidateAudioContext({workspaceRoot,workOrder,sourceAssets});
-    const tracks = muteEffects ? [] : await candidateEffectTracks({workOrder, result:candidate.result,
-      segment, fps, audioContext, durationMs:segment.durationInFrames/fps*1000});
-    const narration = await readData(getEpisodePaths(workspaceRoot, workOrder.subject.id).narrationPackage);
+    const audioContext = await candidateAudioContext({workspaceRoot,workOrder,sourceAssets,batch:muteEffects ? null : batch});
+    const {narrationPackage:narration, cues:episodeCues} = await inspectP3Input({
+      root:workspaceRoot, episodeId:workOrder.subject.id
+    });
     const narrationFile = path.posix.join(workOrder.subject.id, '制作', 'p2', narration.files.audio.path);
     const sourceOrigin = frameForMs({milliseconds: startMs, fps});
+    const narrationFrames = frameForMs({milliseconds:narration.durationMs ?? endMs, fps});
+    const tracks = muteEffects ? [] : await candidateEffectTracks({workOrder, result:candidate.result,
+      segment, fps, audioContext, earliestMs:-sourceOrigin/fps*1000, durationMs:(narrationFrames-sourceOrigin)/fps*1000});
     for (const view of views) {
       const fromFrame = view.props.motion.startFrame - view.props.motion.cameraFrameOffset;
       const toFrame = view.props.motion.runtimeEndFrame - view.props.motion.cameraFrameOffset + 1;
       const narrationStart = Math.max(fromFrame, -sourceOrigin);
-      const narrationEnd = Math.min(toFrame, frameForMs({milliseconds: narration.durationMs ?? endMs, fps}) - sourceOrigin);
+      const narrationEnd = Math.min(toFrame, narrationFrames - sourceOrigin);
       view.props.audioTracks = audioTracksForWindow({tracks, fromFrame, toFrame, fps});
       view.props.audioTracks.push(...specifiedMusicForWindow({sourceAssetId:bgmSourceAssetId,
         workOrder, result:candidate.result, segment, muteEffects, audioContext, sourceAssets,
         episodeId:workOrder.subject.id, fromFrame:sourceOrigin+fromFrame, toFrame:sourceOrigin+toFrame,
-        fps, bodyEndMs:narration.durationMs ?? endMs}));
+        fps, bodyStartMs:episodeCues[0].startMs, bodyEndMs:episodeCues.at(-1).endMs}));
       if (narrationEnd > narrationStart) view.props.audioTracks.unshift({id: 'preview-narration', kind:'narration',
         file: narrationFile, startMs: (narrationStart - fromFrame) / fps * 1000,
         endMs: (narrationEnd - fromFrame) / fps * 1000,

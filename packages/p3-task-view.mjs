@@ -7,10 +7,10 @@ import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { parseArgs } from "node:util";
 import { assertProjectPath, hashObject, readData, sha256 } from "./program-utils.mjs";
-import { drawingStyleForTemplate, loadProgramVisualPackage } from "./visual-package.mjs";
+import { drawingStyleForTemplate, loadProgramVisualPackage, productionProfileForKind } from "./visual-package.mjs";
 import { deriveCandidateWorkspaceRoot } from "./templates/fullframe-narrative/task-contract.mjs";
 
-const supportedModules = new Set(["understand-episode", "direct-episode", "author-beat"]);
+const supportedModules = new Set(["direct-episode", "author-beat"]);
 const normalizeNarration = (value) => value.replace(/\s/gu, "");
 const fail = (message) => {
   throw new Error(message);
@@ -48,6 +48,22 @@ const projectAssembly = (assembly) => ({
   }))
 });
 
+export const currentP3DirectorInputs = (inputs) => {
+  if (!inputs.understanding?.content) return inputs;
+  const { understanding, currentVisualPlan, ...rest } = inputs;
+  return currentVisualPlan
+    ? { ...rest, currentVisualPlan: { ...currentVisualPlan, understanding: understanding.content } }
+    : { ...rest, currentUnderstanding: understanding.content };
+};
+
+export const currentP3ReturnTargets = ({ stageId, nodeId, moduleId, inputs, allowedReturnTargets }) => {
+  // A signed body-redesign order can use the current Director handoff without being reissued.
+  if (stageId === "p3" && nodeId === "author" && moduleId === "author-beat"
+    && inputs?.p3BodyRedesign?.revisionScope === "body-redesign") return ["director"];
+  return [...new Set(allowedReturnTargets.flatMap(target => target !== "understand" ? [target]
+    : moduleId === "direct-episode" ? [] : ["director"]))];
+};
+
 export const projectP3TaskView = (workOrder) => {
   if (!workOrder || typeof workOrder !== "object" || Array.isArray(workOrder)) {
     fail("P3 工作单必须是对象");
@@ -66,7 +82,7 @@ export const projectP3TaskView = (workOrder) => {
     assembly?.module?.id !== workOrder.moduleId ||
     !Array.isArray(assembly?.slots)
   ) {
-    fail("任务视图只接受正式 P3 Understanding、Visual Director 或 Author 工作单");
+    fail("任务视图只接受正式 P3 Director 或 Author 工作单");
   }
   if (
     !workOrder.inputs ||
@@ -95,7 +111,7 @@ export const projectP3TaskView = (workOrder) => {
     fail("P3 工作单缺少模型执行合同");
   }
 
-  const inputs = structuredClone(workOrder.inputs);
+  const inputs = structuredClone(isAuthor ? workOrder.inputs : currentP3DirectorInputs(workOrder.inputs));
   if (isAuthor && inputs.authorPhase === "quotes") {
     // Keep the signed work order intact; read its source text in bounded portions.
     for (const video of inputs.referenceVideos ?? []) {
@@ -144,7 +160,7 @@ export const projectP3TaskView = (workOrder) => {
     resolvedAssembly: projectAssembly(assembly),
     outputContract: projectResource(workOrder.outputContract),
     allowedWrite: workOrder.allowedWrite,
-    allowedReturnTargets: structuredClone(workOrder.allowedReturnTargets),
+    allowedReturnTargets: currentP3ReturnTargets(workOrder),
     candidatePath: workOrder.candidatePath,
     ...(isAuthor || workOrder.moduleId === "direct-episode" ? { scratchPath: workOrder.scratchPath } : {})
   };
@@ -206,12 +222,24 @@ const main = async () => {
     }
   }
   if (workOrder.moduleId === "author-beat") {
-    if (workOrder.inputs.authorPhase !== "quotes" && workOrder.inputs.authorUnit?.templateId !== "vox-explainer") {
+    let visual;
+    if (workOrder.inputs.authorPhase !== "quotes") {
       const workspaceRoot = deriveCandidateWorkspaceRoot({ workOrder,
         candidatePath: path.join(path.dirname(path.resolve(workOrderPath)), path.basename(workOrder.candidatePath)) });
-      const visual = await loadProgramVisualPackage(root, workspaceRoot, { roles: ["render"] });
+      const templateId = workOrder.inputs.authorUnit?.templateId;
+      const fullframe = templateId === "fullframe-narrative";
+      visual = await loadProgramVisualPackage(root, workspaceRoot, fullframe || templateId === "vox-explainer"
+        ? { roles: ["render", "productionProfiles"], profileKinds: ["fullframe-image"] }
+        : { roles: ["render"] });
       view.inputs.templateContext = { ...view.inputs.templateContext,
-        visual: { id: visual.id, drawingStyle: structuredClone(drawingStyleForTemplate(visual.renderTokens, workOrder.inputs.authorUnit?.templateId)) } };
+        visual: { id: visual.id, drawingStyle: structuredClone(drawingStyleForTemplate(visual.renderTokens, templateId)) } };
+      if (fullframe) {
+        const { stylePrompt, references } = productionProfileForKind(visual, "fullframe-image");
+        Object.assign(view.inputs.templateContext.visual, {
+          stylePrompt,
+          references: references.map(({ id, absolutePath, styleScopes }) => ({ id, absolutePath, styleScopes }))
+        });
+      }
     }
     for (const slot of view.resolvedAssembly.slots) {
       for (const implementation of slot.implementations) {
@@ -252,11 +280,10 @@ const main = async () => {
             await assertProjectPath({ root, file: contextFile, label: "P3模板作者参考入口" });
             const context = await import(pathToFileURL(contextFile).href);
             if (context.refreshAuthorReferences) {
-              const references = await context.refreshAuthorReferences({ workOrder, workOrderPath });
+              const references = await context.refreshAuthorReferences({ workOrder, workOrderPath, visualPackage: visual });
               view.inputs = { ...view.inputs, ...references,
                 templateContext: { ...view.inputs.templateContext, ...references.templateContext,
                   visual: { ...view.inputs.templateContext?.visual, ...references.templateContext?.visual } } };
-              if (implementation.packageId === 'vox-explainer') delete view.inputs.templateContext.visual;
             }
             if (context.projectAuthorReferenceView) {
               const workspaceRoot = deriveCandidateWorkspaceRoot({ workOrder,

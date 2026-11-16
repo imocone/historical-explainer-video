@@ -13,6 +13,7 @@ const exec = promisify(execFile);
 const require = createRequire(import.meta.url);
 export const hyperframesCli = path.join(path.dirname(require.resolve("hyperframes/package.json")), "bin/hyperframes.mjs");
 export const hyperframesEnv = { ...process.env };
+export const studioBuildHeader = 'x-project-studio-build-signature';
 
 export const studioBuildSignature = async () => {
   const files = ['browser-session.mjs', 'studio-server.mjs', 'studio-render.mjs', 'studio-composition.mjs'];

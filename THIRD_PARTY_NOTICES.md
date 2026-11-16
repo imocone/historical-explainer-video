@@ -16,12 +16,13 @@
 
 | 资源 | 来源、许可与保留位置 |
 |---|---|
-| Noto、思源宋体、霞鹜文楷GB、站酷小薇、马善政字体 | 各自SIL OFL及版权声明原样保留；详见三个Visual的`render/fonts/LICENSES.md`及[讲解字体原许可](packages/templates/vox-explainer/fonts/Noto-OFL.txt)。保留字体名称和附加许可，不能按MIT单独转授 |
+| Noto、思源宋体 | 各自 SIL OFL 及来源随资源保留。详见各 Visual 的 `render/fonts/LICENSES.md` 和[讲解字体原许可](packages/templates/vox-explainer/fonts/Noto-OFL.txt)。 |
 | MiSans协议PDF | 仅保留[原协议](visuals/meiji-state-machine/render/fonts/MiSans-License.pdf)供本机用户核对；MiSans字体文件不随仓库分发。公开字幕使用仓库中已许可的Noto Sans SC，原字体仅在本机保留 |
 | `packages/templates/vox-explainer/spatial/geography/{land,lakes,rivers}.json` | [Natural Earth公有领域数据](https://www.naturalearthdata.com/about/terms-of-use/)；原数据用途及精度见[资源说明](packages/templates/vox-explainer/spatial/docs/resources.md) |
 | `packages/templates/vox-explainer/spatial/assets/unit-*.svg` | 参考letstalkaboutdune的[AbsoluteUnits](https://github.com/letstalkaboutdune/AbsoluteUnits)改绘，CC BY 4.0；原[许可全文](packages/templates/vox-explainer/spatial/assets/AbsoluteUnits-LICENSE.txt)及SVG内署名保持。使用时保留作者、项目、许可和改绘说明 |
 | `packages/templates/glass-opener/assets/window-glass-{normal.png,pbr.jpg}` | © 2023 Wayfair，Eric Chadwick制作的[GlassBrokenWindow](https://github.com/KhronosGroup/glTF-Sample-Assets/tree/main/Models/GlassBrokenWindow)，[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)；本项目用于动态玻璃网格并调整强度，保留该署名与加工说明 |
 | `packages/templates/documentary-opener/audio/samples/*.flac`、`piano.sfz` | FreePats Upright Piano KW，2022-02-21；Gonzalo、Roberto录制，Roberto编辑，[CC0 1.0](https://freepats.zenvoid.org/Piano/acoustic-grand-piano.html)。十个实际采样及[原许可](packages/templates/documentary-opener/audio/samples/CC0.txt)保持 |
+| `packages/features/sound-effects/recordings/*.wav` | Joseph Sardin 实录，[CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/)；本项目裁切及整理，[原作与加工说明](packages/features/sound-effects/SOURCES.md#实录素材) |
 
 当前资料明确记为本项目原创生成或程序合成的资源，其本项目可授权部分按MIT开放：
 
@@ -41,7 +42,7 @@
 | 原默认背景音乐`default.mp3` | 不附带默认配乐，原文件只留本机。用户可自行放入具备使用权的音乐 |
 | episode-opener与opposed-opener中源于Mixkit的音效 | 公开文件为本项目制作的静音占位WAV，保留原采样率、声道数和长度。Mixkit原件及裁切版本只留本机；[来源登记](packages/templates/episode-opener/audio/sources.mjs)根据实际使用的文件报告来源 |
 | episode-opener与crossfire-opener原背景音乐《沈黙》 | DOVA-SYNDROME／OpenTracks原件只留本机；公开文件为相同时长的静音占位，不转授原音乐 |
-| 三个Visual的`MiSans-Semibold.woff2` | 字体原件只留本机；公开使用OFL的Noto Sans SC。原许可PDF保留，不能据此认为原字体已随源码开放 |
+| Visual 的 `MiSans-Semibold.woff2` | 字体原件只留本机，公开版本使用 OFL 的 Noto Sans SC。随仓保留原许可 PDF。 |
 | 示例旁白与视频 | 公开旁白为相同时长的静音占位；成品及示例视频均不随仓库分发，本机保留完整原片和原声 |
 
 上述占位音频按本项目MIT范围开放，不代表原音乐、原音效或原音色获得再分发许可。公开片头及本机从示例源码生成的预览因此可能无声；用户自行配置有权使用的音频后可恢复声音。

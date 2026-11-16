@@ -4,15 +4,15 @@
 
 一份`treatment`保存整段作品。字段见[结果合同](../../../../contracts/vox-explainer-treatment.schema.json)，正常候选外壳与提交沿author-beat。
 
-`design.md`是当前工作单`scratchPath`内的制作工作稿，其写入、读取、修订及同源制作由[作者入口](../AUTHOR.md#构思与制作)安排。它不是`treatment`字段，不加入`assetRequests`或P4资源；下面接口只交付当前候选的实际设计。
+`design.md`是当前工作单`scratchPath`内的[整章制作稿](creative/design.md#整章设计稿)，从第1步写起，供本单各步读取和更新。预演读取当前候选，P4读取已接纳的章节`treatment`及正式交付的素材。
 
-`templateContext.audio.file`是正式P2原声音频的绝对路径，`startMs / endMs`是本段在该文件中的播放窗口，`sha256`沿用原交接身份。创作与卡点使用本单正式口播、Cue时间戳和已投递的实测短语时间。预演读取同一文件和窗口，复用原配音与时长。
+`templateContext.audio.file`是正式P2原声音频的绝对路径，`startMs / endMs`是本段在该文件中的播放窗口，`sha256`用于校验文件身份。预演读取同一文件和窗口，复用原配音与时长。作者的创作依据见[作者入口](../AUTHOR.md#接住本单)，句内时间见[实测短语与句内卡点](tools/cues.md#实测短语与句内卡点)。
 
 - `templateId: "vox-explainer"`。
 - `objective`：本段让观众明白什么。
-- `appearance`：从本单templateContext取得字体与外观身份。`art: "editorial-cutout"`与`tone: "neutral"`是现行合同标识，共同风格按[画法](art.md)落实；结合本题对象与表达需要填写本段`palette`。新上下文已提供固定的`background / ink / paper`，保留这些底板与字线颜色；作者填写`accent / secondary`及图形实际需要的其它角色色、材料色。渲染器使用同源固定底板。
+- `appearance`：沿用本单`templateContext.appearance`的外观身份与字体。底色按本题调整，并在候选的`palette`填齐`accent`与`secondary`，其它角色色按需加入。见[画布与动画](#画布与动画)。
 - `continuity`：本段时期、地点、人物与道具，遵守本单事实。`carryToNext`仅在有后续复现提示时填写，不代表下一正文段自动继承；已有内容保留。
-- `moments`：将动画讲法中的关键动作、状态转变或理解发现记为`{id:"M001",purpose,sourceRefs}`，`purpose`写清本次可见变化或新认识，再选择对应Cue；一项可以跨多句，一句也可包含多项，不把口播分段自动复制为moments或一张张说明页。
+- `moments`：将讲法中的关键动作、状态转变或理解发现记为`{id:"M001",purpose,sourceRefs}`，`purpose`写清本次可见变化或新认识，再选择对应Cue。一项可以跨多句，一句也可包含多项；一幅静态比较已经讲清时，可用一个理解发现绑定Cue。
 - `scene.markup`：整段动画的场景、对象、图件与图文结构，保存为完整HTML片段，可含CSS、SVG、Canvas和图片。自由布局，不分固定元素类别。
 - `scene.animation`：用原生JavaScript编排对象、图解、镜头与状态变化，可按表达需要非线性组织；播放仍由本段统一时钟定位。
 - `assetRequests`：交付本段实际使用的图片，没有图片时为空数组；素材组织可参考[素材与动作](creative/production.md#素材与动作一起设计)。
@@ -27,17 +27,15 @@
 | 使用Three.js并与SVG协作 | [三维接口](tools/three.md) |
 | 纸面、标注、字体测量和数值 | [图文工具](tools/graphics.md) |
 | 预演、取帧、导出及临时收字 | [预演接口](tools/preview.md) |
-| 地图、路线、旁图和兵棋工具 | [空间工具入口](../spatial/README.md) |
+| 地图、路线、旁图和图件 | [空间工具入口](../spatial/README.md) |
 
 ## 画布与动画
 
-从`templateContext.renderContext`取画幅与`safeArea`。以完整画幅组织场景，`safeArea`用于安排关键内容、避让字幕及画面边缘；地图外框和底图按[地图对象构图](spatial.md#地图对象构图)展开。
+从`templateContext.renderContext`取画幅与`safeArea`。以完整画幅组织场景，`safeArea`用于安排关键内容、避让字幕及画面边缘；地图构图和底图按[地图对象构图](spatial.md#地图对象构图)展开。
 
 每段在独立Shadow DOM中，markup的根样式用`:host`，内部ID和CSS不会影响其它段。颜色变量为`--background`、`--ink`、`--paper`、`--accent`、`--secondary`及本段其它角色色，用如`fill: var(--accent)`的CSS取值。实字体用`var(--font-body)`与`var(--font-title)`，字重用`var(--font-body-weight)`与`var(--font-title-weight)`。
 
-底板与外部进出场由模板及原转场消费者提供；scene内层容器与Canvas保持透明，不用`:host`改写底板，也不以满幅底色、地台或滤镜覆盖它。主体、局部环境、图解展开、镜头与内部换景由作者设计，可连续变化、并行比较或转换表示。
-
-统一底板不规定固定版式，也不要求主体四周始终留出一圈空白。按当前观察取近景或裁出暂时无关的部分，让作用处取得足够面积；阅读层与观看窗口分开，关键内容和字幕仍各有空间。留白服务本镜的主次，不用缩小全部对象来保留同一张总览。
+`appearance.palette.background`、`paper`、`ink`共同决定底板、衬色与字色，浅纸为默认。作者可按镜头设计环境和滤镜。节目字幕用本段`ink`作字色、`paper`作描边，按字幕实际压住的表面配色。字幕落在浅色地图上时，按地图配深字，并让两行字幕范围落在安静、连续的区域。讲解进入、退出及讲解互接由渲染器沿原专用推移处理。章内切点和动作由作者按[全章粗排](creative/design.md#全章粗排)写入同一scene。
 
 `scene.animation`可直接使用：
 
@@ -45,7 +43,8 @@
 |---|---|
 | `root`、`select(css)` | 取得画面根或元素；select单个命中返回节点，多个返回数组，无命中报错 |
 | `gsap`、`timeline` | 原生GSAP与本段受控时间轴；动画接到timeline，通过select传节点 |
-| `THREE` | 随模板打包的Three.js命名空间，在本段Canvas中创建三维主体、相机、灯光与材质；见[三维与SVG协作](tools/three.md#三维与svg协作) |
+| `THREE` | 随模板打包的Three.js命名空间，在本段Canvas中创建三维主体、相机、灯光与材质；见[三维制作](tools/three.md) |
+| `spatial.projectAnchor(worldPoint, camera, view?)` | 把当前相机中的三维点换算成SVG坐标。点在镜头可见范围外时返回`null`。局部画布传入它在SVG中的矩形，见[三维标注](tools/three.md#让标注跟住部件) |
 | `cue("M001")` | 该观看变化所选Cue的start或end绑定时刻，相对本段、单位秒 |
 | `eventTime("E001")` | 本段scene.events中的画面动作时刻，相对本段、单位秒；独立于可选功能 |
 | `onFrame(({frame,time,fps})=>...)` | 按指定帧直接绘制Canvas、改变SVG或计算完整状态 |
@@ -54,38 +53,22 @@
 | `assets` | Map，按AR编号读取图片的尺寸、可见范围与锚点 |
 | `width / height / fps / duration` | 画幅、帧率、本段时长（秒） |
 
-把已设计的对象关系接到这些接口：共同事实或位移由一处状态求出，相关形体、路径和读数读取它；镜头、标签揭示与停顿按观看需要编排。需要整体移动的对象放在同一外层，独立活动件保留局部变换。同一物件改变景别、位置或尺度时，优先连续变换既有对象组；需要换表示或复制时，先对齐承接处的形象、锚点和状态，再安排新旧图件交接。实体层与内容层可以分别控制，避免交叉淡化让两套文字重影或让背景穿过本应不透明的物体。变量、分组与函数只属于当前scene，不另交状态清单。下面仅演示同一进度驱动图形与反馈；markup中需有矩形#shape和结果#result，对象与尺寸按本题填写。
+共同事实或位移由一处状态求出，形体、路径和读数读取它。需要整体移动的对象放在同一外层，独立活动件保留局部变换。变量、分组与函数属于当前scene。
 
-```js
-const start = cue('M002'), span = 1.2;
-onFrame(({time}) => {
-  const progress = Math.max(0, Math.min(1, (time - start) / span));
-  select('#shape').setAttribute('width', 320 * progress);
-  select('#result').setAttribute('opacity', progress === 1 ? 1 : 0);
-});
-```
-
-GSAP动画写入提供的`timeline`，或把自建子时间轴加入它，由HyperFrames按本段时间定位。例如：
-
-```js
-timeline.fromTo(select('#shape'), {x: 0},
-  {x: 320, duration: 1.2, ease: 'power2.inOut'}, cue('M002'));
-```
+GSAP动画写入提供的`timeline`，或把自建子时间轴加入它，由HyperFrames按本段时间定位。按需查看[取景与动作示例](tools/motion.md)。
 
 独立的`gsap.to(...)`或未接入的子时间轴会自行播放，不能随本段跳帧复位。当前Shadow DOM内的CSS动画与Web Animations由Renderer按同一时间定位；逐帧函数按当前time计算完整状态，不能依赖前一帧、定时器或未固定的随机数。跳帧、倒放和重进应得到相同画面。不要在markup内放脚本或运行时网络请求。
 
-将一次观看转折的时间保存为`const anchor = cue('M002')`。这个锚点可以对应动作开始、关键变化或结果落定；若设计要让结果在此落定，就从该锚点向前安排动作时长与准备，相关镜头、主体变化、读数与字组仍由同一锚点加各自偏移求值，并保持在本段合法时窗内。不同对象可以错时，但不能把它们各自写成脱离Cue的全段固定秒数；偏移是制作编排，不是新字幕时间或已验证的词级时间。原声时窗变短时，按当前讲法重排动作和停驻，不用整体加速掩盖来不及看清的问题。地图内部的CSS与Web Animations也沿同一时钟定位；需要随地理投影更新的位置在await map.seek之后计算。
+按[口播卡点与画面节奏](creative/timing.md#按字幕时窗粗排)决定取景、作用、读数和字组各自的时机。用`cue('M002')`或已声明的`eventTime('E001')`取得时间锚点，动作留在本段时窗内。偏移是制作编排，实测词点按[短语证据](tools/cues.md#实测短语与句内卡点)取用。地图内的CSS与Web Animations共用本段时钟；随地理投影更新的位置在`await map.seek(...)`后计算。
 
-共同位移、形体与读数的实际联动可看[粮食补给的动作与结果](../examples/supply-mg/README.md#动作怎样留下结果)；身体、道具与作用点的联动可看[七国之乱的人物过程](../examples/seven-kingdoms/README.md#源码)。它们分别使用Canvas与SVG，混合图片时仍按[实际图片锚点](tools/images.md#图片与动作配合)校准，同一状态的控制关系保持一致。
+混合图片时按[实际图片锚点](tools/images.md#图片与动作配合)校准，同一状态的控制关系保持一致。
 
 同一元素的显隐由同一处控制。用SVG的`opacity`属性驱动时，初态也写在该属性上；不要再用CSS类固定`opacity:0`覆盖动画，导致对象始终不可见。
 
-字组和标注的进入、停驻、退出或替换同样写入原`timeline / onFrame`，需要持续的依据按当前用途保留。逐帧函数由当前时间计算完整显隐与内容，不能只在越过进场点时置为可见而遗漏后续退出与回看状态。上面的结果揭示示例只演示一个变化；其后是否保留及如何交给下一观看重点，按本段设计继续编排。
+字组和标注的进入、停驻、退出或替换同样写入原`timeline / onFrame`，需要持续的依据按当前用途保留。逐帧函数由当前时间计算完整显隐与内容，不能只在越过进场点时置为可见而遗漏后续退出与回看状态。
 
 ### 附着、脱离与换表示
 
 需要把同一物件带到另一处、改变形状再接入新关系时，先求承托对象的当前位姿，再把局部锚点经缩放、旋转和平移投到世界坐标；SVG同组嵌套可让浏览器执行相同变换，独立图层则显式求这个坐标。脱离时固定实际离开位置，飞行终点取目标在接触时刻的位置，另排中间通路；接入后跟随目标的当前位姿，不再沿两端插值。为人物、读数和作用处留出实际通路，不能只靠换层躲避相穿。
 
 形变围绕实际接触点展开。例如物件底边受承托时，宽高改变仍保持底边锚点；代码画件用当前轮廓求锚点，图片从实图可见边界及已定锚点求位置。外层镜头最后统一作用于同一场景，独立叠加层按当前投影定位。绘制顺序与路径分别安排：需要从后面经过就进入相应遮挡层，需要在前面可见就给它实际通路。
-
-[七国之乱的工匠](../examples/seven-kingdoms/README.md#源码)展示持续附着：手随柄、铜流随勺口，落点保持在钱范；[粮食补给](../examples/supply-mg/README.md#动作怎样留下结果)展示对象转移：粮袋由储备出发，到达口粮位置后进入消耗，前后数量与去向对应。它们帮助观察接触与状态，当前作品仍需完成自身的形体、构图、路径和过程可见性。

@@ -59,11 +59,7 @@ export const measureCameraDesign = ({ treatment, featureResults, templateContext
   });
   const motionBudgets = items.map(({ id, budget }) => ({ target: id, ...budget }));
   const results = inspectFullframeDesigns({ items });
-  const failures = results.filter((item) => !item.ok).map((item) => ({
-    target: item.id,
-    failureClass: item.failureClass,
-    error: item.error
-  }));
+  const failures = results.filter((item) => !item.ok).map(({ id, ok: _ok, ...failure }) => ({ target: id, ...failure }));
   if (failures.length) return { ok: false, failures, motionBudgets };
   return {
     ok: true,
@@ -72,6 +68,9 @@ export const measureCameraDesign = ({ treatment, featureResults, templateContext
     targets: results.map((item, index) => ({
       target: item.id,
       speedRatio: item.speedRatio,
+      family: item.family,
+      routeLength: item.routeLength,
+      feasibleConstantSpeedRange: item.feasibleConstantSpeedRange,
       ...(item.speedChanges ? { speedChanges: item.speedChanges } : {}),
       incomingTransition: index === 0 ? treatment.incomingTransition ?? null
         : treatment.assetRequests[index].incomingTransition,

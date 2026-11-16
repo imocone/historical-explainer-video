@@ -15,7 +15,8 @@ import {
 } from "./subtitle-timing.mjs";
 
 const SHA256 = /^[a-f0-9]{64}$/u;
-const MAX_CONTENT_CHARS = 32;
+const MAX_CONTENT_CHARS = JSON.parse(await readFile(new URL("./result.schema.json", import.meta.url), "utf8"))
+  .properties.maxContentChars.const;
 
 const fail = (message) => { throw new Error(message); };
 
@@ -71,7 +72,7 @@ const loadContext = async (workOrderFile) => {
   }
   const audioPath = path.join(workspaceRoot, ...candidateParent.slice(0, -1), ttsResult.rawAudio.path);
   if (sha256(await readFile(audioPath)) !== ttsResult.rawAudio.sha256) fail("音频摘要与TTS结果不一致");
-  return { workOrder, workspaceRoot, candidatePath, scratchPath, scriptPackage, ttsResult, narration };
+  return { workOrder, workspaceRoot, candidatePath, scratchPath, audioPath, scriptPackage, ttsResult, narration };
 };
 
 const srtMilliseconds = (value) => {
@@ -99,7 +100,7 @@ const srt = (cues) => cues.map((cue, index) => (
   `${index + 1}\n${srtTimestamp(cue.startMs)} --> ${srtTimestamp(cue.endMs)}\n${cue.text}`
 )).join("\n\n") + "\n";
 
-export const prepareSubtitleInput = async (workOrderPath) => {
+export const prepareSubtitleInput = async (workOrderPath, { exportNativeSrt = false } = {}) => {
   const context = await loadContext(workOrderPath);
   const reused = context.workOrder.inputs?.reusedSubtitleTiming;
   if (reused) {
@@ -123,9 +124,11 @@ export const prepareSubtitleInput = async (workOrderPath) => {
   }
   const cues = nativeWordCues(context.ttsResult?.nativeTiming);
   if (!cues) fail("当前TTS没有原生词级时间轴，应由VideoCaptioner ASR形成raw-asr.srt");
-  const output = path.join(context.scratchPath, "raw-word.srt");
-  await writeFile(output, srt(cues));
-  return { route: "provider-native", output, cueCount: cues.length };
+  alignWordTimeline({ wordCues: cues, narration: context.narration });
+  const output = exportNativeSrt ? path.join(context.scratchPath, "raw-word.srt") : null;
+  if (output) await writeFile(output, srt(cues));
+  return { route: "provider-native", source: "workOrder.inputs.ttsResult.nativeTiming",
+    ...(output ? { output } : {}), cueCount: cues.length };
 };
 
 const parseMergeAfter = (value) => {
@@ -134,8 +137,9 @@ const parseMergeAfter = (value) => {
 };
 
 // 这些数值只提示当前作者复核，不替作者判断语义，也不改动时间。
-const readingInspection = (cues, narration, layouts) => {
+const readingInspection = (cues, narration, layouts, timedBreaks) => {
   const sentenceEnds = new Set(narrationBreaks(narration));
+  const usableBreaks = new Set(timedBreaks);
   let offset = 0;
   return cues.map((cue, index) => {
     const contentStart = offset;
@@ -143,7 +147,7 @@ const readingInspection = (cues, narration, layouts) => {
     for (const character of cue.text) {
       offset += contentLength(character);
       if (/[，,；;：:]/u.test(character) && offset > contentStart
-        && offset < contentStart + contentLength(cue.text)) possibleBreaks.push(offset);
+        && offset < contentStart + contentLength(cue.text) && usableBreaks.has(offset)) possibleBreaks.push(offset);
     }
     const durationMs = cue.endMs - cue.startMs;
     const visibleChars = [...withoutWhitespace(cue.text)].length;
@@ -165,7 +169,8 @@ const readingInspection = (cues, narration, layouts) => {
       startMs: cue.startMs, endMs: cue.endMs, durationMs,
       visibleChars, charsPerSecond: Math.round(readingSpeed * 100) / 100,
       gapBeforeMs: index ? cue.startMs - cues[index - 1].endMs : cue.startMs,
-      layout: layouts[index], possibleBreaks, hints };
+      layout: layouts[index], possibleBreaks,
+      timedBreaks: timedBreaks.filter((b) => b > contentStart && b < offset), hints };
   });
 };
 
@@ -192,6 +197,15 @@ export const buildSubtitleCandidate = async ({
   const allowRecognitionDifferences = !native;
   const alignment = alignWordTimeline({ wordCues, narration: context.narration, allowRecognitionDifferences });
   if (inspect) {
+    let sentenceStart = 0;
+    const sentencePreview = [...narrationBreaks(context.narration), alignment.contentCount].map((end, index) => {
+      const start = sentenceStart;
+      sentenceStart = end;
+      const sentence = { sentence: index + 1, contentStart: start, contentEnd: end,
+        text: alignment.textSlice(start, end), timedBreaks: alignment.timedBreaks.filter((b) => b > start && b < end) };
+      try { return { ...sentence, ...alignment.project(start, end) }; }
+      catch (error) { return { ...sentence, bindingError: error.message }; }
+    });
     const candidate = await readData(context.candidatePath).catch((error) => {
       if (error.code === "ENOENT") return null;
       throw error;
@@ -202,6 +216,10 @@ export const buildSubtitleCandidate = async ({
       fail("当前候选不属于本工作单、正文或音频，不能复核");
     }
     const source = candidate ? "current-candidate" : "sentence-preview";
+    const inspection = {
+      source, differences: alignment.differences, wordCueCount: wordCues.length, sentencePreview,
+      audioPath: context.audioPath, scratchPath: context.scratchPath
+    };
     let cues;
     let bindingErrors;
     try {
@@ -211,14 +229,13 @@ export const buildSubtitleCandidate = async ({
       });
       bindingErrors = subtitleTimingErrors({ cues, wordCues, narration: context.narration, allowRecognitionDifferences });
     } catch (error) {
-      return { source, differences: alignment.differences, wordCueCount: wordCues.length,
-        bindingErrors: [error.message], cues: [] };
+      return { ...inspection, bindingErrors: [error.message], cues: [] };
     }
     const { layouts, ...display } = await measureCaptions({
       systemRoot: fileURLToPath(new URL("../../../", import.meta.url)), workspaceRoot: context.workspaceRoot, cues
     });
-    return { source, differences: alignment.differences, wordCueCount: wordCues.length,
-      bindingErrors, display, cues: readingInspection(cues, context.narration, layouts) };
+    return { ...inspection, bindingErrors, display,
+      cues: readingInspection(cues, context.narration, layouts, alignment.timedBreaks) };
   }
   const cues = projectSubtitleCues({
     wordCues,
@@ -271,7 +288,7 @@ const main = async () => {
   if (!command || !workOrderPath || !["prepare", "build", "inspect"].includes(command)) {
     fail("用法: node build-candidate.mjs <prepare|build|inspect> <workOrderPath> [--merge-after 1,2] [--break-at 原文字位] [--timing-source native|asr] [--native-timing-issue 原因]");
   }
-  if (command === "prepare") return prepareSubtitleInput(workOrderPath);
+  if (command === "prepare") return prepareSubtitleInput(workOrderPath, { exportNativeSrt: args.includes("--export-native-srt") });
   const option = (name) => {
     const index = args.indexOf(name);
     return index >= 0 ? args[index + 1] : undefined;

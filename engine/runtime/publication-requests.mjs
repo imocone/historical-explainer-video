@@ -3,6 +3,7 @@ import { isDeepStrictEqual } from "node:util";
 import { hashObject, readData } from "../../packages/program-utils.mjs";
 import { REVISION_REQUEST_ID, exists, filesUnder, relative } from "./files.mjs";
 import { businessContent } from "./storyboard.mjs";
+import { readRetainedDelivery } from "../../packages/modules/render-video/runtime/cleanup.mjs";
 const PUBLICATION_REVISION_SCOPE = "publication-copy";
 
 const PUBLICATION_ALL_REVISION_SCOPE = "publication-all";
@@ -18,6 +19,13 @@ const PUBLICATION_FIELDS = new Set([
   "xiaohongshu.title", "xiaohongshu.body", "xiaohongshu.topics",
   "covers.youtube.visibleText", "covers.vertical.visibleText"
 ]);
+
+// The completed delivery retains the formal text, not its authoring cache.
+const canReviseRetainedPlatformCopy = async ({ workspaceRoot, episodeId, request }) =>
+  request?.revisionScope === PUBLICATION_REVISION_SCOPE
+  && Array.isArray(request.publicationFields) && request.publicationFields.length > 0
+  && request.publicationFields.every(field => PUBLICATION_FIELDS.has(field) && !field.startsWith("covers."))
+  && Boolean(await readRetainedDelivery({ workspaceRoot, episodeId }));
 
 const TERMINAL_COVER_GENERATION_STATES = new Set([
   "completed",
@@ -190,5 +198,6 @@ export {
   assertCoverRegenerationRequest,
   assertPublicationRevisionHasNoRemoteActivity,
   assertPublicationRevisionRequest,
+  canReviseRetainedPlatformCopy,
   sealedPublicationBusinessForRevision
 };

@@ -45,10 +45,16 @@ test("获准只重试失败首稿，重复恢复且保留其它稿件和旧回�
     assert.deepEqual(await Promise.all([1, 3].map(route => readFile(path.join(scratch, `author-${route}.json`), "utf8"))), before);
     await writeFile(path.join(scratch, "author-2.json"), JSON.stringify({ ...draft, failures: [] }));
     await assert.rejects(authorHandoff("retry", work, "2", "--authorize-retry"), /全部结束/u);
-    await writeFile(path.join(scratch, "author-2.json"), JSON.stringify(draft));
+    const chapterReceipt = path.join(scratch, "author-2.chapter-location.agy.json");
+    const chapterExit = chapterReceipt.replace(/\.json$/u, ".exit.txt");
+    await writeFile(path.join(scratch, "author-2.json"), JSON.stringify({ ...draft, chapterLocationReceipt: chapterReceipt }));
+    await writeFile(chapterReceipt, JSON.stringify({ status: "SUCCESS", response: "原作者章节定位" }));
+    await writeFile(chapterExit, "0\n");
     await writeFile(path.join(scratch, "disposable.txt"), "临时文件");
     await compactAcceptedNarrationMaterials({ workspaceRoot: root, episodeId: "ep01", materialExecutionId: executionId });
     assert.equal(await readFile(oldReceipt, "utf8"), "原失败回包");
+    assert.equal(JSON.parse(await readFile(chapterReceipt, "utf8")).response, "原作者章节定位");
+    assert.equal(await readFile(chapterExit, "utf8"), "0\n");
     assert.deepEqual(await Promise.all([1, 3].map(route => readFile(path.join(scratch, `author-${route}.json`), "utf8"))), before);
     await assert.rejects(readFile(path.join(scratch, "disposable.txt")), { code: "ENOENT" });
   } finally { await rm(root, { recursive: true, force: true }); }
