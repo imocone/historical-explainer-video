@@ -238,6 +238,8 @@ npm run setup
 
 Your `.env` and program directories outside the repository are preserved. Resolve local code conflicts before updating; do not force-overwrite your changes.
 
+If you cloned this repository before its public history was rewritten, `git pull --ff-only` may fail. Clone the repository into a new directory, run `npm run setup`, and copy the `.env` settings you need. Keep the old checkout while you move any local changes you want to keep. Program directories outside the repository can stay at their existing paths.
+
 ## FAQ
 
 **`brew` or `node` not found?** Complete the [Homebrew installation](https://brew.sh/) and its shell setup instructions, open a new terminal, then retry. `node --version` must report 22.12 or newer.
